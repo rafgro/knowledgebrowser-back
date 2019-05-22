@@ -33,6 +33,7 @@ function downloadBiorxiv() {
 
         parseXml( body, function (err, result) {
             
+            console.log( result["rdf:RDF"].item[0].title );
             /*
 { 'rdf:RDF':
    { '$':
