@@ -1,14 +1,6 @@
 const express = require('express'),
-      server = express();
-
-const mongoose = require('mongoose');
-const publication = require('.././schemaPublication');
-mongoose.set('useNewUrlParser', true);
-mongoose.set('useFindAndModify', false);
-mongoose.set('useCreateIndex', true);
-const connectDb = () => {
-    return mongoose.connect("mongodb://localhost:27017/pcDev", { useNewUrlParser: true });
-};
+      server = express(),
+      downloadBiorxivRss = require('./downloadBiorxivRss');
 
 server.set('port', process.env.PORT || 3000);
 
@@ -19,13 +11,8 @@ server.get('/', (request,response)=>{
 server.get('/downloadBiorxiv', (request,response)=>{
   response.send('Started job');
 
-  downloadBiorxiv();
+  downloadBiorxivRss.start();
 
-  connectDb().then(async () => {
-    server.listen(27017, () =>
-      console.log('Mongodb at port 27017'),
-    );
-  });
 
 });
 

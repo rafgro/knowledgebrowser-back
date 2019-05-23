@@ -1,7 +1,7 @@
 
 const request = require('request');
 
-function downloadBiorxiv() {
+exports.start = function () {
     var parseXml = require('xml2js').parseString;
 
     request('http://connect.biorxiv.org/biorxiv_xml.php?subject=genomics', function (error, response, body) {
@@ -20,4 +20,4 @@ function downloadBiorxiv() {
         } );
 
     });
-}
+};
