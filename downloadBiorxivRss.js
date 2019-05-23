@@ -14,37 +14,57 @@ exports.start = function () {
 
     request('http://connect.biorxiv.org/biorxiv_xml.php?subject=genomics', function (error, response, body) {
 
-        console.log( body.substring(0,100) );
+        if( error ) {
+            console.log( 'Not good' );
+            console.log(error);
+        }
+        else {
+            console.log( body.substring(0,100) );
 
-        parseXml( body, function (err, result) {
+            parseXml( body, function (err, result) {
             
-            /*console.log( result["rdf:RDF"].item[0].link );
-            console.log( result["rdf:RDF"].item[0].description );
-            console.log( result["rdf:RDF"].item[0]["dc:creator"] );
-            console.log( result["rdf:RDF"].item[0]["dc:date"] );
-            console.log( result["rdf:RDF"].item[0]["dc:identifier"] );
-            console.log( result["rdf:RDF"].item[0]["dc:title"] );*/
-            sh.insert({ 
-                    link: result["rdf:RDF"].item[0]["link"].toString().replace("\n", ""),
-                    abstract: "(\'" + result["rdf:RDF"].item[0]["description"].toString().replace("\n", "") + "\')",
-                    authors: result["rdf:RDF"].item[0]["dc:creator"],
-                    date: result["rdf:RDF"].item[0]["dc:date"],
-                    doi: result["rdf:RDF"].item[0]["dc:identifier"],
-                    title: result["rdf:RDF"].item[0]["dc:title"] })
-                .into('biorxiv')
-                .run()
-                .then(() => {
-                    console.log('Good');
-                })
-                .catch(e => {
-                    console.log('Not good');
-                    console.log(e);
-                })
-                .finally(() => {
-                    sh.stop();
-                });
+                result["rdf:RDF"].item.forEach(function(element) {
+                    console.log( element["dc:identifier"] );
 
-        } );
+                    let nonDuplicated = false;
+
+                    sh.select('doi').from('biorxiv').where('doi','=',element["dc:identifier"]).run()
+                    .then(doi => {
+
+                        if( doi.length == 0 ) {
+                            nonDuplicated = true;
+                        }
+
+                        if( nonDuplicated == true ) {
+
+                            sh.insert({ 
+                                link: element["link"].toString().replace("\n", ""),
+                                abstract: "(\'" + escape(element["description"]) + "\')",
+                                authors: escape(element["dc:creator"]),
+                                date: element["dc:date"],
+                                doi: element["dc:identifier"],
+                                title: element["dc:title"] })
+                            .into('biorxiv')
+                            .run()
+                            .then(() => {
+                                console.log('Good');
+                            })
+                            .catch(e => {
+                                console.log('Not good');
+                                console.log(e);
+                            });
+                        }
+
+                    })
+                    .catch(e => {
+                        console.log('Not good');
+                        console.log(e);
+                    });
+                    
+                });
+    
+            } );
+        }
 
     });
 };
