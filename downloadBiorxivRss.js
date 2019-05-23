@@ -10,7 +10,12 @@ function downloadBiorxiv() {
 
         parseXml( body, function (err, result) {
             
-            console.log( result["rdf:RDF"].item[0].title );
+            /*console.log( result["rdf:RDF"].item[0].link );
+            console.log( result["rdf:RDF"].item[0].description );
+            console.log( result["rdf:RDF"].item[0]["dc:creator"] );
+            console.log( result["rdf:RDF"].item[0]["dc:date"] );
+            console.log( result["rdf:RDF"].item[0]["dc:identifier"] );
+            console.log( result["rdf:RDF"].item[0]["dc:title"] );*/
 
         } );
 

@@ -1,6 +1,15 @@
 const express = require('express'),
       server = express();
 
+const mongoose = require('mongoose');
+const publication = require('.././schemaPublication');
+mongoose.set('useNewUrlParser', true);
+mongoose.set('useFindAndModify', false);
+mongoose.set('useCreateIndex', true);
+const connectDb = () => {
+    return mongoose.connect("mongodb://localhost:27017/pcDev", { useNewUrlParser: true });
+};
+
 server.set('port', process.env.PORT || 3000);
 
 server.get('/', (request,response)=>{
@@ -8,8 +17,16 @@ server.get('/', (request,response)=>{
 });
 
 server.get('/downloadBiorxiv', (request,response)=>{
-  downloadBiorxiv();
   response.send('Started job');
+
+  downloadBiorxiv();
+
+  connectDb().then(async () => {
+    server.listen(27017, () =>
+      console.log('Mongodb at port 27017'),
+    );
+  });
+
 });
 
 server.use((request,response)=>{
@@ -33,52 +50,12 @@ function downloadBiorxiv() {
 
         parseXml( body, function (err, result) {
             
-            console.log( result["rdf:RDF"].item[0].title );
-            /*
-{ 'rdf:RDF':
-   { '$':
-      { 'xmlns:admin': 'http://webns.net/mvcb/',
-        xmlns: 'http://purl.org/rss/1.0/',
-        'xmlns:rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
-        'xmlns:prism': 'http://purl.org/rss/1.0/modules/prism/',
-        'xmlns:taxo': 'http://purl.org/rss/1.0/modules/taxonomy/',
-        'xmlns:content': 'http://purl.org/rss/1.0/modules/content/',
-        'xmlns:dc': 'http://purl.org/dc/elements/1.1/',
-        'xmlns:syn': 'http://purl.org/rss/1.0/modules/syndication/' },
-     channel: [ [Object] ],
-     image: [ [Object] ],
-     item:
-      [ [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object],
-        [Object] ] } }
-            */
+            /*console.log( result["rdf:RDF"].item[0].link );
+            console.log( result["rdf:RDF"].item[0].description );
+            console.log( result["rdf:RDF"].item[0]["dc:creator"] );
+            console.log( result["rdf:RDF"].item[0]["dc:date"] );
+            console.log( result["rdf:RDF"].item[0]["dc:identifier"] );
+            console.log( result["rdf:RDF"].item[0]["dc:title"] );*/
 
         } );
 
