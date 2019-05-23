@@ -1,4 +1,5 @@
 const express = require('express'),
+      //bodyParser = require('body-parser'),
       server = express(),
       downloadBiorxivRss = require('./downloadBiorxivRss');
 
@@ -12,7 +13,6 @@ server.get('/downloadBiorxiv', (request,response)=>{
   response.send('Started job');
 
   downloadBiorxivRss.start();
-
 
 });
 
