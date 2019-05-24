@@ -3,6 +3,8 @@ const express = require('express'),
       server = express(),
       downloadBiorxivRss = require('./downloadBiorxivRss');
 
+require('events').EventEmitter.prototype._maxListeners = 100;
+
 server.set('port', process.env.PORT || 3000);
 
 server.get('/', (request,response)=>{
