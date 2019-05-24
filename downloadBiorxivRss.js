@@ -56,7 +56,7 @@ exports.start = function () {
                             .into('biorxiv')
                             .run()
                             .then(() => {
-                                console.log('Inserted '+doi);
+                                console.log('Inserted');
                             })
                             .catch(e => {
                                 console.log('Not good');

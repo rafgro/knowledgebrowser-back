@@ -1,7 +1,8 @@
 const express = require('express'),
       //bodyParser = require('body-parser'),
       server = express(),
-      downloadBiorxivRss = require('./downloadBiorxivRss');
+      downloadBiorxivRss = require('./downloadBiorxivRss'),
+      downloadArxivRss = require('./downloadArxivRss');
 
 require('events').EventEmitter.prototype._maxListeners = 100;
 
@@ -15,6 +16,13 @@ server.get('/downloadBiorxiv', (request,response)=>{
   response.send('Started job');
 
   downloadBiorxivRss.start();
+
+});
+
+server.get('/downloadArxiv', (request,response)=>{
+  response.send('Started job');
+
+  downloadArxivRss.start();
 
 });
 
