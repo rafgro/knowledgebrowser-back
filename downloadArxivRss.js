@@ -4,10 +4,11 @@ const striptags = require('striptags');
 
 const {shiphold} = require('ship-hold');
 const sh = shiphold({
-  hostname: '127.0.0.1',
-  user: 'crawler',
-  password: 'blackseo666',
-  database: 'preprint-crawls'
+    host     : process.env.RDS_HOSTNAME,
+    user     : process.env.RDS_USERNAME,
+    password : process.env.RDS_PASSWORD,
+    port     : process.env.RDS_PORT,
+  database: 'postgres'
 });
 
 const date = new Date(Date.now());
@@ -22,13 +23,13 @@ exports.start = function () {
 
     subjects.forEach( subject => {
 
-        console.log(subject);
+        //console.log(subject);
 
         request('http://export.arxiv.org/rss/'+subject, {timeout: 20000}, function (error, response, body) {
 
         if( error ) {
-            console.log( 'Not good' );
-            console.log(error);
+            //console.log( 'Not good' );
+            //console.log(error);
         }
         else {
             //console.log( body.substring(0,100) );
@@ -58,18 +59,18 @@ exports.start = function () {
                             .into('arxiv')
                             .run()
                             .then(() => {
-                                console.log('Inserted');
+                                //console.log('Inserted');
                             })
                             .catch(e => {
-                                console.log('Not good');
-                                console.log(e);
+                                //console.log('Not good');
+                                //console.log(e);
                             });
                         }
 
                     })
                     .catch(e => {
-                        console.log('Not good');
-                        console.log(e);
+                        //console.log('Not good');
+                        //console.log(e);
                     });
                     
                 });

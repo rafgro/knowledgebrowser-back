@@ -1,5 +1,4 @@
 const express = require('express'),
-      //bodyParser = require('body-parser'),
       server = express(),
       downloadBiorxivRss = require('./downloadBiorxivRss'),
       downloadArxivRss = require('./downloadArxivRss');
@@ -33,5 +32,5 @@ server.use((request,response)=>{
 });
 
 server.listen(3000, ()=>{
-  console.log('Yea');
+  //console.log('Yea');
 });
