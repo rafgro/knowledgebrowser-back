@@ -2,7 +2,8 @@ const express = require('express'),
       server = express(),
       downloadBiorxivRss = require('./downloadBiorxivRss'),
       downloadArxivRss = require('./downloadArxivRss'),
-      downloadChemrxivRss = require('./downloadChemrxivRss');
+      downloadChemrxivRss = require('./downloadChemrxivRss'),
+      indexPublications = require('./indexPublications');
 
 require('events').EventEmitter.prototype._maxListeners = 100;
 
@@ -12,12 +13,12 @@ server.get('/', (request,response)=>{
   response.send('Home page');
 });
 
-/*server.get('/indexPublications', (request,response)=>{
+server.get('/indexPublications', (request,response)=>{
   response.send('Started job');
 
   indexPublications.start();
 
-});*/
+});
 
 server.get('/downloadChemrxiv', (request,response)=>{
   response.send('Started job');

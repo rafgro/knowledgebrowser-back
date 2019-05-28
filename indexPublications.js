@@ -42,12 +42,61 @@ exports.start = function () {
 
         let nlpTitle = nlp(titleProper);
 
-        //console.log( nlpTitle.match("#Hyphenated").out('text') );
+        console.log(nlpTitle.terms().data().length);
 
-        var nouns = nlpTitle.nouns().data();
+        let toDb = new Array();
+
+        // hyphenated terms
+        nlpTitle.match("#Hyphenated").out('text').toString().split(" ").forEach(element => {
+            if( element.length > 1 ) {
+                toDb.push( { t: element.toLowerCase(), w: 8 } );
+            }
+        });
+
+        // acronyms
+        nlpTitle.acronyms().data().forEach(element => {
+            if( element.text.length > 1 ) {
+                toDb.push( { t: element.text.toLowerCase(), w: 8 } );
+            }
+        });
+
+        // pairs adjectives - nouns
+        let words = nlpTitle.terms().data();
+        let checkIfNoun = (word) => { return word == "Noun"; }
+        let checkIfAdjective = (word) => { return word == "Adjective"; }
+        for( let i = 0; i < words.length; i++ ) {
+            if( words[i].tags.find( checkIfNoun ) ) {
+                if( i > 0 ) {
+                    if( words[i-1].tags.find( checkIfAdjective ) ) {
+                        toDb.push( { t: words[i-1].normal+" "+words[i].normal, w: 7 } );
+                    }
+                }
+                if( i+1 < words.length ) {
+                    if( words[i+1].tags.find( checkIfAdjective ) ) {
+                        toDb.push( { t: words[i].normal+" "+words[i+1].normal, w: 7 } );
+                    }
+                }
+            }
+        }
+
+        // nouns grouped by the module
+        nlpTitle.nouns().data().forEach(element => {
+            if( element.normal.length > 1 ) {
+                /*if( element.article == 'the' ) {
+                    toDb.push( { t: element.normal, w: 7 } );
+                }
+                else {
+                    toDb.push( { t: element.normal, w: 6 } );
+                }*/
+            }
+        });
+
+        //console.log(toDb);
+
+        /*var nouns = nlpTitle.nouns().data();
         console.log(nouns);
         var parts = nlpTitle.terms().data();
-        console.log(parts);
+        console.log(parts);*/
 
     })
     .catch(e => {
