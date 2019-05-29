@@ -41,8 +41,9 @@ exports.start = function () {
         */
 
         let nlpTitle = nlp(titleProper);
+        let words = nlpTitle.terms().data();
 
-        console.log(nlpTitle.terms().data().length);
+        console.log(words.length);
 
         let toDb = new Array();
 
@@ -60,9 +61,26 @@ exports.start = function () {
             }
         });
 
+        // create array of weight change based on verb proximity
+        let checkIfVerb = (word) => { return word == "Verb"; }
+        let weightArrayPerWord = new Array( words.length );
+        weightArrayPerWord.fill(0);
+        for( let i = 0; i < words.length; i++ ) {
+            if( words[i].tags.find( checkIfVerb ) ) {
+                //-2
+                if( i-2 >= 0 ) { weightArrayPerWord[i-2] = 1; }
+                //-1
+                if( i-1 >= 0 ) { weightArrayPerWord[i-1] = 1; }
+                //+1
+                if( i+1 <= words.length-1 ) { weightArrayPerWord[i+1] = 1; }
+                //+2
+                if( i+2 <= words.length-1 ) { weightArrayPerWord[i+2] = 1; }
+            }
+        }
+        console.log(weightArrayPerWord);
+
         // pairs adjectives - nouns
-        let words = nlpTitle.terms().data();
-        let checkIfNoun = (word) => { return word == "Noun"; }
+        /*let checkIfNoun = (word) => { return word == "Noun"; }
         let checkIfAdjective = (word) => { return word == "Adjective"; }
         for( let i = 0; i < words.length; i++ ) {
             if( words[i].tags.find( checkIfNoun ) ) {
@@ -154,7 +172,7 @@ exports.start = function () {
             return !this[a.t] && (this[a.t] = true);
         }, Object.create(null) );
 
-        console.log(toDb);
+        console.log(toDb);*/
 
         /*var nouns = nlpTitle.nouns().data();
         console.log(nouns);
