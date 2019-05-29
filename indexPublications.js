@@ -11,7 +11,7 @@ const sh = shiphold({
 
 exports.start = function () {
     
-    sh.select('title').from('biorxiv').where('id','=', "331")
+    sh.select('title').from('arxiv').where('id','=', "1705")
     .run()
     .then(title => {
 
@@ -30,7 +30,7 @@ exports.start = function () {
           start with array marking weight two words from verb in both directions
         - (weight:8) extract hyphenated terms because they are often very specific and the module doesn't handle them well
         - (weight:8) extract acronyms and place them with high weight
-        - (weight:7) extract pairs adjective-noun (in various combinations)
+        - (weight:7) extract pairs adjective-noun (in various combinations), noun-noun, verb-noun, acronym-noun, value-noun
         - (weight:6) get ready nouns from module (often multi-word), we need correction mechanism for cutting out hyphenated words,
           possibly start with checking if there is hyphen before or after the noun (extreme example: i've seen 'non-' cut out!),
           an article 'the' should have more weight (+1)
@@ -43,9 +43,22 @@ exports.start = function () {
         let nlpTitle = nlp(titleProper);
         let words = nlpTitle.terms().data();
 
-        console.log(words.length);
+        //console.log(words);
 
         let toDb = new Array();
+
+        // handling cases with bad tagging
+        for( let i = 0; i < words.length; i++ ) {
+            if( words[i].tags.length == 1 ) {
+                // single title case happens for words like Th17
+                if( words[i].tags[0] == "TitleCase" ) {
+                    nlpTitle.match( words[i].normal ).tag('Noun');
+                }
+            }
+        }
+
+        // let's go
+        words = nlpTitle.terms().data();
 
         // hyphenated terms
         nlpTitle.match("#Hyphenated").out('text').toString().split(" ").forEach(element => {
@@ -56,7 +69,7 @@ exports.start = function () {
 
         // acronyms
         nlpTitle.acronyms().data().forEach(element => {
-            if( element.text.length > 1 ) {
+            if( element.text.length > 0 ) {
                 toDb.push( { t: element.text, w: 8 } );
             }
         });
@@ -77,21 +90,56 @@ exports.start = function () {
                 if( i+2 <= words.length-1 ) { weightArrayPerWord[i+2] = 1; }
             }
         }
-        console.log(weightArrayPerWord);
 
-        // pairs adjectives - nouns
-        /*let checkIfNoun = (word) => { return word == "Noun"; }
+        // pairs with nouns: adjectives, verbs, acronyms, other nouns
+        let checkIfNoun = (word) => { return word == "Noun"; }
         let checkIfAdjective = (word) => { return word == "Adjective"; }
+        let checkIfAcronym = (word) => { return word == "Acronym"; }
+        let checkIfValue = (word) => { return word == "Value"; }
         for( let i = 0; i < words.length; i++ ) {
             if( words[i].tags.find( checkIfNoun ) ) {
                 if( i > 0 ) {
+                    // pair: adjective - noun
                     if( words[i-1].tags.find( checkIfAdjective ) ) {
-                        toDb.push( { t: words[i-1].normal+" "+words[i].normal, w: 7 } );
+                        toDb.push( { t: words[i-1].normal+" "+words[i].normal, w: 7+weightArrayPerWord[i-1]+weightArrayPerWord[i] } );
+                    }
+                    // pair: verb - noun
+                    else if( words[i-1].tags.find( checkIfVerb ) ) {
+                        toDb.push( { t: words[i-1].normal+" "+words[i].normal, w: 5 } );
+                    }
+                    // pair: acronym - noun
+                    else if( words[i-1].tags.find( checkIfAcronym ) ) {
+                        toDb.push( { t: words[i-1].normal+" "+words[i].normal, w: 6+weightArrayPerWord[i-1]+weightArrayPerWord[i] } );
+                    }
+                    // pair: value - noun
+                    else if( words[i-1].tags.find( checkIfValue ) ) {
+                        toDb.push( { t: words[i-1].normal+" "+words[i].normal, w: 6+weightArrayPerWord[i-1]+weightArrayPerWord[i] } );
+                    }
+                    // pair: noun - noun
+                    else if( words[i-1].tags.find( checkIfNoun ) ) {
+                        toDb.push( { t: words[i-1].normal+" "+words[i].normal, w: 6+weightArrayPerWord[i-1]+weightArrayPerWord[i] } );
                     }
                 }
                 if( i+1 < words.length ) {
+                    // pair: noun - adjective
                     if( words[i+1].tags.find( checkIfAdjective ) ) {
-                        toDb.push( { t: words[i].normal+" "+words[i+1].normal, w: 7 } );
+                        toDb.push( { t: words[i].normal+" "+words[i+1].normal, w: 7+weightArrayPerWord[i]+weightArrayPerWord[i+1] } );
+                    }
+                    // pair: noun - verb
+                    else if( words[i+1].tags.find( checkIfVerb ) ) {
+                        toDb.push( { t: words[i].normal+" "+words[i+1].normal, w: 5 } );
+                    }
+                    // pair: noun - acronym
+                    else if( words[i+1].tags.find( checkIfAcronym ) ) {
+                        toDb.push( { t: words[i].normal+" "+words[i+1].normal, w: 6+weightArrayPerWord[i]+weightArrayPerWord[i+1] } );
+                    }
+                    // pair: noun - value
+                    else if( words[i+1].tags.find( checkIfValue ) ) {
+                        toDb.push( { t: words[i].normal+" "+words[i+1].normal, w: 6+weightArrayPerWord[i]+weightArrayPerWord[i+1] } );
+                    }
+                    // pair: noun - noun
+                    else if( words[i+1].tags.find( checkIfNoun ) ) {
+                        toDb.push( { t: words[i].normal+" "+words[i+1].normal, w: 6+weightArrayPerWord[i]+weightArrayPerWord[i+1] } );
                     }
                 }
             }
@@ -117,8 +165,10 @@ exports.start = function () {
         // nouns grouped by the module
         nlpTitle.nouns().data().forEach(element => {
             if( element.normal.length > 1 ) {
-                let weight = 6;
-                if( element.article == 'the' ) { weight = 7; }
+                let weight = 7;
+                if( element.article == 'the' ) { weight = 8; }
+
+                if( element.normal.split(" ").length > 5 ) { return; }
 
                 if( titleProper.charAt( titleProper.indexOf(element.text)-1 ) == '-' ) {
                     toDb.push( 
@@ -126,25 +176,40 @@ exports.start = function () {
                           w: weight } );
                 }
                 else if( element.text.charAt(element.text.length-1) == '-' ) {
-                    toDb.push( 
-                        { t: element.text.substring(1)
-                            + getNextWord( titleProper.substring( titleProper.indexOf(element.text) + element.text.length ) ),
-                          w: weight } );
+                    if( element.text.charAt(0) == ' ' ) {
+                        toDb.push( 
+                            { t: element.text.substring(1)
+                                + getNextWord( titleProper.substring( titleProper.indexOf(element.text) + element.text.length ) ),
+                            w: weight } );
+                    }
+                    else {
+                        toDb.push( 
+                            { t: element.text
+                                + getNextWord( titleProper.substring( titleProper.indexOf(element.text) + element.text.length ) ),
+                            w: weight } );
+                    }
                 }
                 else {
-                    toDb.push( 
-                        { t: element.text.substring(1),
-                          w: weight } );
+                    if( element.text.charAt(0) == ' ' ) {
+                        toDb.push( 
+                            { t: element.text.substring(1),
+                              w: weight } );
+                    }
+                    else {
+                        toDb.push( 
+                            { t: element.text,
+                              w: weight } );
+                    }
                 }
             }
         });
 
         // single words
         nlpTitle.terms().data().forEach( element => {
-            if( element.tags.find( (value) => { return value == 'Noun' } ) ) {
+            if( element.tags.find( checkIfNoun ) ) {
                 toDb.push( { t: element.normal, w: 5 } );
             }
-            if( element.tags.find( (value) => { return value == 'Adjective' } ) ) {
+            if( element.tags.find( checkIfAdjective ) ) {
                 toDb.push( { t: element.normal, w: 4 } );
             }
             if( element.tags.find( (value) => { return value == 'Value' } ) ) {
@@ -153,7 +218,10 @@ exports.start = function () {
             if( element.tags.find( (value) => { return value == 'Parentheses' } ) ) {
                 toDb.push( { t: element.normal, w: 3 } );
             }
-            if( element.tags.find( (value) => { return value == 'Verb' } ) ) {
+            if( element.tags.find( (value) => { return value == 'Adverb' } ) ) {
+                toDb.push( { t: element.normal, w: 3 } );
+            }
+            if( element.tags.find( checkIfVerb ) ) {
                 toDb.push( { t: element.normal, w: 3 } );
             }
         });
@@ -163,21 +231,19 @@ exports.start = function () {
             return { t: element.t.replace( RegExp(",","g"), "" )
                                  .replace( RegExp("-","g"), " " )
                                  .replace( RegExp("\\.","g"), "" )
+                                 .replace( RegExp(":","g"), "" )
+                                 .replace( RegExp("'","g"), "" )
+                                 .replace( RegExp("\\\\","g"), "" )
+                                 .replace( RegExp(" +$"), "" )
+                                 .replace( RegExp("  "), " " )
                                  .toLowerCase(),
                      w: element.w };
         });
         
         // cutting out duplicated terms
-        toDb = toDb.filter( function (a) {
-            return !this[a.t] && (this[a.t] = true);
-        }, Object.create(null) );
+        toDb = toDb.filter( function (a) { return !this[a.t] && (this[a.t] = true); }, Object.create(null) );
 
-        console.log(toDb);*/
-
-        /*var nouns = nlpTitle.nouns().data();
-        console.log(nouns);
-        var parts = nlpTitle.terms().data();
-        console.log(parts);*/
+        console.log(toDb);
 
     })
     .catch(e => {
