@@ -122,7 +122,13 @@ exports.start = function () {
             }
         });
 
-        toDb = toDb.map( ( element ) => {
+        // single words
+        /*nlpTitle.terms().data().forEach( element => {
+            if( element. )
+        });*/
+
+        // normalization
+        /*toDb = toDb.map( ( element ) => {
             return { t: element.t.replace( RegExp(",","g"), "" )
                                  .replace( RegExp("-","g"), " " )
                                  .replace( RegExp("\\.","g"), "" )
@@ -130,16 +136,17 @@ exports.start = function () {
                      w: element.w };
         });
         
+        // cutting out duplicated terms
         toDb = toDb.filter( function (a) {
             return !this[a.t] && (this[a.t] = true);
-        }, Object.create(null) );
+        }, Object.create(null) );*/
 
         console.log(toDb);
 
         /*var nouns = nlpTitle.nouns().data();
-        console.log(nouns);
+        console.log(nouns);*/
         var parts = nlpTitle.terms().data();
-        console.log(parts);*/
+        console.log(parts);
 
     })
     .catch(e => {
