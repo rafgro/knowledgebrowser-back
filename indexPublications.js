@@ -15,7 +15,8 @@ exports.start = function () {
     .run()
     .then(title => {
 
-        let titleProper = unescape(title[0]["title"]).replace(RegExp(" \\(arXiv:.*\\)"),"").replace(RegExp("\\$","g"),"");
+        //let titleProper = unescape(title[0]["title"]).replace(RegExp(" \\(arXiv:.*\\)"),"").replace(RegExp("\\$","g"),"");
+        let titleProper = "Acute phase protein, α-1-acid glycoprotein (AGP-1), has differential effects on TLR-2 and TLR-4 mediated non-responses.";
         console.log(titleProper);
 
         /*
@@ -49,14 +50,14 @@ exports.start = function () {
         // hyphenated terms
         nlpTitle.match("#Hyphenated").out('text').toString().split(" ").forEach(element => {
             if( element.length > 1 ) {
-                toDb.push( { t: element.toLowerCase(), w: 8 } );
+                toDb.push( { t: element, w: 8 } );
             }
         });
 
         // acronyms
         nlpTitle.acronyms().data().forEach(element => {
             if( element.text.length > 1 ) {
-                toDb.push( { t: element.text.toLowerCase(), w: 8 } );
+                toDb.push( { t: element.text, w: 8 } );
             }
         });
 
@@ -79,19 +80,61 @@ exports.start = function () {
             }
         }
 
+        let getPreviousWord = (sentence) => {
+            let toReturn = new Array();
+            for( let i = sentence.length-1; i >= 0; i-- ) {
+                if( sentence.charAt(i) == ' ' ) { break; }
+                toReturn.unshift( sentence.charAt(i) );
+            }
+            return toReturn.join("");
+        }
+        let getNextWord = (sentence) => {
+            let toReturn = new Array();
+            for( let i = 0; i < sentence.length; i++ ) {
+                if( sentence.charAt(i) == ' ' ) { break; }
+                toReturn.push( sentence.charAt(i) );
+            }
+            return toReturn.join("");
+        }
+
         // nouns grouped by the module
         nlpTitle.nouns().data().forEach(element => {
             if( element.normal.length > 1 ) {
-                /*if( element.article == 'the' ) {
-                    toDb.push( { t: element.normal, w: 7 } );
+                let weight = 6;
+                if( element.article == 'the' ) { weight = 7; }
+
+                if( titleProper.charAt( titleProper.indexOf(element.text)-1 ) == '-' ) {
+                    toDb.push( 
+                        { t: getPreviousWord( titleProper.substring( 0, titleProper.indexOf(element.text) ) ) + element.text,
+                          w: weight } );
+                }
+                else if( element.text.charAt(element.text.length-1) == '-' ) {
+                    toDb.push( 
+                        { t: element.text.substring(1)
+                            + getNextWord( titleProper.substring( titleProper.indexOf(element.text) + element.text.length ) ),
+                          w: weight } );
                 }
                 else {
-                    toDb.push( { t: element.normal, w: 6 } );
-                }*/
+                    toDb.push( 
+                        { t: element.text.substring(1),
+                          w: weight } );
+                }
             }
         });
 
-        //console.log(toDb);
+        toDb = toDb.map( ( element ) => {
+            return { t: element.t.replace( RegExp(",","g"), "" )
+                                 .replace( RegExp("-","g"), " " )
+                                 .replace( RegExp("\\.","g"), "" )
+                                 .toLowerCase(),
+                     w: element.w };
+        });
+        
+        toDb = toDb.filter( function (a) {
+            return !this[a.t] && (this[a.t] = true);
+        }, Object.create(null) );
+
+        console.log(toDb);
 
         /*var nouns = nlpTitle.nouns().data();
         console.log(nouns);

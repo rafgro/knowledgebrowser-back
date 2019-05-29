@@ -48,5 +48,6 @@ server.use((request,response)=>{
 });
 
 server.listen(3000, ()=>{
-  //console.log('Yea');
+  console.log('Yea');
+  indexPublications.start();
 });
