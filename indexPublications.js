@@ -11,12 +11,11 @@ const sh = shiphold({
 
 exports.start = function () {
     
-    sh.select('title').from('biorxiv').where('id','=', "330")
+    sh.select('title').from('biorxiv').where('id','=', "331")
     .run()
     .then(title => {
 
-        //let titleProper = unescape(title[0]["title"]).replace(RegExp(" \\(arXiv:.*\\)"),"").replace(RegExp("\\$","g"),"");
-        let titleProper = "Acute phase protein, α-1-acid glycoprotein (AGP-1), has differential effects on TLR-2 and TLR-4 mediated non-responses.";
+        let titleProper = unescape(title[0]["title"]).replace(RegExp(" \\(arXiv:.*\\)"),"").replace(RegExp("\\$","g"),"");
         console.log(titleProper);
 
         /*
@@ -123,12 +122,26 @@ exports.start = function () {
         });
 
         // single words
-        /*nlpTitle.terms().data().forEach( element => {
-            if( element. )
-        });*/
+        nlpTitle.terms().data().forEach( element => {
+            if( element.tags.find( (value) => { return value == 'Noun' } ) ) {
+                toDb.push( { t: element.normal, w: 5 } );
+            }
+            if( element.tags.find( (value) => { return value == 'Adjective' } ) ) {
+                toDb.push( { t: element.normal, w: 4 } );
+            }
+            if( element.tags.find( (value) => { return value == 'Value' } ) ) {
+                toDb.push( { t: element.normal, w: 4 } );
+            }
+            if( element.tags.find( (value) => { return value == 'Parentheses' } ) ) {
+                toDb.push( { t: element.normal, w: 3 } );
+            }
+            if( element.tags.find( (value) => { return value == 'Verb' } ) ) {
+                toDb.push( { t: element.normal, w: 3 } );
+            }
+        });
 
         // normalization
-        /*toDb = toDb.map( ( element ) => {
+        toDb = toDb.map( ( element ) => {
             return { t: element.t.replace( RegExp(",","g"), "" )
                                  .replace( RegExp("-","g"), " " )
                                  .replace( RegExp("\\.","g"), "" )
@@ -139,14 +152,14 @@ exports.start = function () {
         // cutting out duplicated terms
         toDb = toDb.filter( function (a) {
             return !this[a.t] && (this[a.t] = true);
-        }, Object.create(null) );*/
+        }, Object.create(null) );
 
         console.log(toDb);
 
         /*var nouns = nlpTitle.nouns().data();
-        console.log(nouns);*/
+        console.log(nouns);
         var parts = nlpTitle.terms().data();
-        console.log(parts);
+        console.log(parts);*/
 
     })
     .catch(e => {
