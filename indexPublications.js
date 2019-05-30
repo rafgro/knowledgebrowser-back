@@ -9,7 +9,12 @@ const sh = shiphold({
     database: 'preprint-crawls'
 });
 
-exports.index = function(fromWhat,whichId) {
+exports.close = function() {
+    console.log('Stopping index module conn');
+    sh.stop();
+}
+
+exports.index = function(fromWhat,whichId,canStop) {
     
     sh.select('title','id').from(fromWhat).where('id','=', whichId)
     .run()
@@ -250,7 +255,15 @@ exports.index = function(fromWhat,whichId) {
 
         // insertion to database
 
-        toDb.forEach( (element) => {
+        let insertionCounter = 0;
+        function checkInsertionCounter() {
+            if(insertionCounter == toDb.length-1 && canStop == true) {
+                console.log('Stopping indexing');
+                sh.stop();
+            }
+        }
+
+        toDb.forEach( (element,index,array) => {
 
             sh.select('term','relevant').from('index_title').where('term','=',element.t)
             .run()
@@ -276,11 +289,18 @@ exports.index = function(fromWhat,whichId) {
                         .run()
                         .then(() => {
                             //console.log('Inserted');
+                            ++insertionCounter;
+                            checkInsertionCounter();
                         })
                         .catch(e => {
                             console.log('Not good');
                             console.log(e);
                         });
+                    }
+                    else {
+                        console.log(index+' existed');
+                        ++insertionCounter;
+                        checkInsertionCounter();
                     }
 
                 }
@@ -293,7 +313,9 @@ exports.index = function(fromWhat,whichId) {
                     .into('index_title')
                     .run()
                     .then(() => {
-                        //console.log('Inserted');
+                        console.log('Inserted '+index);
+                        ++insertionCounter;
+                        checkInsertionCounter();
                     })
                     .catch(e => {
                         console.log('Not good');

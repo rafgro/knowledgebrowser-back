@@ -15,16 +15,20 @@ exports.start = function () {
     .run()
     .then(result => {
 
-        sh.select('id').from('arxiv').orderBy('id').limit(1,16).run()//5,result[0].value).run()
+        sh.select('id').from('arxiv').orderBy('id').limit(5,result[0].value).run()
         .then( onepubresult => {
 
-            onepubresult.forEach( element => {
-                console.log(element.id);
-                indexPublications.index('arxiv',element.id);
-                //sleep(1000); //to avoid lack of detection of duplications between terms
+            onepubresult.forEach( (element,index) => {
+                setTimeout( () => {
+                    console.log(element.id);
+                    let doStop = false;
+                    if( index == onepubresult.length-1 ) { doStop = true; }
+                    console.log(doStop);
+                    indexPublications.index('arxiv',element.id,doStop);
+                }, 1000 * index );
             } );
             
-            /*if( onepubresult.length != 0 ) {
+            if( onepubresult.length != 0 ) {
                 let value = parseInt(result[0].value) +onepubresult.length;//+1;
                 sh.update('manager').set('value',value.toString()).where('option','=','arxiv_offset')
                 .run()
@@ -34,16 +38,21 @@ exports.start = function () {
                 .catch(e => {
                     console.log('Not good');
                     console.log(e);
+                })
+                .finally(() => {
+                    console.log('Stopping manager');
+                    sh.stop();
                 });
-            }*/
+            }
+            else {
+                console.log('Stopping manager');
+                sh.stop();
+            }
 
         })
         .catch( e => {
             console.log('Not good');
             console.log(e);
-        })
-        .finally(() => {
-            sh.stop();
         });
         
     })
