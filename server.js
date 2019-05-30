@@ -34,6 +34,13 @@ server.get('/downloadArxiv', (request,response)=>{
 
 });
 
+server.get('/indexArxiv', (request,response)=>{
+  response.send('Started job');
+
+  manager.start('arxiv');
+
+});
+
 server.use((request,response)=>{
   response.type('text/plain');
   response.status(404);
@@ -42,5 +49,4 @@ server.use((request,response)=>{
 
 server.listen(3000, ()=>{
   console.log('Yea');
-  manager.start();
 });

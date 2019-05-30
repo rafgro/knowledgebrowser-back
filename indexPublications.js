@@ -3,16 +3,12 @@ var nlp = require('compromise');
 
 const {shiphold} = require('ship-hold');
 const sh = shiphold({
-    host     : "127.0.0.1",
-    user     : "crawler",
-    password : "blackseo666",
-    database: 'preprint-crawls'
+    host     : process.env.RDS_HOSTNAME,
+    user     : process.env.RDS_USERNAME,
+    password : process.env.RDS_PASSWORD,
+    port     : process.env.RDS_PORT,
+  database: 'postgres'
 });
-
-exports.close = function() {
-    console.log('Stopping index module conn');
-    sh.stop();
-}
 
 exports.index = function(fromWhat,whichId,canStop) {
     
@@ -24,7 +20,7 @@ exports.index = function(fromWhat,whichId,canStop) {
         var id = letter+title[0]["id"];
 
         let titleProper = unescape(title[0]["title"]).replace(RegExp(" \\(arXiv:.*\\)"),"").replace(RegExp("\\$","g"),"");
-        console.log(titleProper);
+        //console.log(titleProper);
 
         /*
 
@@ -298,7 +294,7 @@ exports.index = function(fromWhat,whichId,canStop) {
                         });
                     }
                     else {
-                        console.log(index+' existed');
+                        //console.log(index+' existed');
                         ++insertionCounter;
                         checkInsertionCounter();
                     }
@@ -313,7 +309,7 @@ exports.index = function(fromWhat,whichId,canStop) {
                     .into('index_title')
                     .run()
                     .then(() => {
-                        console.log('Inserted '+index);
+                        //console.log('Inserted '+index);
                         ++insertionCounter;
                         checkInsertionCounter();
                     })
