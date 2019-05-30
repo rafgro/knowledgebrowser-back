@@ -3,7 +3,7 @@ const express = require('express'),
       downloadBiorxivRss = require('./downloadBiorxivRss'),
       downloadArxivRss = require('./downloadArxivRss'),
       downloadChemrxivRss = require('./downloadChemrxivRss'),
-      indexPublications = require('./indexPublications');
+      manager = require('./manager');
 
 require('events').EventEmitter.prototype._maxListeners = 100;
 
@@ -11,13 +11,6 @@ server.set('port', process.env.PORT || 3000);
 
 server.get('/', (request,response)=>{
   response.send('Home page');
-});
-
-server.get('/indexPublications', (request,response)=>{
-  response.send('Started job');
-
-  indexPublications.start();
-
 });
 
 server.get('/downloadChemrxiv', (request,response)=>{
@@ -49,5 +42,5 @@ server.use((request,response)=>{
 
 server.listen(3000, ()=>{
   console.log('Yea');
-  indexPublications.start();
+  manager.start();
 });

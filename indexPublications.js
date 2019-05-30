@@ -9,9 +9,9 @@ const sh = shiphold({
     database: 'preprint-crawls'
 });
 
-exports.start = function () {
+exports.index = function(fromWhat,whichId) {
     
-    sh.select('title','id').from('arxiv').where('id','=', "1705")
+    sh.select('title','id').from(fromWhat).where('id','=', whichId)
     .run()
     .then(title => {
 
@@ -250,32 +250,50 @@ exports.start = function () {
 
         // insertion to database
 
-        let element = toDb[0];
+        toDb.forEach( (element) => {
 
-        sh.select('term','relevant').from('index_title').where('term','=',element.t)
-        .run()
-        .then(returned => {
+            sh.select('term','relevant').from('index_title').where('term','=',element.t)
+            .run()
+            .then(returned => {
 
-            if( Object.keys(returned).length !== 0 ) {
-                //term is present
-                //now there are two possible scenarios:
-                //false - term is already associated with this publication, therefore we don't undertake any db operation
-                //true - term is associated only with other publications
-                let scenario = true;
+                if( Object.keys(returned).length !== 0 ) {
+                    //term is present
+                    //now there are two possible scenarios:
+                    //false - term is already associated with this publication, therefore we don't undertake any db operation
+                    //true - term is associated only with other publications
+                    let scenario = true;
 
-                let relevant = JSON.parse( returned[0].relevant );
-                relevant.forEach( (onepub) => {
-                    if( onepub.p == id ) { scenario = false; }
-                });
+                    let relevant = JSON.parse( returned[0].relevant );
+                    relevant.forEach( (onepub) => {
+                        if( onepub.p == id ) { scenario = false; }
+                    });
 
-                if( scenario == true ) {
-                    relevant.push( {"p":id, "w":element.w} );
-                    sh.update('index_title')
-                    .set('relevant','\''+JSON.stringify(relevant)+'\'')
-                    .where('term','=',element.t)
+                    if( scenario == true ) {
+                        relevant.push( {"p":id, "w":element.w} );
+                        sh.update('index_title')
+                        .set('relevant','\''+JSON.stringify(relevant)+'\'')
+                        .where('term','=',element.t)
+                        .run()
+                        .then(() => {
+                            //console.log('Inserted');
+                        })
+                        .catch(e => {
+                            console.log('Not good');
+                            console.log(e);
+                        });
+                    }
+
+                }
+
+                else {
+
+                    sh.insert({
+                        term:element.t,
+                        relevant:'\'[{"p":"'+id+'","w":'+element.w+'}]\'' })
+                    .into('index_title')
                     .run()
                     .then(() => {
-                        console.log('Inserted');
+                        //console.log('Inserted');
                     })
                     .catch(e => {
                         console.log('Not good');
@@ -283,28 +301,12 @@ exports.start = function () {
                     });
                 }
 
-            }
+            })
+            .catch(e => {
+                console.log('Not good');
+                console.log(e);
+            });
 
-            else {
-
-                sh.insert({
-                    term:element.t,
-                    relevant:'\'[{"p":"'+id+'","w":'+element.w+'}]\'' })
-                .into('index_title')
-                .run()
-                .then(() => {
-                    console.log('Inserted');
-                })
-                .catch(e => {
-                    console.log('Not good');
-                    console.log(e);
-                });
-            }
-
-        })
-        .catch(e => {
-            console.log('Not good');
-            console.log(e);
         });
 
     })
