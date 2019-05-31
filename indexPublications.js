@@ -21,7 +21,7 @@ exports.index = function(fromWhat,whichId,canStop) {
         var id = letter+title[0]["id"];
 
         let titleProper = unescape(title[0]["title"]).replace(RegExp(" \\(arXiv:.*\\)"),"").replace(RegExp("\\$","g"),"");
-        //console.log(titleProper);
+        logger.info(titleProper);
 
         /*
 
@@ -285,7 +285,7 @@ exports.index = function(fromWhat,whichId,canStop) {
                         .where('term','=',element.t)
                         .run()
                         .then(() => {
-                            logger.info('Inserted '+index);
+                            logger.info('Inserted '+element.t);
                             ++insertionCounter;
                             checkInsertionCounter();
                         })
@@ -294,7 +294,7 @@ exports.index = function(fromWhat,whichId,canStop) {
                         });
                     }
                     else {
-                        logger.info(index+' existed');
+                        logger.info(element.t+' existed');
                         ++insertionCounter;
                         checkInsertionCounter();
                     }
@@ -309,7 +309,7 @@ exports.index = function(fromWhat,whichId,canStop) {
                     .into('index_title')
                     .run()
                     .then(() => {
-                        logger.info('Inserted '+index);
+                        logger.info('Inserted '+element.t);
                         ++insertionCounter;
                         checkInsertionCounter();
                     })
