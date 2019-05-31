@@ -13,34 +13,35 @@ server.get('/', (request,response)=>{
   response.send('Home page');
 });
 
+/* Downloads */
 server.get('/downloadChemrxiv', (request,response)=>{
   response.send('Started job');
-
   downloadChemrxivRss.start();
-
 });
-
 server.get('/downloadBiorxiv', (request,response)=>{
   response.send('Started job');
-
   downloadBiorxivRss.start();
-
 });
-
 server.get('/downloadArxiv', (request,response)=>{
   response.send('Started job');
-
   downloadArxivRss.start();
-
 });
 
+/* Indexing */
 server.get('/indexArxiv', (request,response)=>{
   response.send('Started job');
-
   manager.start('arxiv');
-
+});
+server.get('/indexBiorxiv', (request,response)=>{
+  response.send('Started job');
+  manager.start('biorxiv');
+});
+server.get('/indexChemrxiv', (request,response)=>{
+  response.send('Started job');
+  manager.start('chemrxiv');
 });
 
+/* Utils */
 server.use((request,response)=>{
   response.type('text/plain');
   response.status(404);
@@ -48,5 +49,5 @@ server.use((request,response)=>{
 });
 
 server.listen(3000, ()=>{
-  console.log('Yea');
+  console.log('Listening');
 });

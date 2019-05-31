@@ -16,7 +16,7 @@ exports.start = function (where) {
     .run()
     .then(result => {
 
-        sh.select('id').from(where).orderBy('id').limit(5,result[0].value).run()
+        sh.select('id').from(where).orderBy('id').limit(30,result[0].value).run()
         .then( onepubresult => {
 
             onepubresult.forEach( (element,index) => {
@@ -41,12 +41,12 @@ exports.start = function (where) {
                     console.log(e);
                 })
                 .finally(() => {
-                    console.log('Stopping manager');
+                    //console.log('Stopping manager');
                     sh.stop();
                 });
             }
             else {
-                console.log('Stopping manager');
+                //console.log('Stopping manager');
                 sh.stop();
             }
 
@@ -58,7 +58,7 @@ exports.start = function (where) {
         
     })
     .catch(e => {
-        console.log('Not good');
+        //console.log('Not good');
         console.log(e);
     });
 };

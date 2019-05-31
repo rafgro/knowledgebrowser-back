@@ -211,22 +211,22 @@ exports.index = function(fromWhat,whichId,canStop) {
         // single words
         nlpTitle.terms().data().forEach( element => {
             if( element.tags.find( checkIfNoun ) ) {
-                toDb.push( { t: element.normal, w: 5 } );
+                toDb.push( { t: element.normal, w: 3 } );
             }
             if( element.tags.find( checkIfAdjective ) ) {
-                toDb.push( { t: element.normal, w: 4 } );
+                toDb.push( { t: element.normal, w: 2 } );
             }
             if( element.tags.find( (value) => { return value == 'Value' } ) ) {
-                toDb.push( { t: element.normal, w: 4 } );
+                toDb.push( { t: element.normal, w: 3 } );
             }
             if( element.tags.find( (value) => { return value == 'Parentheses' } ) ) {
                 toDb.push( { t: element.normal, w: 3 } );
             }
             if( element.tags.find( (value) => { return value == 'Adverb' } ) ) {
-                toDb.push( { t: element.normal, w: 3 } );
+                toDb.push( { t: element.normal, w: 2 } );
             }
             if( element.tags.find( checkIfVerb ) ) {
-                toDb.push( { t: element.normal, w: 3 } );
+                toDb.push( { t: element.normal, w: 2 } );
             }
         });
 
@@ -254,7 +254,7 @@ exports.index = function(fromWhat,whichId,canStop) {
         let insertionCounter = 0;
         function checkInsertionCounter() {
             if(insertionCounter == toDb.length-1 && canStop == true) {
-                console.log('Stopping indexing');
+                //console.log('Stopping indexing');
                 sh.stop();
             }
         }
