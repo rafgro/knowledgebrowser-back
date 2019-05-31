@@ -1,4 +1,5 @@
 
+const logging = require('./logger');
 var nlp = require('compromise');
 
 const {shiphold} = require('ship-hold');
@@ -254,7 +255,7 @@ exports.index = function(fromWhat,whichId,canStop) {
         let insertionCounter = 0;
         function checkInsertionCounter() {
             if(insertionCounter == toDb.length-1 && canStop == true) {
-                //console.log('Stopping indexing');
+                logger.info('Stopping indexing');
                 sh.stop();
             }
         }
@@ -284,17 +285,16 @@ exports.index = function(fromWhat,whichId,canStop) {
                         .where('term','=',element.t)
                         .run()
                         .then(() => {
-                            //console.log('Inserted');
+                            logger.info('Inserted '+index);
                             ++insertionCounter;
                             checkInsertionCounter();
                         })
                         .catch(e => {
-                            console.log('Not good');
-                            console.log(e);
+                            logger.error(e);
                         });
                     }
                     else {
-                        //console.log(index+' existed');
+                        logger.info(index+' existed');
                         ++insertionCounter;
                         checkInsertionCounter();
                     }
@@ -309,27 +309,24 @@ exports.index = function(fromWhat,whichId,canStop) {
                     .into('index_title')
                     .run()
                     .then(() => {
-                        //console.log('Inserted '+index);
+                        logger.info('Inserted '+index);
                         ++insertionCounter;
                         checkInsertionCounter();
                     })
                     .catch(e => {
-                        console.log('Not good');
-                        console.log(e);
+                        logger.error(e);
                     });
                 }
 
             })
             .catch(e => {
-                console.log('Not good');
-                console.log(e);
+                logger.error(e);
             });
 
         });
 
     })
     .catch(e => {
-        //console.log('Not good');
-        //console.log(e);
+        logger.error(e);
     });
 };

@@ -1,4 +1,5 @@
 
+const logging = require('./logger');
 const request = require('request');
 
 const {shiphold} = require('ship-hold');
@@ -19,7 +20,7 @@ exports.start = function () {
     "scientific%20communication", "synthetic%20biology", "systems%20biology", "zoology"];
 
     subjects.forEach( subject => {
-        console.log(subject);
+        logger.info(subject);
         request('http://connect.biorxiv.org/biorxiv_xml.php?subject='+subject, {timeout: 20000}, processResponseOfRss );
     } );
 
@@ -30,11 +31,10 @@ var parseXml = require('xml2js').parseString;
 function processResponseOfRss (error, response, body) {
 
     if( error ) {
-        console.log( 'Not good' );
-        console.log(error);
+        logger.error(error);
     }
     else {
-        console.log( body.substring(0,100) );
+        logger.info( body.substring(0,100) );
 
         parseXml( body, processAndUploadToDatabase );
     }
@@ -44,8 +44,7 @@ function processResponseOfRss (error, response, body) {
 function processAndUploadToDatabase (err, result) {
 
     if( err ) {
-        console.log( 'Not good' );
-        console.log(err);
+        logger.error(err);
     }
     else {
 
@@ -79,18 +78,16 @@ function tryToInsertPublicationToDatabase (element) {
             .into('biorxiv')
             .run()
             .then(() => {
-                console.log('Inserted');
+                logger.info('Inserted '+element["dc:identifier"]);
             })
             .catch(e => {
-                console.log('Not good');
-                console.log(e);
+                logger.error(e);
             });
         }
 
     })
     .catch(e => {
-        console.log('Not good');
-        console.log(e);
+        logger.error(e);
     });
     
 }

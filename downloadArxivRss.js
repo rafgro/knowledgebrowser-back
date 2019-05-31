@@ -1,4 +1,5 @@
 
+const logging = require('./logger');
 const request = require('request');
 const striptags = require('striptags');
 
@@ -23,16 +24,15 @@ exports.start = function () {
 
     subjects.forEach( subject => {
 
-        //console.log(subject);
+        logger.info(subject);
 
         request('http://export.arxiv.org/rss/'+subject, {timeout: 20000}, function (error, response, body) {
 
         if( error ) {
-            //console.log( 'Not good' );
-            //console.log(error);
+            logger.error(error);
         }
         else {
-            //console.log( body.substring(0,100) );
+            logger.info( body.substring(0,20) );
 
             parseXml( body, function (err, result) {
             
@@ -59,18 +59,16 @@ exports.start = function () {
                             .into('arxiv')
                             .run()
                             .then(() => {
-                                //console.log('Inserted');
+                                logger.info('Inserted '+"arXiv:"+(element["link"].toString().substring(21)));
                             })
                             .catch(e => {
-                                //console.log('Not good');
-                                //console.log(e);
+                                logger.error(e);
                             });
                         }
 
                     })
                     .catch(e => {
-                        //console.log('Not good');
-                        //console.log(e);
+                        logger.error(e);
                     });
                     
                 });

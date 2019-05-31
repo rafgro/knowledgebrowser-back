@@ -1,4 +1,5 @@
 
+const logging = require('./logger');
 const indexPublications = require('./indexPublications');
 
 const {shiphold} = require('ship-hold');
@@ -34,31 +35,28 @@ exports.start = function (where) {
                 sh.update('manager').set('value',value.toString()).where('option','=',where+'_offset')
                 .run()
                 .then(() => {
-                    //console.log('Offset set to '+value);
+                    logger.info('Offset set to '+value);
                 })
                 .catch(e => {
-                    console.log('Not good');
-                    console.log(e);
+                    logger.error(e);
                 })
                 .finally(() => {
-                    //console.log('Stopping manager');
+                    logger.info('Stopping manager');
                     sh.stop();
                 });
             }
             else {
-                //console.log('Stopping manager');
+                logger.info('Stopping manager');
                 sh.stop();
             }
 
         })
         .catch( e => {
-            console.log('Not good');
-            console.log(e);
+            logger.error(e);
         });
         
     })
     .catch(e => {
-        //console.log('Not good');
-        console.log(e);
+        logger.error(e);
     });
 };

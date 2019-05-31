@@ -3,7 +3,8 @@ const express = require('express'),
       downloadBiorxivRss = require('./downloadBiorxivRss'),
       downloadArxivRss = require('./downloadArxivRss'),
       downloadChemrxivRss = require('./downloadChemrxivRss'),
-      manager = require('./manager');
+      manager = require('./manager'),
+      logging = require('./logger');
 
 require('events').EventEmitter.prototype._maxListeners = 100;
 
@@ -49,5 +50,5 @@ server.use((request,response)=>{
 });
 
 server.listen(3000, ()=>{
-  console.log('Listening');
+  logger.info('Listening');
 });

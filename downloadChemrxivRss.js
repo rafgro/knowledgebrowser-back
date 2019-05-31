@@ -1,4 +1,5 @@
 
+const logging = require('./logger');
 const request = require('request');
 
 const {shiphold} = require('ship-hold');
@@ -12,7 +13,7 @@ const sh = shiphold({
 
 exports.start = function () {
 
-    console.log("chemrxiv");
+    logger.info("chemrxiv");
     request('https://chemrxiv.org/rss/portal/chemrxiv', {timeout: 20000}, processResponseOfRss );
 
 };
@@ -22,11 +23,10 @@ var parseXml = require('xml2js').parseString;
 function processResponseOfRss (error, response, body) {
 
     if( error ) {
-        console.log( 'Not good' );
-        console.log(error);
+        logger.error(error);
     }
     else {
-        console.log( body.substring(0,20) );
+        logger.info( body.substring(0,20) );
 
         parseXml( body, processAndUploadToDatabase );
     }
@@ -36,8 +36,7 @@ function processResponseOfRss (error, response, body) {
 function processAndUploadToDatabase (err, result) {
 
     if( err ) {
-        console.log( 'Not good' );
-        console.log(err);
+        logger.error(err);
     }
     else {
 
@@ -72,18 +71,16 @@ function tryToInsertPublicationToDatabase (element) {
             .into('chemrxiv')
             .run()
             .then(() => {
-                console.log('Inserted');
+                logger.info('Inserted '+chemrxivDoi);
             })
             .catch(e => {
-                console.log('Not good');
-                console.log(e);
+                logger.error(e);
             });
         }
 
     })
     .catch(e => {
-        console.log('Not good');
-        console.log(e);
+        logger.error(e);
     });
     
 }
