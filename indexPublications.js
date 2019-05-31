@@ -255,8 +255,8 @@ exports.index = function(fromWhat,whichId,canStop) {
         let insertionCounter = 0;
         function checkInsertionCounter() {
             if(insertionCounter == toDb.length-1 && canStop == true) {
-                logger.info('Stopping indexing');
-                sh.stop();
+                //logger.info('Stopping indexing');
+                //sh.stop();
             }
         }
 
@@ -291,6 +291,8 @@ exports.index = function(fromWhat,whichId,canStop) {
                         })
                         .catch(e => {
                             logger.error(e);
+                            logger.error( sh.update('index_title').set('relevant','\''+JSON.stringify(relevant)+'\'')
+                                            .where('term','=',element.t).build() );
                         });
                     }
                     else {
@@ -315,12 +317,15 @@ exports.index = function(fromWhat,whichId,canStop) {
                     })
                     .catch(e => {
                         logger.error(e);
+                        logger.error( sh.insert({ term:element.t, relevant:'\'[{"p":"'+id+'","w":'+element.w+'}]\'' })
+                                        .into('index_title').build() );
                     });
                 }
 
             })
             .catch(e => {
                 logger.error(e);
+                logger.error( sh.select('term','relevant').from('index_title').where('term','=',element.t).build() );
             });
 
         });
@@ -328,5 +333,6 @@ exports.index = function(fromWhat,whichId,canStop) {
     })
     .catch(e => {
         logger.error(e);
+        logger.error(sh.select('title','id').from(fromWhat).where('id','=', whichId).build());
     });
 };

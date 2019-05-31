@@ -54,3 +54,7 @@ server.use((request,response)=>{
 server.listen(3000, ()=>{
   logger.info('Listening');
 });
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled rejection at: '+reason+' | '+JSON.stringify(promise));
+});

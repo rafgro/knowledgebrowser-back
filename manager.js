@@ -13,18 +13,22 @@ const sh = shiphold({
 
 exports.start = function (where) {
 
+    logger.info( '------------------INDEXING START------------------' );
     sh.select('value').from('manager').where('option','=', where+'_offset')
     .run()
     .then(result => {
 
-        sh.select('id').from(where).orderBy('id').limit(30,result[0].value).run()
+        sh.select('id').from(where).orderBy('id').limit(20,result[0].value).run()
         .then( onepubresult => {
 
-            onepubresult.forEach( (element,index) => {
+            let counterForPubs = 0;
+            onepubresult.forEach( (element,index,array) => {
                 setTimeout( () => {
                     //console.log(element.id);
+                    ++counterForPubs;
+                    logger.info('Working with pub number '+counterForPubs);
                     let doStop = false;
-                    if( index == onepubresult.length-1 ) { doStop = true; }
+                    if( counterForPubs == array.length ) { doStop = true; }
                     //console.log(doStop);
                     indexPublications.index(where,element.id,doStop);
                 }, 1000 * index );
@@ -41,13 +45,13 @@ exports.start = function (where) {
                     logger.error(e);
                 })
                 .finally(() => {
-                    logger.info('Stopping manager');
-                    sh.stop();
+                    //logger.info('Stopping manager 1');
+                    //sh.stop();
                 });
             }
             else {
-                logger.info('Stopping manager');
-                sh.stop();
+                //logger.info('Stopping manager 2');
+                //sh.stop();
             }
 
         })
