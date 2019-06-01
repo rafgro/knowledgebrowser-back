@@ -51,25 +51,25 @@ server.get('/ops/indexChemrxiv', (request,response)=>{
   manager.start('chemrxiv');
 });
 
+const {shiphold} = require('ship-hold');
+/*const sh = shiphold({
+    host     : process.env.RDS_HOSTNAME,
+    user     : process.env.RDS_USERNAME,
+    password : process.env.RDS_PASSWORD,
+    port     : process.env.RDS_PORT,
+    database : 'postgres'
+});*/
+const sh = shiphold({
+    host     : '127.0.0.1',
+    user     : 'crawler',
+    password : 'blackseo666',
+    database : 'preprint-crawls'
+});
+
 /* API */
 server.get('/api/search', (request,response)=>{
 
   let hrstart = process.hrtime();
-
-  const {shiphold} = require('ship-hold');
-  const sh = shiphold({
-      host     : process.env.RDS_HOSTNAME,
-      user     : process.env.RDS_USERNAME,
-      password : process.env.RDS_PASSWORD,
-      port     : process.env.RDS_PORT,
-      database : 'postgres'
-  });
-  /*const sh = shiphold({
-      host     : '127.0.0.1',
-      user     : 'crawler',
-      password : 'blackseo666',
-      database : 'preprint-crawls'
-  });*/
 
   let query = request.query.q;
 
