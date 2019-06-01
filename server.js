@@ -17,31 +17,71 @@ server.get('/', (request,response)=>{
 });
 
 /* Downloads */
-server.get('/downloadChemrxiv', (request,response)=>{
+server.get('/ops/downloadChemrxiv', (request,response)=>{
   response.send('Started job');
   downloadChemrxivRss.start();
 });
-server.get('/downloadBiorxiv', (request,response)=>{
+server.get('/ops/downloadBiorxiv', (request,response)=>{
   response.send('Started job');
   downloadBiorxivRss.start();
 });
-server.get('/downloadArxiv', (request,response)=>{
+server.get('/ops/downloadArxiv', (request,response)=>{
   response.send('Started job');
   downloadArxivRss.start();
 });
 
+/*server.get('/debug', (request,response)=>{
+  let fs = require('fs');
+  let filename = "stackify-debug.log";
+  let content = fs.readFileSync(process.cwd() + "/" + filename).toString();
+  response.send(content);
+});*/
+
 /* Indexing */
-server.get('/indexArxiv', (request,response)=>{
+server.get('/ops/indexArxiv', (request,response)=>{
   response.send('Started job');
   manager.start('arxiv');
 });
-server.get('/indexBiorxiv', (request,response)=>{
+server.get('/ops/indexBiorxiv', (request,response)=>{
   response.send('Started job');
   manager.start('biorxiv');
 });
-server.get('/indexChemrxiv', (request,response)=>{
+server.get('/ops/indexChemrxiv', (request,response)=>{
   response.send('Started job');
   manager.start('chemrxiv');
+});
+
+/* API */
+server.get('/api/search', (request,response)=>{
+
+  let hrstart = process.hrtime();
+
+  const {shiphold} = require('ship-hold');
+  const sh = shiphold({
+      host     : process.env.RDS_HOSTNAME,
+      user     : process.env.RDS_USERNAME,
+      password : process.env.RDS_PASSWORD,
+      port     : process.env.RDS_PORT,
+      database : 'postgres'
+  });
+  /*const sh = shiphold({
+      host     : '127.0.0.1',
+      user     : 'crawler',
+      password : 'blackseo666',
+      database : 'preprint-crawls'
+  });*/
+
+  let query = request.query.q;
+
+  sh.select('term','relevant').from('index_title').where('term','=',query)
+    .run()
+    .then(result => {
+      let hrend = process.hrtime(hrstart);
+      response.send( result[0]["relevant"] + '<br/>' + 'Execution time (hr): '+hrend[0]+'s '+hrend[1] / 1000000 + 'ms' );
+    })
+    .catch(e=>{
+      response.send( e );
+    });
 });
 
 /* Utils */

@@ -285,7 +285,7 @@ exports.index = function(fromWhat,whichId,canStop) {
                         .where('term','=',element.t)
                         .run()
                         .then(() => {
-                            logger.info('Inserted '+element.t);
+                            //logger.info('Inserted '+element.t);
                             ++insertionCounter;
                             checkInsertionCounter();
                         })
@@ -311,7 +311,7 @@ exports.index = function(fromWhat,whichId,canStop) {
                     .into('index_title')
                     .run()
                     .then(() => {
-                        logger.info('Inserted '+element.t);
+                        //logger.info('Inserted '+element.t);
                         ++insertionCounter;
                         checkInsertionCounter();
                     })
