@@ -76,8 +76,23 @@ server.get('/api/search', (request,response)=>{
   sh.select('term','relevant').from('index_title').where('term','=',query)
     .run()
     .then(result => {
-      let hrend = process.hrtime(hrstart);
-      response.send( result[0]["relevant"] + '<br/>' + 'Execution time (hr): '+hrend[0]+'s '+hrend[1] / 1000000 + 'ms' );
+
+      let listOfIds = new Array();
+      JSON.parse( result[0]["relevant"] ).forEach( element => {
+        listOfIds.push( element.p.substring(1) );
+      });
+      
+      sh.select('doi').from('arxiv').where('id','IN','('+listOfIds[0]+', '+listOfIds[1]+')').run()
+      .then( results => {
+        console.log(results);
+
+        let hrend = process.hrtime(hrstart);
+        response.send( result[0]["relevant"] + '<br/>' + 'Execution time (hr): '+hrend[0]+'s '+hrend[1] / 1000000 + 'ms' );
+
+      })
+      .catch(e=>{
+        console.log(e);
+      });
     })
     .catch(e=>{
       response.send( e );
