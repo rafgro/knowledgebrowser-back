@@ -6,6 +6,7 @@ const express = require('express'),
       downloadArxivRss = require('./downloadArxivRss'),
       downloadChemrxivRss = require('./downloadChemrxivRss'),
       manager = require('./manager'),
+      apiSearch = require('./apiSearch'),
       logging = require('./logger');
 
 require('events').EventEmitter.prototype._maxListeners = 100;
@@ -43,61 +44,37 @@ server.get('/ops/index', (request,response)=>{
   manager.start();
 });
 
-/*const {shiphold} = require('ship-hold');
-const sh = shiphold({
+const {shiphold} = require('ship-hold');
+/*const sh = shiphold({
     host     : process.env.RDS_HOSTNAME,
     user     : process.env.RDS_USERNAME,
     password : process.env.RDS_PASSWORD,
     port     : process.env.RDS_PORT,
     database : 'postgres'
-});
+});*/
 const sh = shiphold({
     host     : '127.0.0.1',
     user     : 'crawler',
     password : 'blackseo666',
     database : 'preprint-crawls'
-});*/
+});
 
 /* API */
-/*server.get('/api/search', (request,response)=>{
+server.get('/api/search', (request,response)=>{
 
   let hrstart = process.hrtime();
 
-  let query = request.query.q;
-
-  sh.select('term','relevant').from('index_title').where('term','=',query)
-    .run()
-    .then(result => {
-
-      let listOfIds = { "a": new Array(), "b": new Array(), "c": new Array() };
-      JSON.parse( result[0]["relevant"] ).forEach( element => {
-        listOfIds[element.p.charAt(0)].push( element.p.substring(1) );
-      });
-      
-      let test = sh.select('title','authors','date','abstract','link').from('arxiv').where('id','IN','('+listOfIds["a"][0]+')');
-
-      let test2 = sh.select('title','authors','date','abstract','link').from('arxiv').where('id','IN','('+listOfIds["a"][1]+')');
-
-      //test.text = '(' + test.text + ') UNION ALL (' + test2.text + ')';
-
-      //sh.select('title','authors','date','abstract','link').from('arxiv').where('id','IN','('+listOfIds["a"].join(", ")+')')
-      console.log( test );
-      .then( results => {
-
-        let hrend = process.hrtime(hrstart);
-        response.send( { results, "execution": hrend[1] / 1000000 } );
-
-      })
-      .catch(e=>{
-        console.log(e);
-      });
-      response.send("lol");
-
-    })
-    .catch(e=>{
-      console.log( e );
-    });
-});*/
+  apiSearch.doYourJob( sh, request.query.q )
+  .then( results => {
+    response.send( results );
+    let hrend = process.hrtime(hrstart);
+    console.log( "execution: " + hrend[1] / 1000000 );
+  })
+  .catch( e=> {
+    response.send( { "error": "error" } );
+    console.log(e);
+  });
+});
 
 /* Utils */
 server.use((request,response)=>{

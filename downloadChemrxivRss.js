@@ -3,12 +3,18 @@ const logging = require('./logger');
 const request = require('request');
 
 const {shiphold} = require('ship-hold');
-const sh = shiphold({
+/*const sh = shiphold({
     host     : process.env.RDS_HOSTNAME,
     user     : process.env.RDS_USERNAME,
     password : process.env.RDS_PASSWORD,
     port     : process.env.RDS_PORT,
   database: 'postgres'
+});*/
+const sh = shiphold({
+    host     : '127.0.0.1',
+    user     : 'crawler',
+    password : 'blackseo666',
+    database : 'preprint-crawls'
 });
 
 exports.start = function () {
@@ -38,7 +44,7 @@ function processAndUploadToDatabase (err, result) {
 
     if( err ) {
         logger.error("Parse XML error");
-        logger.error(err);
+        logger.error(JSON.stringify(err));
     }
     else {
 
