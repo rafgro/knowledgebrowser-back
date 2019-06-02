@@ -23,6 +23,7 @@ var parseXml = require('xml2js').parseString;
 function processResponseOfRss (error, response, body) {
 
     if( error ) {
+        logger.error("Request error");
         logger.error(error);
     }
     else {
@@ -36,6 +37,7 @@ function processResponseOfRss (error, response, body) {
 function processAndUploadToDatabase (err, result) {
 
     if( err ) {
+        logger.error("Parse XML error");
         logger.error(err);
     }
     else {
@@ -51,7 +53,7 @@ function tryToInsertPublicationToDatabase (element) {
     let chemrxivDoi = "chemRxiv:"+element["link"].toString().substring(element["link"].toString().lastIndexOf("/")+1);
     let nonDuplicated = false;
 
-    sh.select('doi').from('chemrxiv').where('doi','=',chemrxivDoi)
+    sh.select('doi').from('content_preprints').where('doi','=',chemrxivDoi)
     .run()
     .then(doi => {
 
@@ -68,7 +70,7 @@ function tryToInsertPublicationToDatabase (element) {
                 date: element["pubDate"].toString().substring(0,10),
                 doi: chemrxivDoi,
                 title: escape(element["title"]) })
-            .into('chemrxiv')
+            .into('content_preprints')
             .run()
             .then(() => {
                 logger.info('Inserted '+chemrxivDoi);

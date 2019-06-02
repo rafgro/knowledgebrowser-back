@@ -40,7 +40,7 @@ exports.start = function () {
 
                     let nonDuplicated = false;
 
-                    sh.select('doi').from('arxiv').where('doi','=', "arXiv:"+(element["link"].toString().substring(21)) ).run()
+                    sh.select('doi').from('content_preprints').where('doi','=', "arXiv:"+(element["link"].toString().substring(21)) ).run()
                     .then(doi => {
 
                         if( doi.length == 0 ) {
@@ -56,7 +56,7 @@ exports.start = function () {
                                 date: todaysDate,
                                 doi: "arXiv:"+(element["link"].toString().substring(21)),
                                 title: escape(element["title"]) })
-                            .into('arxiv')
+                            .into('content_preprints')
                             .run()
                             .then(() => {
                                 logger.info('Inserted '+"arXiv:"+(element["link"].toString().substring(21)));

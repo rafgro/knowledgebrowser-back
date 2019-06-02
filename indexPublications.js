@@ -11,14 +11,13 @@ const sh = shiphold({
   database: 'postgres'
 });
 
-exports.index = function(fromWhat,whichId,canStop) {
+exports.index = function(whichId,canStop) {
     
-    sh.select('title','id').from(fromWhat).where('id','=', whichId)
+    sh.select('title','id').from("content_preprints").where('id','=', whichId)
     .run()
     .then(title => {
 
-        let letter = "a";
-        var id = letter+title[0]["id"];
+        var id = title[0]["id"];
 
         let titleProper = unescape(title[0]["title"]).replace(RegExp(" \\(arXiv:.*\\)"),"").replace(RegExp("\\$","g"),"");
         logger.info(titleProper);
@@ -333,6 +332,6 @@ exports.index = function(fromWhat,whichId,canStop) {
     })
     .catch(e => {
         logger.error(e);
-        logger.error(sh.select('title','id').from(fromWhat).where('id','=', whichId).build());
+        logger.error(sh.select('title','id').from("content_preprints").where('id','=', whichId).build());
     });
 };

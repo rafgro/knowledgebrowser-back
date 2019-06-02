@@ -58,7 +58,7 @@ function tryToInsertPublicationToDatabase (element) {
 
     let nonDuplicated = false;
 
-    sh.select('doi').from('biorxiv').where('doi','=',element["dc:identifier"])
+    sh.select('doi').from('content_preprints').where('doi','=',element["dc:identifier"])
     .run()
     .then(doi => {
 
@@ -75,7 +75,7 @@ function tryToInsertPublicationToDatabase (element) {
                 date: element["dc:date"],
                 doi: element["dc:identifier"],
                 title: escape(element["dc:title"]) })
-            .into('biorxiv')
+            .into('content_preprints')
             .run()
             .then(() => {
                 logger.info('Inserted '+element["dc:identifier"]);

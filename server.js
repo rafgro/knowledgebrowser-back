@@ -38,36 +38,28 @@ server.get('/ops/downloadArxiv', (request,response)=>{
 });*/
 
 /* Indexing */
-server.get('/ops/indexArxiv', (request,response)=>{
+server.get('/ops/index', (request,response)=>{
   response.send('Started job');
-  manager.start('arxiv');
-});
-server.get('/ops/indexBiorxiv', (request,response)=>{
-  response.send('Started job');
-  manager.start('biorxiv');
-});
-server.get('/ops/indexChemrxiv', (request,response)=>{
-  response.send('Started job');
-  manager.start('chemrxiv');
+  manager.start();
 });
 
-const {shiphold} = require('ship-hold');
-/*const sh = shiphold({
+/*const {shiphold} = require('ship-hold');
+const sh = shiphold({
     host     : process.env.RDS_HOSTNAME,
     user     : process.env.RDS_USERNAME,
     password : process.env.RDS_PASSWORD,
     port     : process.env.RDS_PORT,
     database : 'postgres'
-});*/
+});
 const sh = shiphold({
     host     : '127.0.0.1',
     user     : 'crawler',
     password : 'blackseo666',
     database : 'preprint-crawls'
-});
+});*/
 
 /* API */
-server.get('/api/search', (request,response)=>{
+/*server.get('/api/search', (request,response)=>{
 
   let hrstart = process.hrtime();
 
@@ -77,27 +69,35 @@ server.get('/api/search', (request,response)=>{
     .run()
     .then(result => {
 
-      let listOfIds = new Array();
+      let listOfIds = { "a": new Array(), "b": new Array(), "c": new Array() };
       JSON.parse( result[0]["relevant"] ).forEach( element => {
-        listOfIds.push( element.p.substring(1) );
+        listOfIds[element.p.charAt(0)].push( element.p.substring(1) );
       });
       
-      sh.select('doi').from('arxiv').where('id','IN','('+listOfIds[0]+', '+listOfIds[1]+')').run()
+      let test = sh.select('title','authors','date','abstract','link').from('arxiv').where('id','IN','('+listOfIds["a"][0]+')');
+
+      let test2 = sh.select('title','authors','date','abstract','link').from('arxiv').where('id','IN','('+listOfIds["a"][1]+')');
+
+      //test.text = '(' + test.text + ') UNION ALL (' + test2.text + ')';
+
+      //sh.select('title','authors','date','abstract','link').from('arxiv').where('id','IN','('+listOfIds["a"].join(", ")+')')
+      console.log( test );
       .then( results => {
-        console.log(results);
 
         let hrend = process.hrtime(hrstart);
-        response.send( result[0]["relevant"] + '<br/>' + 'Execution time (hr): '+hrend[0]+'s '+hrend[1] / 1000000 + 'ms' );
+        response.send( { results, "execution": hrend[1] / 1000000 } );
 
       })
       .catch(e=>{
         console.log(e);
       });
+      response.send("lol");
+
     })
     .catch(e=>{
-      response.send( e );
+      console.log( e );
     });
-});
+});*/
 
 /* Utils */
 server.use((request,response)=>{

@@ -11,14 +11,14 @@ const sh = shiphold({
   database: 'postgres'
 });
 
-exports.start = function (where) {
+exports.start = function () {
 
     logger.info( '------------------INDEXING START------------------' );
-    sh.select('value').from('manager').where('option','=', where+'_offset')
+    sh.select('value').from('manager').where('option','=', 'indexing_offset')
     .run()
     .then(result => {
 
-        sh.select('id').from(where).orderBy('id').limit(20,result[0].value).run()
+        sh.select('id').from("content_preprints").orderBy('id').limit(20,result[0].value).run()
         .then( onepubresult => {
 
             let counterForPubs = 0;
@@ -30,13 +30,13 @@ exports.start = function (where) {
                     let doStop = false;
                     if( counterForPubs == array.length ) { doStop = true; }
                     //console.log(doStop);
-                    indexPublications.index(where,element.id,doStop);
+                    indexPublications.index(element.id,doStop);
                 }, 1000 * index );
             } );
             
             if( onepubresult.length != 0 ) {
                 let value = parseInt(result[0].value) +onepubresult.length;//+1;
-                sh.update('manager').set('value',value.toString()).where('option','=',where+'_offset')
+                sh.update('manager').set('value',value.toString()).where('option','=','indexing_offset')
                 .run()
                 .then(() => {
                     logger.info('Offset set to '+value);
