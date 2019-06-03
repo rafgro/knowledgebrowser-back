@@ -70,7 +70,7 @@ server.get('/api/search', (request,response)=>{
     response.send( { "message": + hrend[1] / 1000000, "results": results } );
   })
   .catch( e=> {
-    response.send( { "error": "error" } );
+    response.send( { "message": "error" } );
     console.log(e);
   });
 });

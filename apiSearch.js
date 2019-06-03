@@ -10,17 +10,74 @@ exports.doYourJob = function( sh, query ) {
         let queriesToDb = new Array();
 
         // three initial ways: original query, singular query, plural query
-        queriesToDb.push( { q: query, w: 10 } );
-        queriesToDb.push( { q: queryNlp.nouns().toSingular().all().out(), w: 10 } );
-        queriesToDb.push( { q: queryNlp.nouns().toPlural().all().out(), w: 10 } );
+        queriesToDb.push( { q: queryNlp.normalize().toLowerCase().out(), w: 10 } );
+        queriesToDb.push( { q: queryNlp.nouns().toSingular().all().normalize().toLowerCase().out(), w: 10 } );
+        queriesToDb.push( { q: queryNlp.nouns().toPlural().all().normalize().toLowerCase().out(), w: 10 } );
         
         // working on specific words
         let words = queryNlp.terms().data();
-        
+
+        // pairs with nouns: adjectives, verbs, acronyms, other nouns
         let checkIfNoun = (word) => { return word == "Noun"; }
         let checkIfAdjective = (word) => { return word == "Adjective" || word == "Comparable"; }
+        let checkIfAcronym = (word) => { return word == "Acronym"; }
+        let checkIfValue = (word) => { return word == "Value"; }
+        for( let i = 0; i < words.length; i++ ) {
+            if( words[i].tags.find( checkIfNoun ) ) {
+                if( i > 0 ) {
+                    // pair: adjective - noun
+                    if( words[i-1].tags.find( checkIfAdjective ) ) {
+                        queriesToDb.push( { q: words[i-1].normal+" "+words[i].normal, w: 8 } );
+                    }
+                    // pair: verb - noun
+                    else if( words[i-1].tags.find( checkIfVerb ) ) {
+                        queriesToDb.push( { q: words[i-1].normal+" "+words[i].normal, w: 5 } );
+                    }
+                    // pair: acronym - noun
+                    else if( words[i-1].tags.find( checkIfAcronym ) ) {
+                        queriesToDb.push( { q: words[i-1].normal+" "+words[i].normal, w: 5 } );
+                    }
+                    // pair: value - noun
+                    else if( words[i-1].tags.find( checkIfValue ) ) {
+                        queriesToDb.push( { q: words[i-1].normal+" "+words[i].normal, w: 6 } );
+                    }
+                    // pair: noun - noun
+                    else if( words[i-1].tags.find( checkIfNoun ) ) {
+                        queriesToDb.push( { q: words[i-1].normal+" "+words[i].normal, w: 7 } );
+                    }
+                }
+                if( i+1 < words.length ) {
+                    // pair: noun - adjective
+                    if( words[i+1].tags.find( checkIfAdjective ) ) {
+                        queriesToDb.push( { q: words[i].normal+" "+words[i+1].normal, w: 8 } );
+                    }
+                    // pair: noun - verb
+                    else if( words[i+1].tags.find( checkIfVerb ) ) {
+                        queriesToDb.push( { q: words[i].normal+" "+words[i+1].normal, w: 5 } );
+                    }
+                    // pair: noun - acronym
+                    else if( words[i+1].tags.find( checkIfAcronym ) ) {
+                        queriesToDb.push( { q: words[i].normal+" "+words[i+1].normal, w: 5 } );
+                    }
+                    // pair: noun - value
+                    else if( words[i+1].tags.find( checkIfValue ) ) {
+                        queriesToDb.push( { q: words[i].normal+" "+words[i+1].normal, w: 6 } );
+                    }
+                    // pair: noun - noun
+                    else if( words[i+1].tags.find( checkIfNoun ) ) {
+                        queriesToDb.push( { q: words[i].normal+" "+words[i+1].normal, w: 7 } );
+                    }
+                }
+            }
+        }
+        
+        // single words
         words.forEach( function(word) {
-            if( word.tags.find( checkIfNoun ) ) { queriesToDb.push( { q: word.normal, w: 3 } ); }
+            if( word.tags.find( checkIfNoun ) ) {
+                queriesToDb.push( { q: word.normal, w: 5 } );
+                queriesToDb.push( { q: nlp(word.normal).nouns().toSingular().all().normalize().out(), w: 3 } );
+                queriesToDb.push( { q: nlp(word.normal).nouns().toPlural().all().normalize().out(), w: 3 } );
+            }
             else if( word.tags.find( checkIfAdjective ) ) { queriesToDb.push( { q: word.normal, w: 2 } ); }
             else { queriesToDb.push( { q: word.normal, w: 1 } ); }
         });
