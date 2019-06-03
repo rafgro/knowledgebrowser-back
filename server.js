@@ -45,19 +45,19 @@ server.get('/ops/index', (request,response)=>{
 });
 
 const {shiphold} = require('ship-hold');
-/*const sh = shiphold({
+const sh = shiphold({
     host     : process.env.RDS_HOSTNAME,
     user     : process.env.RDS_USERNAME,
     password : process.env.RDS_PASSWORD,
     port     : process.env.RDS_PORT,
     database : 'postgres'
-});*/
-const sh = shiphold({
+});
+/*const sh = shiphold({
     host     : '127.0.0.1',
     user     : 'crawler',
     password : 'blackseo666',
     database : 'preprint-crawls'
-});
+});*/
 
 /* API */
 server.get('/api/search', (request,response)=>{
@@ -68,10 +68,11 @@ server.get('/api/search', (request,response)=>{
   .then( results => {
     let hrend = process.hrtime(hrstart);
     response.send( { "message": + hrend[1] / 1000000, "results": results } );
+    logger.info( "query: "+request.query.q );
   })
   .catch( e=> {
     response.send( { "message": "error" } );
-    console.log(e);
+    logger.error(e);
   });
 });
 

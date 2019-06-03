@@ -268,6 +268,9 @@ exports.doYourJob = function( sh, query ) {
                     }
                     publications.sort(compare);
 
+                    // and deleting duplicated pubs, just in case
+                    publications = publications.filter( function (a) { return !this[a.doi] && (this[a.doi] = true); }, Object.create(null) );
+
                     resolve(publications);
 
                 })
