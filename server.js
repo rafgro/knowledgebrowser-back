@@ -66,9 +66,8 @@ server.get('/api/search', (request,response)=>{
 
   apiSearch.doYourJob( sh, request.query.q )
   .then( results => {
-    response.send( results );
     let hrend = process.hrtime(hrstart);
-    console.log( "execution: " + hrend[1] / 1000000 );
+    response.send( { "message": + hrend[1] / 1000000, "results": results } );
   })
   .catch( e=> {
     response.send( { "error": "error" } );
