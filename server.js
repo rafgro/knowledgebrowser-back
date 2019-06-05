@@ -1,5 +1,3 @@
-require('stackify-node-apm');
-
 const express = require('express'),
       server = express(),
       downloadBiorxivRss = require('./downloadBiorxivRss'),
