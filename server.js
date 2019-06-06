@@ -62,16 +62,17 @@ server.get('/api/search', (request,response)=>{
 
   let hrstart = process.hrtime();
 
-  apiSearch.doYourJob( sh, request.query.q )
+  apiSearch.doYourJob( sh, request.query.q, 10, request.query.offset || 0 )
   .then( results => {
     let hrend = process.hrtime(hrstart);
-    response.send( { "message": + hrend[1] / 1000000, "results": results } );
+    response.send( { "message": + hrend[1] / 1000000, "numberofall": results.numberofall, "results": results.results } );
     logger.info( "query: "+request.query.q );
   })
   .catch( e=> {
-    response.send( { "message": "error" } );
+    response.send( { "message": JSON.stringify(e) } );
     logger.error(e);
   });
+
 });
 
 /* Utils */

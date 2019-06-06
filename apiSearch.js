@@ -8,15 +8,19 @@ exports.doYourJob = function( sh, query, limit=10, offset=0 ) {
         // query processing
         let queryNlp = nlp(query);
         let queriesToDb = new Array();
-
-        // three initial ways: original query, singular query, plural query
-        queriesToDb.push( { q: queryNlp.normalize().toLowerCase().out(), w: 10 } );
-        queriesToDb.push( { q: queryNlp.nouns().toSingular().all().normalize().toLowerCase().out(), w: 9 } );
-        queriesToDb.push( { q: queryNlp.nouns().toPlural().all().normalize().toLowerCase().out(), w: 9 } );
-
+        
         // onewordquery
         let oneword = true;
         if( query.includes(' ') ) oneword = false;
+
+        // different forms are of lower weight when less words
+        let lowerWeight = 9;
+        if( oneword ) lowerWeight = 8;
+
+        // three initial ways: original query, singular query, plural query
+        queriesToDb.push( { q: queryNlp.normalize().toLowerCase().out(), w: 10 } );
+        queriesToDb.push( { q: queryNlp.nouns().toSingular().all().normalize().toLowerCase().out(), w: lowerWeight } );
+        queriesToDb.push( { q: queryNlp.nouns().toPlural().all().normalize().toLowerCase().out(), w: lowerWeight } );
         
         // working on specific words
         queryNlp = nlp(query);
@@ -39,6 +43,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0 ) {
             toReturn.push( processedNoun + 'ical' );
             toReturn.push( processedNoun + 'ous' );
             toReturn.push( processedNoun + 'ational' );
+            toReturn.push( processedNoun + 'ary' );
             if( noun.includes('ity') ) toReturn.push( noun.substring(0,noun.length-3) );
             if( noun.includes('al') ) toReturn.push( noun.substring(0,noun.length-2) );
             return toReturn;
@@ -50,8 +55,12 @@ exports.doYourJob = function( sh, query, limit=10, offset=0 ) {
         let checkIfAcronym = (word) => { return word == "Acronym"; }
         let checkIfValue = (word) => { return word == "Value"; }
         let checkIfVerb = (word) => { return word == "Verb"; }
+        let numberOfImportantWords = 0;
         if( oneword == false ) {
             for( let i = 0; i < words.length; i++ ) {
+                if( words[i].tags.find( checkIfNoun ) || words[i].tags.find( checkIfAdjective ) || words[i].tags.find( checkIfAcronym )
+                || words[i].tags.find( checkIfValue ) || words[i].tags.find( checkIfVerb ) ) { numberOfImportantWords++; }
+
                 if( words[i].tags.find( checkIfNoun ) ) {
     
                     let singular = true;
@@ -121,7 +130,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0 ) {
                 }
                 else if( word.tags.find( checkIfAdjective ) ) {
                     queriesToDb.push( { q: word.normal, w: 3 } );
-                    wordToAdjectives(word.normal).forEach( e => queriesToDb.push( { q: e, w: 2 } ) );
+                    populateWordToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 2 } ) );
                 }
                 else { queriesToDb.push( { q: word.normal, w: 1 } ); }
             });
@@ -129,6 +138,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0 ) {
 
         // deleting duplications
         queriesToDb = queriesToDb.filter( function (a) { return !this[a.q] && (this[a.q] = true); }, Object.create(null) );
+        //resolve(queriesToDb);
 
         // database querying
 
@@ -140,12 +150,14 @@ exports.doYourJob = function( sh, query, limit=10, offset=0 ) {
 
             if( Object.keys(result).length !== 0 ) {
 
+                let originalTerms = []; //for adding strong around words
                 //assemble all variants the results, multipliying base weights by relevancy weights
                 let multipliedRelevant = new Array();
                 for( let i = 0; i < result.length; i++ ) {
                     let queryWeight = queriesToDb.find( function(e) {
                         return e.q == result[i].term;
                     }).w;
+                    originalTerms.push(result[i].term);
                     JSON.parse( result[i].relevant ).forEach( e => multipliedRelevant.push( { p: e.p, w: e.w * queryWeight } ) );
                 }
 
@@ -166,8 +178,95 @@ exports.doYourJob = function( sh, query, limit=10, offset=0 ) {
                 }
                 originalMultipliedRelevant = originalMultipliedRelevant.filter(
                     function (a) { return !this[a.p] && (this[a.p] = true); }, Object.create(null) );
-
                 //resolve(originalMultipliedRelevant);
+
+                function strongifyText( text, listToStrong ) {
+                    let tempText = text;
+                    let listOfWords = listToStrong.join(" ").split(" ").filter( (v,i,s) => s.indexOf(v) === i );
+                    listOfWords.sort( (a,b) => {
+                        if( a.length > b.length ) return -1;
+                        if( a.length < b.length ) return 1;
+                        return 0;
+                    }); //quickfix to avoid double stronging plurals (like signal and signals)
+                    listOfWords.forEach( word => {
+                        let pos1 = tempText.toLowerCase().indexOf(word);
+                        if( pos1 != -1 ) {
+                            let can = true;
+                            if( pos1 > 0 ) {
+                                can = false;
+                                if( tempText.charAt(pos1-1) != ">" ) { can = true; }
+                            }
+                            if( can ) {
+                                tempText = tempText.substring(0,pos1)+"<strong>"+tempText.substring(pos1,pos1+word.length)
+                                           +"</strong>"+tempText.substring(pos1+word.length);
+                            }
+                        }
+                    });
+                    return tempText;
+                }
+
+                function calculateRelativeWeight( originalWeight, noOfWords ) {
+                    switch( noOfWords ) {
+                        case 1:
+                            if( originalWeight > 80 ) return 9;
+                            else if( originalWeight > 70 ) return 8;
+                            else if( originalWeight > 60 ) return 7;
+                            else if( originalWeight > 50 ) return 6;
+                            else if( originalWeight > 30 ) return 5;
+                            else if( originalWeight > 20 ) return 4;
+                            else if( originalWeight > 10 ) return 3;
+                            else if( originalWeight > 6 ) return 2;
+                            else { return 1; }
+                            break;
+                        case 2:
+                            if( originalWeight > 100 ) return 10;
+                            else if( originalWeight > 90 ) return 9;
+                            else if( originalWeight > 80 ) return 8;
+                            else if( originalWeight > 70 ) return 7;
+                            else if( originalWeight > 50 ) return 6;
+                            else if( originalWeight > 40 ) return 5;
+                            else if( originalWeight > 35 ) return 4;
+                            else if( originalWeight > 30 ) return 3;
+                            else if( originalWeight > 25 ) return 2;
+                            else { return 1; }
+                            break;
+                        case 3:
+                            if( originalWeight > 170 ) return 10;
+                            else if( originalWeight > 140 ) return 9;
+                            else if( originalWeight > 110 ) return 8;
+                            else if( originalWeight > 100 ) return 7;
+                            else if( originalWeight > 90 ) return 6;
+                            else if( originalWeight > 80 ) return 5;
+                            else if( originalWeight > 70 ) return 4;
+                            else if( originalWeight > 50 ) return 3;
+                            else if( originalWeight > 30 ) return 2;
+                            else { return 1; }
+                            break;
+                        case 4:
+                            if( originalWeight > 170 ) return 10;
+                            else if( originalWeight > 140 ) return 9;
+                            else if( originalWeight > 120 ) return 8;
+                            else if( originalWeight > 110 ) return 7;
+                            else if( originalWeight > 100 ) return 6;
+                            else if( originalWeight > 90 ) return 5;
+                            else if( originalWeight > 80 ) return 4;
+                            else if( originalWeight > 70 ) return 3;
+                            else if( originalWeight > 50 ) return 2;
+                            else { return 1; }
+                            break;
+                        default:
+                            if( originalWeight > 170+((noOfWords-4)*10) ) return 10;
+                            else if( originalWeight > 140+((noOfWords-4)*10) ) return 9;
+                            else if( originalWeight > 120+((noOfWords-4)*10) ) return 8;
+                            else if( originalWeight > 110+((noOfWords-4)*10) ) return 7;
+                            else if( originalWeight > 100+((noOfWords-4)*10) ) return 6;
+                            else if( originalWeight > 90+((noOfWords-4)*10) ) return 5;
+                            else if( originalWeight > 80+((noOfWords-4)*10) ) return 4;
+                            else if( originalWeight > 70+((noOfWords-4)*10) ) return 3;
+                            else if( originalWeight > 50+((noOfWords-4)*10) ) return 2;
+                            else { return 1; }
+                    }
+                }
 
                 //expanding id to the whole publication
                 sh.select('id','title','authors','abstract','doi','link','date').from('content_preprints')
@@ -176,8 +275,8 @@ exports.doYourJob = function( sh, query, limit=10, offset=0 ) {
 
                     //mergin weight with rest of the data
                     let publications = andwhat.map( (value) => {
-                        value.title = unescape(value.title).replace(RegExp("\\. \\(arXiv:.*\\)"),"")
-                          .replace(RegExp("\\$","g"),"").replace("\\","");
+                        let untitle = unescape(value.title).replace(RegExp("\\. \\(arXiv:.*\\)"),"");
+                        value.title = strongifyText( untitle, originalTerms ).replace(RegExp("\\$","g"),"").replace("\\","");
                         value.authors = unescape(value.authors);
                         let unabstract = unescape(value.abstract).replace("\n"," ").replace("\\","").replace("<p>","").replace("$","");
                         value.abstract = unabstract.substring(0,unabstract.indexOf(". "));
@@ -186,7 +285,12 @@ exports.doYourJob = function( sh, query, limit=10, offset=0 ) {
                         originalMultipliedRelevant.forEach( (element) => {
                             if( element.p == value.id ) { weight = element.w; }
                         });
-                        value.weight = weight;
+                        let shortTitleBonus = 0;
+                        if( untitle.split(" ").length < (words.length+5) ) shortTitleBonus = 5;
+                        let exactMatchBonus = -7;
+                        if( untitle.toLowerCase().includes(query.toLowerCase()) ) exactMatchBonus = 2;
+                        value.weight = weight+shortTitleBonus+exactMatchBonus;
+                        value.relativeWeight = calculateRelativeWeight( value.weight, numberOfImportantWords );
 
                         return value;
                     });
@@ -206,11 +310,11 @@ exports.doYourJob = function( sh, query, limit=10, offset=0 ) {
                     // and deleting duplicated pubs, just in case
                     publications = publications.filter( function (a) { return !this[a.doi] && (this[a.doi] = true); }, Object.create(null) );
 
-                    resolve(publications.slice(offset,offset+limit));
+                    resolve({ numberofall: publications.length, results: publications.slice(parseInt(offset),parseInt(offset)+limit) });
 
                 })
                 .catch(e=>{
-                    reject(e);
+                    reject("1"+JSON.stringify(e));
                 });
 
             }
@@ -221,7 +325,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0 ) {
 
         })
         .catch(e=>{
-            reject( e );
+            reject("2"+JSON.stringify(e));
         });
     
     });
