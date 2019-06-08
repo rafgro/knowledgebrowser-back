@@ -5,6 +5,7 @@ const express = require('express'),
       downloadChemrxivRss = require('./downloadChemrxivRss'),
       manager = require('./manager'),
       apiSearch = require('./apiSearch'),
+      apiStats = require('./apiStats'),
       logging = require('./logger');
 
 require('events').EventEmitter.prototype._maxListeners = 100;
@@ -71,6 +72,19 @@ server.get('/api/search', (request,response)=>{
   .catch( e=> {
     response.send( { "message": JSON.stringify(e) } );
     logger.error(e);
+  });
+
+});
+
+/* API */
+server.get('/api/stats', (request,response)=>{
+
+  apiStats.doYourJob( sh )
+  .then( results => {
+    response.send( results );
+  })
+  .catch( e=> {
+    response.send( [ { "text": JSON.stringify(e) } ] );
   });
 
 });
