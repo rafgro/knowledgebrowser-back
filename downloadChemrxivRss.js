@@ -3,19 +3,19 @@ const logging = require('./logger');
 const request = require('request');
 
 const {shiphold} = require('ship-hold');
-/*const sh = shiphold({
+const sh = shiphold({
     host     : process.env.RDS_HOSTNAME,
     user     : process.env.RDS_USERNAME,
     password : process.env.RDS_PASSWORD,
     port     : process.env.RDS_PORT,
   database: 'postgres'
-});*/
-const sh = shiphold({
+});
+/*const sh = shiphold({
     host     : '127.0.0.1',
     user     : 'crawler',
     password : 'blackseo666',
     database : 'preprint-crawls'
-});
+});*/
 
 exports.start = function () {
 
@@ -34,6 +34,9 @@ function processResponseOfRss (error, response, body) {
     }
     else {
         logger.info( body.substring(0,20) );
+
+        body = body.replace(/\ \>/, "");
+        body = body.replace(/\<\ /, "");
 
         parseXml( body, processAndUploadToDatabase );
     }
@@ -73,13 +76,13 @@ function tryToInsertPublicationToDatabase (element) {
                 link: element["link"],
                 abstract: "(\'" + escape(element["description"]) + "\')",
                 authors: "",
-                date: element["pubDate"].toString().substring(0,10),
+                date: element["pubDate"].toString(),
                 doi: chemrxivDoi,
                 title: escape(element["title"]) })
             .into('content_preprints')
             .run()
             .then(() => {
-                logger.info('Inserted '+chemrxivDoi);
+                logger.info('Inserted '+chemrxivDoi+' / '+element["pubDate"].toString());
             })
             .catch(e => {
                 logger.error(e);

@@ -10,6 +10,12 @@ const sh = shiphold({
     port     : process.env.RDS_PORT,
   database: 'postgres'
 });
+/*const sh = shiphold({
+    host     : '127.0.0.1',
+    user     : 'crawler',
+    password : 'blackseo666',
+    database : 'preprint-crawls'
+});*/
 
 exports.start = function () {
 
@@ -68,17 +74,22 @@ function tryToInsertPublicationToDatabase (element) {
 
         if( nonDuplicated == true ) {
 
+            let hour = (new Date).getUTCHours();
+            let myDate = ''; //format: 2019-06-04 08:00:00
+            if( hour < 10 ) myDate = element["dc:date"]+' 0'+hour+':00:00';
+            else myDate = element["dc:date"]+' '+hour+':00:00';
+
             sh.insert({ 
                 link: element["link"].toString().replace("\n", ""),
                 abstract: "(\'" + escape(element["description"]) + "\')",
                 authors: escape(element["dc:creator"]),
-                date: element["dc:date"],
+                date: myDate,
                 doi: element["dc:identifier"],
                 title: escape(element["dc:title"]) })
             .into('content_preprints')
             .run()
             .then(() => {
-                logger.info('Inserted '+element["dc:identifier"]);
+                logger.info('Inserted '+element["dc:identifier"]+' / '+myDate);
             })
             .catch(e => {
                 logger.error(e);

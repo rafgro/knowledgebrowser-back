@@ -1,7 +1,7 @@
 const {shiphold} = require('ship-hold');
 var nlp = require('compromise');
 
-exports.doYourJob = function( sh, query, limit=10, offset=0 ) {
+exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
 
     return new Promise( ( resolve, reject ) => {
 
@@ -306,6 +306,24 @@ exports.doYourJob = function( sh, query, limit=10, offset=0 ) {
                         return 0;
                     }
                     publications.sort(compare);
+
+                    if( freshmode == 1 ) {
+                        let whereIsFour = 0;
+                        for( let i = 0; i < publications.length; i++ ) {
+                            if( publications[i].relativeWeight >= 4 ) whereIsFour = i;
+                            else break;
+                        }
+                        function compare2(a,b) {
+                            if( (new Date(a.date)).getTime() > (new Date(b.date)).getTime() ) { return -1; }
+                            else if( (new Date(a.date)).getTime() < (new Date(b.date)).getTime() ) { return 1; }
+                            else if( a.weight > b.weight ) { return -1; }
+                            else if( a.weight < b.weight ) { return 1; }
+                            return 0;
+                        }
+                        if( whereIsFour > 0 ) {
+                            publications = publications.slice(0,whereIsFour).sort(compare2).concat(publications.slice(whereIsFour));
+                        }
+                    }
 
                     // and deleting duplicated pubs, just in case
                     publications = publications.filter( function (a) { return !this[a.doi] && (this[a.doi] = true); }, Object.create(null) );
