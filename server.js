@@ -1,9 +1,7 @@
 const express = require('express'),
       server = express(),
-      downloadBiorxivRss = require('./downloadBiorxivRss'),
-      downloadArxivRss = require('./downloadArxivRss'),
-      downloadChemrxivRss = require('./downloadChemrxivRss'),
-      manager = require('./manager'),
+      managerIndexing = require('./manager-indexing'),
+      managerCrawling = require('./manager-crawling'),
       apiSearch = require('./apiSearch'),
       apiStats = require('./apiStats'),
       logging = require('./logger');
@@ -16,31 +14,10 @@ server.get('/', (request,response)=>{
   response.send('Home page');
 });
 
-/* Downloads */
-server.get('/ops/downloadChemrxiv', (request,response)=>{
-  response.send('Started job');
-  downloadChemrxivRss.start();
-});
-server.get('/ops/downloadBiorxiv', (request,response)=>{
-  response.send('Started job');
-  downloadBiorxivRss.start();
-});
-server.get('/ops/downloadArxiv', (request,response)=>{
-  response.send('Started job');
-  downloadArxivRss.start();
-});
-
-/*server.get('/debug', (request,response)=>{
-  let fs = require('fs');
-  let filename = "stackify-debug.log";
-  let content = fs.readFileSync(process.cwd() + "/" + filename).toString();
-  response.send(content);
-});*/
-
 /* Indexing */
 server.get('/ops/index', (request,response)=>{
   response.send('Started job');
-  manager.start();
+  managerIndexing.start();
 });
 
 const {shiphold} = require('ship-hold');
@@ -98,6 +75,7 @@ server.use((request,response)=>{
 
 server.listen(3000, ()=>{
   logger.info('Listening');
+  managerCrawling.start();
 });
 
 process.on('unhandledRejection', (reason, promise) => {

@@ -38,11 +38,11 @@ exports.doYourJob = function( sh ) {
         + (dateMinusSeven.getUTCMonth()+1) + ((dateMinusSeven.getUTCDate() < 10) ? "-0" : "-")
         + dateMinusSeven.getUTCDate()+" 00:00:00").and("position('chemrxiv' in link) > 0").run();
 
-        const askForArxivLast = sh.select('date').from('content_preprints').where("position('arxiv' in link)",">",0)
+        const askForArxivLast = sh.select('date','title').from('content_preprints').where("position('arxiv' in link)",">",0)
           .orderBy('date','desc').limit(1,0).run();
-        const askForBiorxivLast = sh.select('date').from('content_preprints').where("position('biorxiv' in link)",">",0)
+        const askForBiorxivLast = sh.select('date','title').from('content_preprints').where("position('biorxiv' in link)",">",0)
           .orderBy('date','desc').limit(1,0).run();
-        const askForChemrxivLast = sh.select('date').from('content_preprints').where("position('chemrxiv' in link)",">",0)
+        const askForChemrxivLast = sh.select('date','title').from('content_preprints').where("position('chemrxiv' in link)",">",0)
           .orderBy('date','desc').limit(1,0).run();
         
         Promise.all( [ askForPubCount, askForIndexingOffset, askForPubToday, askForPubThreeDays,
@@ -59,9 +59,12 @@ exports.doYourJob = function( sh ) {
             { text: 'Preprints from the last month: '+pubLastMonth[0].count },
             { text: 'Old preprints: '+(parseInt(pubCount[0].count)-parseInt(pubLastMonth[0].count)) },
             { text: '---' },
-            { text: 'arXiv in the last week: '+arxivWeek[0].count+' (last at '+arxivLast[0].date.toString().substring(0,24)+')' },
-            { text: 'bioRxiv in the last week: '+biorxivWeek[0].count+' (last at '+biorxivLast[0].date.toString().substring(0,24)+')' },
-            { text: 'chemRxiv in the last week: '+chemrxivWeek[0].count+' (last at '+chemrxivLast[0].date.toString().substring(0,24)+')' } ] });
+            { text: 'arXiv in the last week: '+arxivWeek[0].count+' (last at '+arxivLast[0].date.toString().substring(0,24)+' with '
+              +unescape(arxivLast[0].title).toString().substring(0,30)+')' },
+            { text: 'bioRxiv in the last week: '+biorxivWeek[0].count+' (last at '+biorxivLast[0].date.toString().substring(0,24)+' with '
+              +unescape(biorxivLast[0].title).toString().substring(0,30)+')' },
+            { text: 'chemRxiv in the last week: '+chemrxivWeek[0].count+' (last at '+chemrxivLast[0].date.toString().substring(0,24)+' with '
+              +unescape(chemrxivLast[0].title).toString().substring(0,30)+')' } ] });
         })
         .catch( e => {
             reject(e);
