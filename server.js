@@ -20,6 +20,12 @@ server.get('/ops/index', (request,response)=>{
   managerIndexing.start();
 });
 
+/* Crawling */
+server.get('/ops/discover', (request,response)=>{
+  response.send('Started job');
+  managerCrawling.start();
+});
+
 const {shiphold} = require('ship-hold');
 const sh = shiphold({
     host     : process.env.RDS_HOSTNAME,
@@ -75,7 +81,6 @@ server.use((request,response)=>{
 
 server.listen(3000, ()=>{
   logger.info('Listening');
-  managerCrawling.start();
 });
 
 process.on('unhandledRejection', (reason, promise) => {
