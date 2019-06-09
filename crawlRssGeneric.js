@@ -7,19 +7,19 @@ const rssBiorxiv = require('./crawl_specifics/rssBiorxiv');
 const rssChemrxiv = require('./crawl_specifics/rssChemrxiv');
 
 const {shiphold} = require('ship-hold');
-/*const sh = shiphold({
+const sh = shiphold({
     host     : process.env.RDS_HOSTNAME,
     user     : process.env.RDS_USERNAME,
     password : process.env.RDS_PASSWORD,
     port     : process.env.RDS_PORT,
   database: 'postgres'
-});*/
-const sh = shiphold({
+});
+/*const sh = shiphold({
     host     : '127.0.0.1',
     user     : 'crawler',
     password : 'blackseo666',
     database : 'preprint-crawls'
-});
+});*/
 
 exports.start = function ( name, mainurl, mainsuburls ) {
 
@@ -29,9 +29,11 @@ exports.start = function ( name, mainurl, mainsuburls ) {
     console.log('hey '+name);
 
     if( mainsuburls !== null ) {
-        mainsuburls.forEach( subject => {
-            logger.info(subject);
-            request(mainurl+subject, {timeout: 20000}, (e,r,b) => processResponseOfRss(e,r,b,name) );
+        mainsuburls.forEach( (subject,index) => {
+            setTimeout( () => {
+                logger.info(subject);
+                request(mainurl+subject, {timeout: 20000}, (e,r,b) => processResponseOfRss(e,r,b,name) );
+            }, 3000 * index ); //slow requesting to avoid one-time ddos
         } )
     }
     else {
