@@ -50,10 +50,9 @@ server.get('/api/search', (request,response)=>{
   .then( results => {
     let hrend = process.hrtime(hrstart);
     response.send( { "message": + hrend[1] / 1000000, "numberofall": results.numberofall, "results": results.results } );
-    logger.info( "query: "+request.query.q );
   })
   .catch( e=> {
-    response.send( { "message": JSON.stringify(e) } );
+    response.send( e );
     logger.error(e);
   });
 

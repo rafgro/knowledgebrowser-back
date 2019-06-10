@@ -5,13 +5,24 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
 
     return new Promise( ( resolve, reject ) => {
 
+        let hrstart = process.hrtime();
+
+        // query sanitization
+        if( query === undefined ) { reject( { "message": "Please enter your query." }); }
+        if( query.length < 1 || query == " " ) { reject( { "message": "Please enter your query." }); }
+        let workingQuery = query;
+        if( query.length > 100 ) { workingQuery = workingQuery.substring(0,100); }
+        workingQuery = workingQuery.replace(/\'/g,"").replace(/\:/g," ").replace(/\;/g," ").replace(/\"/g,"")
+          .replace(/\//g," ").replace(/\\/g," ");
+        if( query.length < 1 || query == " " ) { reject( { "message": "Please enter your query." }); }
+
         // query processing
-        let queryNlp = nlp(query);
+        let queryNlp = nlp(workingQuery);
         let queriesToDb = new Array();
         
         // onewordquery
         let oneword = true;
-        if( query.includes(' ') ) oneword = false;
+        if( workingQuery.includes(' ') ) oneword = false;
 
         // different forms are of lower weight when less words
         let lowerWeight = 9;
@@ -23,7 +34,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
         queriesToDb.push( { q: queryNlp.nouns().toPlural().all().normalize().toLowerCase().out(), w: lowerWeight } );
         
         // working on specific words
-        queryNlp = nlp(query);
+        queryNlp = nlp(workingQuery);
         let words = queryNlp.terms().data();
         //resolve(JSON.stringify(words));
 
@@ -289,7 +300,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         let shortTitleBonus = 0;
                         if( untitle.split(" ").length < (words.length+5) ) shortTitleBonus = 5;
                         let exactMatchBonus = -7;
-                        if( untitle.toLowerCase().includes(query.toLowerCase()) ) exactMatchBonus = 2;
+                        if( untitle.toLowerCase().includes(workingQuery.toLowerCase()) ) exactMatchBonus = 2;
                         value.weight = weight+shortTitleBonus+exactMatchBonus;
                         value.relativeWeight = calculateRelativeWeight( value.weight, numberOfImportantWords );
 
@@ -303,13 +314,17 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         return 0;
                     }
                     publications.sort(compare);
+                    
+                    let highestRelevancy = 0;
+                    if( publications.length > 0 ) highestRelevancy = publications[0].relativeWeight;
+                    let whereIsFour = 0;
+                    for( let i = 0; i < publications.length; i++ ) {
+                        if( publications[i].relativeWeight >= 4 ) whereIsFour = i+1;
+                        else break;
+                    }
+                    let newestResult = 0;
 
                     if( freshmode == 1 ) {
-                        let whereIsFour = 0;
-                        for( let i = 0; i < publications.length; i++ ) {
-                            if( publications[i].relativeWeight >= 4 ) whereIsFour = i+1;
-                            else break;
-                        }
                         function compare2(a,b) {
                             let aDate = (new Date(a.date)).getTime();
                             let bDate = (new Date(b.date)).getTime();
@@ -319,32 +334,106 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                             else if( a.relativeWeight < b.relativeWeight ) { return 1; }
                             return 0;
                         }
-                        if( whereIsFour > 0 ) {
-                            publications = publications.slice(0,whereIsFour).sort(compare2).concat(publications.slice(whereIsFour));
+                        function compare3(a,b) {
+                            if( a.relativeWeight > b.relativeWeight ) { return -1; }
+                            else if( a.relativeWeight < b.relativeWeight ) { return 1; }
+                            else {
+                                let aDate = (new Date(a.date)).getTime();
+                                let bDate = (new Date(b.date)).getTime();
+                                if( aDate > bDate ) { return -1; }
+                                else if( aDate < bDate ) { return 1; }
+                            }
+                            return 0;
                         }
+                        if( whereIsFour > 0 ) {
+                            publications = publications.slice(0,whereIsFour).sort(compare2)
+                                .concat(publications.slice(whereIsFour).sort(compare3));
+                        } else {
+                            publications = publications.sort(compare3);
+                        }
+                        newestResult = (new Date(publications[0].date)).getTime();
                     }
 
                     // and deleting duplicated pubs, just in case
                     publications = publications.filter( function (a) { return !this[a.doi] && (this[a.doi] = true); }, Object.create(null) );
 
+                    if( parseInt(offset) == 0 ) {
+                        let quality = 0;
+                        quality = publications[0].relativeWeight/2;
+                        if( publications.length >= 5 ) quality += publications[4].relativeWeight/4;
+                        if( publications.length >= 10 ) quality += publications[9].relativeWeight/4;
+
+                        let hrend = process.hrtime(hrstart);
+
+                        let details = '{"timestamp":"'+Date.now()+'","howManyRelevant":"'+whereIsFour+
+                          '","highestRelevancy":"'+highestRelevancy+'","executionTime":"'+(hrend[1]/1000000+hrend[0]*1000).toFixed(0)+
+                          '","newestResult":"'+newestResult.toFixed(0)+'"}';
+                        registerQueryInStats( sh, workingQuery, quality.toFixed(0), details );
+                    }
                     resolve({ numberofall: publications.length, results: publications.slice(parseInt(offset),parseInt(offset)+limit) });
 
                 })
                 .catch(e=>{
-                    reject("1"+JSON.stringify(e));
+                    registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'"}' );
+                    reject( { "message": "Sorry, we have encountered an error." } );
                 });
 
             }
             else {
-                resolve( { "message": "No results" });
+                registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'","howManyRelevant":"0"}' );
+                reject( { "message": "Sorry, there are no resuls for <i>"+query+"</i>. Would you like to rephrase your query?" });
             }
             
 
         })
         .catch(e=>{
-            reject("2"+JSON.stringify(e));
+            registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'"}' );
+            reject( { "message": "Sorry, we have encountered an error." } );
         });
     
     });
 
 };
+
+function registerQueryInStats( sh, query, lastQuality, newDetails ) {
+    sh.select('details').from('query_stats')
+        .where('query','=',escape(query)).run()
+        .then(result => {
+
+            if( result.length == 0 ) {
+                
+                sh.insert({ 
+                    query: escape(query),
+                    lastquality: lastQuality,
+                    details: '\'['+newDetails+']\'' })
+                .into('query_stats')
+                .run()
+                .then(() => {
+                    //console.log('ok');
+                })
+                .catch(e => {
+                    console.log(e);
+                });
+                
+            } else {
+
+                sh.update('query_stats')
+                .set({
+                  lastquality: lastQuality,
+                  details: '\''+result[0].details.substring(0,result[0].details.length-1)+","+newDetails+']\'' })
+                .where('query','=',escape(query))
+                .run()
+                .then(() => {
+                    //console.log('ok');
+                })
+                .catch(e => {
+                    console.log(e);
+                });
+
+            }
+
+    })
+    .catch(e=>{
+        logger.info("error during query stats insertion");
+    });
+}
