@@ -118,6 +118,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                 }
             }
         }
+        if( numberOfImportantWords == 0 ) numberOfImportantWords = 1;
         
         // single words
         if( oneword == false ) {
@@ -213,7 +214,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                             else if( originalWeight > 60 ) return 7;
                             else if( originalWeight > 50 ) return 6;
                             else if( originalWeight > 30 ) return 5;
-                            else if( originalWeight > 20 ) return 4;
+                            else if( originalWeight > 15 ) return 4;
                             else if( originalWeight > 10 ) return 3;
                             else if( originalWeight > 6 ) return 2;
                             else { return 1; }
@@ -299,10 +300,6 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                     function compare(a,b) {
                         if( a.weight > b.weight ) { return -1; }
                         else if( a.weight < b.weight ) { return 1; }
-                        else if( a.weight == b.weight ) { 
-                            if( (new Date(a.date)).getTime() > (new Date(b.date)).getTime() ) { return -1; }
-                            else if( (new Date(a.date)).getTime() < (new Date(b.date)).getTime() ) { return 1; }
-                        }
                         return 0;
                     }
                     publications.sort(compare);
@@ -310,14 +307,16 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                     if( freshmode == 1 ) {
                         let whereIsFour = 0;
                         for( let i = 0; i < publications.length; i++ ) {
-                            if( publications[i].relativeWeight >= 4 ) whereIsFour = i;
+                            if( publications[i].relativeWeight >= 4 ) whereIsFour = i+1;
                             else break;
                         }
                         function compare2(a,b) {
-                            if( (new Date(a.date)).getTime() > (new Date(b.date)).getTime() ) { return -1; }
-                            else if( (new Date(a.date)).getTime() < (new Date(b.date)).getTime() ) { return 1; }
-                            else if( a.weight > b.weight ) { return -1; }
-                            else if( a.weight < b.weight ) { return 1; }
+                            let aDate = (new Date(a.date)).getTime();
+                            let bDate = (new Date(b.date)).getTime();
+                            if( aDate > bDate ) { return -1; }
+                            else if( aDate < bDate ) { return 1; }
+                            else if( a.relativeWeight > b.relativeWeight ) { return -1; }
+                            else if( a.relativeWeight < b.relativeWeight ) { return 1; }
                             return 0;
                         }
                         if( whereIsFour > 0 ) {
