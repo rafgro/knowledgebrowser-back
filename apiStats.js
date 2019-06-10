@@ -24,50 +24,55 @@ exports.doYourJob = function( sh ) {
           .where('date','>=',dateMinusThirty.getUTCFullYear() + (((dateMinusThirty.getUTCMonth()+1) < 10) ? "-0" : "-")
           + (dateMinusThirty.getUTCMonth()+1) + ((dateMinusThirty.getUTCDate() < 10) ? "-0" : "-")
           + dateMinusThirty.getUTCDate()+" 00:00:00").run();
-          
-        const askForArxivWeek = sh.select('COUNT(*)').from('content_preprints')
-        .where('date','>=',dateMinusSeven.getUTCFullYear() + (((dateMinusSeven.getUTCMonth()+1) < 10) ? "-0" : "-")
-        + (dateMinusSeven.getUTCMonth()+1) + ((dateMinusSeven.getUTCDate() < 10) ? "-0" : "-")
-        + dateMinusSeven.getUTCDate()+" 00:00:00").and("position('arxiv' in link) > 0").run();
-        const askForBiorxivWeek = sh.select('COUNT(*)').from('content_preprints')
-        .where('date','>=',dateMinusSeven.getUTCFullYear() + (((dateMinusSeven.getUTCMonth()+1) < 10) ? "-0" : "-")
-        + (dateMinusSeven.getUTCMonth()+1) + ((dateMinusSeven.getUTCDate() < 10) ? "-0" : "-")
-        + dateMinusSeven.getUTCDate()+" 00:00:00").and("position('biorxiv' in link) > 0").run();
-        const askForChemrxivWeek = sh.select('COUNT(*)').from('content_preprints')
-        .where('date','>=',dateMinusSeven.getUTCFullYear() + (((dateMinusSeven.getUTCMonth()+1) < 10) ? "-0" : "-")
-        + (dateMinusSeven.getUTCMonth()+1) + ((dateMinusSeven.getUTCDate() < 10) ? "-0" : "-")
-        + dateMinusSeven.getUTCDate()+" 00:00:00").and("position('chemrxiv' in link) > 0").run();
 
-        const askForArxivLast = sh.select('date','title').from('content_preprints').where("position('arxiv' in link)",">",0)
-          .orderBy('date','desc').limit(1,0).run();
-        const askForBiorxivLast = sh.select('date','title').from('content_preprints').where("position('biorxiv' in link)",">",0)
-          .orderBy('date','desc').limit(1,0).run();
-        const askForChemrxivLast = sh.select('date','title').from('content_preprints').where("position('chemrxiv' in link)",">",0)
-          .orderBy('date','desc').limit(1,0).run();
-        
-        Promise.all( [ askForPubCount, askForIndexingOffset, askForPubToday, askForPubThreeDays,
-            askForPubLastWeek, askForPubLastMonth, askForArxivWeek, askForBiorxivWeek, askForChemrxivWeek,
-            askForArxivLast, askForBiorxivLast, askForChemrxivLast ] )
-        .then( ([pubCount,indexingOffset,pubToday,pubThreeDays,pubLastWeek,pubLastMonth,
-                 arxivWeek,biorxivWeek,chemrxivWeek,arxivLast,biorxivLast,chemrxivLast]) => {
-            resolve( { messages: [ { text: 'Discovered preprints: '+pubCount[0].count },
-            { text: 'Indexing queue: '+(parseInt(pubCount[0].count)-parseInt(indexingOffset[0].value)) },
-            { text: '---' },
-            { text: 'Preprints today: '+pubToday[0].count },
-            { text: 'Preprints from the last 3 days: '+pubThreeDays[0].count },
-            { text: 'Preprints from the last week: '+pubLastWeek[0].count },
-            { text: 'Preprints from the last month: '+pubLastMonth[0].count },
-            { text: 'Old preprints: '+(parseInt(pubCount[0].count)-parseInt(pubLastMonth[0].count)) },
-            { text: '---' },
-            { text: 'arXiv in the last week: '+arxivWeek[0].count+' (last at '+arxivLast[0].date.toString().substring(0,24)+' with '
-              +unescape(arxivLast[0].title).toString().substring(0,30)+')' },
-            { text: 'bioRxiv in the last week: '+biorxivWeek[0].count+' (last at '+biorxivLast[0].date.toString().substring(0,24)+' with '
-              +unescape(biorxivLast[0].title).toString().substring(0,30)+')' },
-            { text: 'chemRxiv in the last week: '+chemrxivWeek[0].count+' (last at '+chemrxivLast[0].date.toString().substring(0,24)+' with '
-              +unescape(chemrxivLast[0].title).toString().substring(0,30)+')' } ] });
+        let arrayOfQueries = [ askForPubCount, askForIndexingOffset, askForPubToday, askForPubThreeDays,
+          askForPubLastWeek, askForPubLastMonth ];
+
+        sh.select('name').from('manager_lines')
+        .run()
+        .then(result => {
+            
+            result.forEach( element => {
+                arrayOfQueries.push( sh.select('COUNT(*)').from('content_preprints')
+                .where('date','>=',dateMinusSeven.getUTCFullYear() + (((dateMinusSeven.getUTCMonth()+1) < 10) ? "-0" : "-")
+                + (dateMinusSeven.getUTCMonth()+1) + ((dateMinusSeven.getUTCDate() < 10) ? "-0" : "-")
+                + dateMinusSeven.getUTCDate()+" 00:00:00").and("position('"+element.name.toLowerCase()+"' in link) > 0").run() );
+
+                arrayOfQueries.push( sh.select('date','title').from('content_preprints')
+                .where("position('"+element.name.toLowerCase()+"' in link)",">",0)
+                .orderBy('date','desc').limit(1,0).run() );
+            });
+
+            Promise.all( arrayOfQueries )
+            .then( arrayOfResults => {
+              let toResolve = [ { text: 'Discovered preprints: '+arrayOfResults[0][0].count },
+                { text: 'Indexing queue: '+(parseInt(arrayOfResults[0][0].count)-parseInt(arrayOfResults[1][0].value)) },
+                { text: '---' },
+                { text: 'Preprints today: '+arrayOfResults[2][0].count },
+                { text: 'Preprints from the last 3 days: '+arrayOfResults[3][0].count },
+                { text: 'Preprints from the last week: '+arrayOfResults[4][0].count },
+                { text: 'Preprints from the last month: '+arrayOfResults[5][0].count },
+                { text: 'Old preprints: '+(parseInt(arrayOfResults[0][0].count)-parseInt(arrayOfResults[5][0].count)) },
+                { text: '---' }];
+              
+              for( let i = 6; i < arrayOfResults.length; i+=2 ) {
+                let noOfName = i-6;
+                if( noOfName > 0 ) noOfName = noOfName/2;
+                toResolve.push( { text: result[noOfName].name+' in the last week: '+arrayOfResults[i][0].count
+                +' (last at '+arrayOfResults[i+1][0].date.toString().substring(0,24)+' with '
+                +unescape(arrayOfResults[i+1][0].title).toString().substring(0,30)+')' } );
+              }
+              
+              resolve( { messages: toResolve } );
+            })
+            .catch( e => {
+                reject(e);
+            });
+    
         })
-        .catch( e => {
+        .catch(e => {
             reject(e);
         });
+        
     } );
 };

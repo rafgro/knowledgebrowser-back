@@ -19,8 +19,8 @@ const sh = shiphold({
 
 exports.start = function () {
 
-    logger.info( '------------------CRAWLING START------------------' );
-    let currentHour = (new Date).getUTCHours();
+    let currentHour = (new Date).getUTCHours().toString();
+    logger.info( '------------------CRAWLING START at '+currentHour+'------------------' );
 
     sh.select('*').from('manager_lines')
     .run()
