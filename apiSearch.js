@@ -299,8 +299,17 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         });
                         let shortTitleBonus = 0;
                         if( untitle.split(" ").length < (words.length+5) ) shortTitleBonus = 5;
-                        let exactMatchBonus = -7;
-                        if( untitle.toLowerCase().includes(workingQuery.toLowerCase()) ) exactMatchBonus = 2;
+                        let exactMatchBonus = 0;
+                        let lowuntitle = untitle.toLowerCase();
+                        if( lowuntitle.includes(workingQuery.toLowerCase()) ) { exactMatchBonus = 25; }
+                        else if( numberOfImportantWords > 1 ) {
+                            let fulfill = 0;
+                            let splitted = workingQuery.toLowerCase().split(" ");
+                            splitted.forEach( aword => {
+                                if( lowuntitle.includes(aword) ) { fulfill++; }
+                            });
+                            if( fulfill == splitted.length ) exactMatchBonus = 23;
+                        }
                         value.weight = weight+shortTitleBonus+exactMatchBonus;
                         value.relativeWeight = calculateRelativeWeight( value.weight, numberOfImportantWords );
 
@@ -381,7 +390,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
             }
             else {
                 registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'","howManyRelevant":"0"}' );
-                reject( { "message": "Sorry, there are no resuls for <i>"+query+"</i>. Would you like to rephrase your query?" });
+                reject( { "message": "Sorry, there are no results for <i>"+query+"</i>. Would you like to rephrase your query?" });
             }
             
 
