@@ -30,7 +30,8 @@ exports.processRssBody = function( sh, body ) {
                     authors: escape(element["dc:creator"]),
                     date: myDate,
                     doi: element["dc:identifier"],
-                    title: escape(element["dc:title"]) })
+                    title: escape(element["dc:title"]),
+                    server: 'bioRxiv' })
                 .into('content_preprints')
                 .run()
                 .then(() => {

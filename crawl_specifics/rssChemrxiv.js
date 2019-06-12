@@ -26,7 +26,8 @@ exports.processRssBody = function( sh, body ) {
                     authors: "",
                     date: element["pubDate"].toString(),
                     doi: chemrxivDoi,
-                    title: escape(element["title"]) })
+                    title: escape(element["title"]),
+                    server: 'chemRxiv' })
                 .into('content_preprints')
                 .run()
                 .then(() => {

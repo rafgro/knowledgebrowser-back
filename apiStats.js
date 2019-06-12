@@ -24,23 +24,29 @@ exports.doYourJob = function( sh ) {
           .where('date','>=',dateMinusThirty.getUTCFullYear() + (((dateMinusThirty.getUTCMonth()+1) < 10) ? "-0" : "-")
           + (dateMinusThirty.getUTCMonth()+1) + ((dateMinusThirty.getUTCDate() < 10) ? "-0" : "-")
           + dateMinusThirty.getUTCDate()+" 00:00:00").run();
+          
+        const askForLastTenQueries = sh.select('query').from('query_stats').orderBy('id','desc').limit(10).run();
+        const askForLastQueryQualities = sh.select('lastquality').from('query_stats').run();
+        const askForLowQualityQueries = sh.select('query').from('query_stats').where('lastquality','<',3).run();
 
         let arrayOfQueries = [ askForPubCount, askForIndexingOffset, askForPubToday, askForPubThreeDays,
-          askForPubLastWeek, askForPubLastMonth ];
+          askForPubLastWeek, askForPubLastMonth, askForLastTenQueries, askForLastQueryQualities, askForLowQualityQueries ];
 
         sh.select('name').from('manager_lines')
         .run()
         .then(result => {
             
             result.forEach( element => {
+              if(element.name != 'OSF') {
                 arrayOfQueries.push( sh.select('COUNT(*)').from('content_preprints')
                 .where('date','>=',dateMinusSeven.getUTCFullYear() + (((dateMinusSeven.getUTCMonth()+1) < 10) ? "-0" : "-")
                 + (dateMinusSeven.getUTCMonth()+1) + ((dateMinusSeven.getUTCDate() < 10) ? "-0" : "-")
-                + dateMinusSeven.getUTCDate()+" 00:00:00").and("position('"+element.name.toLowerCase()+"' in link) > 0").run() );
+                + dateMinusSeven.getUTCDate()+" 00:00:00").and('server','=',element.name).run() );
 
                 arrayOfQueries.push( sh.select('date','title').from('content_preprints')
-                .where("position('"+element.name.toLowerCase()+"' in link)",">",0)
+                .where('server','=',element.name)
                 .orderBy('date','desc').limit(1,0).run() );
+              }
             });
 
             Promise.all( arrayOfQueries )
@@ -55,13 +61,28 @@ exports.doYourJob = function( sh ) {
                 { text: 'Old preprints: '+(parseInt(arrayOfResults[0][0].count)-parseInt(arrayOfResults[5][0].count)) },
                 { text: '---' }];
               
-              for( let i = 6; i < arrayOfResults.length; i+=2 ) {
-                let noOfName = i-6;
+              for( let i = 9; i < arrayOfResults.length; i+=2 ) {
+                let noOfName = i-9;
                 if( noOfName > 0 ) noOfName = noOfName/2;
-                toResolve.push( { text: result[noOfName].name+' in the last week: '+arrayOfResults[i][0].count
-                +' (last at '+arrayOfResults[i+1][0].date.toString().substring(0,24)+' with '
-                +unescape(arrayOfResults[i+1][0].title).toString().substring(0,30)+')' } );
+                let textText = result[noOfName].name+' in the last week: '+arrayOfResults[i][0].count;
+                if( arrayOfResults[i][0].count > 0 ) {
+                  textText += ' (last at '+arrayOfResults[i+1][0].date.toString().substring(0,24)+' with '
+                    +unescape(arrayOfResults[i+1][0].title).toString().substring(0,30)+')';
+                }
+                toResolve.push( { text: textText } );
               }
+
+              toResolve.push( { text: '---' } );
+              toResolve.push( { text: 'Overall sum of original queries: '+arrayOfResults[7].length } );
+              let lastTen = '';
+              arrayOfResults[6].forEach( element => { lastTen += element.query + ', '; } );
+              toResolve.push( { text: 'Ten newest quries: '+unescape(lastTen.substring(0,lastTen.length-2)) } );
+              let averageQuality = arrayOfResults[7].reduce( (acc,val) => acc+parseInt(val.lastquality), 0 )
+                / arrayOfResults[7].length;
+              toResolve.push( { text: 'Average quality of results: '+averageQuality.toFixed(2) } );
+              let lowQueries = '';
+              arrayOfResults[8].forEach( element => { lowQueries += element.query + ', '; } );
+              toResolve.push( { text: 'List of low quality queries: '+unescape(lowQueries.substring(0,lowQueries.length-2)) } );
               
               resolve( { messages: toResolve } );
             })

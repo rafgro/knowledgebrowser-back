@@ -34,7 +34,8 @@ exports.processRssBody = function( sh, body ) {
                     authors: escape(striptags(element["dc:creator"].toString())),
                     date: myDate,
                     doi: id,
-                    title: escape(element["title"]) })
+                    title: escape(element["title"]),
+                    server: 'arXiv' })
                 .into('content_preprints')
                 .run()
                 .then(() => {

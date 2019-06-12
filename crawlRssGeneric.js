@@ -5,6 +5,7 @@ const request = require('request');
 const rssArxiv = require('./crawl_specifics/rssArxiv');
 const rssBiorxiv = require('./crawl_specifics/rssBiorxiv');
 const rssChemrxiv = require('./crawl_specifics/rssChemrxiv');
+const rssOsf = require('./crawl_specifics/rssOsf');
 
 const {shiphold} = require('ship-hold');
 const sh = shiphold({
@@ -21,7 +22,7 @@ const sh = shiphold({
     database : 'preprint-crawls'
 });*/
 
-exports.start = function ( name, mainurl, mainsuburls ) {
+exports.start = function ( name, mainurl, mainsuburls=null ) {
 
     console.log('hey '+name);
 
@@ -69,6 +70,7 @@ function processAndUploadToDatabase (err, result, name) {
             case 'arXiv': rssArxiv.processRssBody( sh, result ); break;
             case 'bioRxiv': rssBiorxiv.processRssBody( sh, result ); break;
             case 'chemRxiv': rssChemrxiv.processRssBody( sh, result ); break;
+            case 'OSF': rssOsf.processRssBody( sh, result ); break;
         }
 
     }
