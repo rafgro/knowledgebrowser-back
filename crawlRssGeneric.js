@@ -6,7 +6,6 @@ const rssArxiv = require('./crawl_specifics/rssArxiv');
 const rssBiorxiv = require('./crawl_specifics/rssBiorxiv');
 const rssChemrxiv = require('./crawl_specifics/rssChemrxiv');
 const rssOsf = require('./crawl_specifics/rssOsf');
-const rssPeerj = require('./crawl_specifics/rssPeerj');
 
 const {shiphold} = require('ship-hold');
 /*const sh = shiphold({
@@ -72,7 +71,6 @@ function processAndUploadToDatabase (err, result, name) {
             case 'bioRxiv': rssBiorxiv.processRssBody( sh, result ); break;
             case 'chemRxiv': rssChemrxiv.processRssBody( sh, result ); break;
             case 'OSF': rssOsf.processRssBody( sh, result ); break;
-            case 'PeerJ Preprints': rssPeerj.processRssBody( sh, result ); break;
         }
 
     }

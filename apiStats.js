@@ -37,7 +37,6 @@ exports.doYourJob = function( sh ) {
         .then(result => {
             
             result.forEach( element => {
-              if(element.name != 'OSF') {
                 arrayOfQueries.push( sh.select('COUNT(*)').from('content_preprints')
                 .where('date','>=',dateMinusSeven.getUTCFullYear() + (((dateMinusSeven.getUTCMonth()+1) < 10) ? "-0" : "-")
                 + (dateMinusSeven.getUTCMonth()+1) + ((dateMinusSeven.getUTCDate() < 10) ? "-0" : "-")
@@ -46,7 +45,6 @@ exports.doYourJob = function( sh ) {
                 arrayOfQueries.push( sh.select('date','title').from('content_preprints')
                 .where('server','=',element.name)
                 .orderBy('date','desc').limit(1,0).run() );
-              }
             });
 
             Promise.all( arrayOfQueries )
@@ -65,12 +63,14 @@ exports.doYourJob = function( sh ) {
               for( let i = 9; i < arrayOfResults.length; i+=2 ) {
                 let noOfName = i-9;
                 if( noOfName > 0 ) noOfName = noOfName/2;
-                let textText = result[noOfName].name+' in the last week: '+arrayOfResults[i][0].count;
-                if( arrayOfResults[i][0].count > 0 ) {
-                  textText += ' (last at '+arrayOfResults[i+1][0].date.toString().substring(0,24)+' with '
-                    +unescape(arrayOfResults[i+1][0].title).toString().substring(0,30)+')';
+                if( result[noOfName].name != 'OSF' ) {
+                  let textText = result[noOfName].name+' in the last week: '+arrayOfResults[i][0].count;
+                  if( arrayOfResults[i][0].count > 0 ) {
+                    textText += ' (last at '+arrayOfResults[i+1][0].date.toString().substring(0,24)+' with '
+                      +unescape(arrayOfResults[i+1][0].title).toString().substring(0,30)+')';
+                  }
+                  preprintServers.push( { number: parseInt(arrayOfResults[i][0].count), text: textText } );
                 }
-                preprintServers.push( { number: parseInt(arrayOfResults[i][0].count), text: textText } );
               }
               function compare(a,b) {
                 if( a.number > b.number ) { return -1; }
