@@ -20,7 +20,7 @@ const sh = shiphold({
 
 exports.start = function () {
 
-    let currentHour = (new Date).getUTCHours().toString();
+    let currentHour = '5';//(new Date).getUTCHours().toString();
     logger.info( '------------------CRAWLING START at '+currentHour+'------------------' );
 
     sh.select('*').from('manager_lines')

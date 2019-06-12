@@ -7,6 +7,8 @@ const rssBiorxiv = require('./crawl_specifics/rssBiorxiv');
 const rssChemrxiv = require('./crawl_specifics/rssChemrxiv');
 const rssOsf = require('./crawl_specifics/rssOsf');
 const rssEssoar = require('./crawl_specifics/rssEssoar');
+const rssPreprintsorg = require('./crawl_specifics/rssPreprintsorg');
+const rssNeprepec = require('./crawl_specifics/rssNeprepec');
 
 const {shiphold} = require('ship-hold');
 const sh = shiphold({
@@ -73,6 +75,8 @@ function processAndUploadToDatabase (err, result, name) {
             case 'chemRxiv': rssChemrxiv.processRssBody( sh, result ); break;
             case 'OSF': rssOsf.processRssBody( sh, result ); break;
             case 'ESSOAr': rssEssoar.processRssBody( sh, result ); break;
+            case 'Preprints.org': rssPreprintsorg.processRssBody( sh, result ); break;
+            case 'NEP RePEc': rssNeprepec.processRssBody( sh, result ); break;
         }
 
     }
