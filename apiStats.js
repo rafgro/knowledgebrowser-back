@@ -61,6 +61,7 @@ exports.doYourJob = function( sh ) {
                 { text: 'Old preprints: '+(parseInt(arrayOfResults[0][0].count)-parseInt(arrayOfResults[5][0].count)) },
                 { text: '---' }];
               
+              let preprintServers = new Array();
               for( let i = 9; i < arrayOfResults.length; i+=2 ) {
                 let noOfName = i-9;
                 if( noOfName > 0 ) noOfName = noOfName/2;
@@ -69,8 +70,17 @@ exports.doYourJob = function( sh ) {
                   textText += ' (last at '+arrayOfResults[i+1][0].date.toString().substring(0,24)+' with '
                     +unescape(arrayOfResults[i+1][0].title).toString().substring(0,30)+')';
                 }
-                toResolve.push( { text: textText } );
+                preprintServers.push( { number: parseInt(arrayOfResults[i][0].count), text: textText } );
               }
+              function compare(a,b) {
+                if( a.number > b.number ) { return -1; }
+                else if( a.number < b.number ) { return 1; }
+                return 0;
+              }
+              preprintServers.sort(compare);
+              preprintServers.forEach( element => {
+                toResolve.push( { text: element.text } );
+              });
 
               toResolve.push( { text: '---' } );
               toResolve.push( { text: 'Overall sum of original queries: '+arrayOfResults[7].length } );
