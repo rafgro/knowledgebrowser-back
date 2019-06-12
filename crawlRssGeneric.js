@@ -9,19 +9,19 @@ const rssOsf = require('./crawl_specifics/rssOsf');
 const rssEssoar = require('./crawl_specifics/rssEssoar');
 
 const {shiphold} = require('ship-hold');
-/*const sh = shiphold({
+const sh = shiphold({
     host     : process.env.RDS_HOSTNAME,
     user     : process.env.RDS_USERNAME,
     password : process.env.RDS_PASSWORD,
     port     : process.env.RDS_PORT,
   database: 'postgres'
-});*/
-const sh = shiphold({
+});
+/*const sh = shiphold({
     host     : '127.0.0.1',
     user     : 'crawler',
     password : 'blackseo666',
     database : 'preprint-crawls'
-});
+});*/
 
 exports.start = function ( name, mainurl, mainsuburls=null ) {
 
@@ -47,7 +47,7 @@ var parseXml = require('xml2js').parseString;
 function processResponseOfRss (error, response, body, name) {
 
     if( error ) {
-        logger.error(error);
+        logger.error(error.toString());
     }
     else {
         logger.info( body.substring(0,100) );
@@ -63,7 +63,7 @@ function processResponseOfRss (error, response, body, name) {
 function processAndUploadToDatabase (err, result, name) {
 
     if( err ) {
-        logger.error(err);
+        logger.error(err.toString());
     }
     else {
 
