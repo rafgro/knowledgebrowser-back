@@ -4,23 +4,23 @@ const crawlRssGeneric = require('./crawlRssGeneric');
 const crawlJsonGeneric = require('./crawlJsonGeneric');
 
 const {shiphold} = require('ship-hold');
-const sh = shiphold({
+/*const sh = shiphold({
     host     : process.env.RDS_HOSTNAME,
     user     : process.env.RDS_USERNAME,
     password : process.env.RDS_PASSWORD,
     port     : process.env.RDS_PORT,
     database : 'postgres'
-});
-/*const sh = shiphold({
+});*/
+const sh = shiphold({
     host     : '127.0.0.1',
     user     : 'crawler',
     password : 'blackseo666',
     database : 'preprint-crawls'
-});*/
+});
 
 exports.start = function () {
 
-    let currentHour = (new Date).getUTCHours().toString();
+    let currentHour = '3';//(new Date).getUTCHours().toString();
     logger.info( '------------------CRAWLING START at '+currentHour+'------------------' );
 
     sh.select('*').from('manager_lines')
