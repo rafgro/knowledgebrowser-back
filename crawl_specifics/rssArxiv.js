@@ -30,7 +30,7 @@ exports.processRssBody = function( sh, body ) {
 
                 sh.insert({ 
                     link: element["link"],
-                    abstract: "(\'" + escape(striptags(element["description"][0]["_"])) + "\')",
+                    abstract: "(\'" + escape(striptags(element["description"][0]["_"].toString())) + "\')",
                     authors: escape(striptags(element["dc:creator"].toString())),
                     date: myDate,
                     doi: id,

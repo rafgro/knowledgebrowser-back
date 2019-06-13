@@ -10,6 +10,7 @@ const rssEssoar = require('./crawl_specifics/rssEssoar');
 const rssPreprintsorg = require('./crawl_specifics/rssPreprintsorg');
 const rssNeprepec = require('./crawl_specifics/rssNeprepec');
 const rssNber = require('./crawl_specifics/rssNber');
+const rssVixra = require("./crawl_specifics/rssVixra");
 
 const {shiphold} = require('ship-hold');
 const sh = shiphold({
@@ -79,6 +80,7 @@ function processAndUploadToDatabase (err, result, name) {
             case 'Preprints.org': rssPreprintsorg.processRssBody( sh, result ); break;
             case 'NEP RePEc': rssNeprepec.processRssBody( sh, result ); break;
             case 'NBER': rssNber.processRssBody( sh, result ); break;
+            case 'viXra': rssVixra.processRssBody( sh, result ); break;
         }
 
     }
