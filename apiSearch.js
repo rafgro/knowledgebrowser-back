@@ -299,7 +299,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         });
                         let shortTitleBonus = 0;
                         if( untitle.split(" ").length < (words.length+5) ) shortTitleBonus = 5;
-                        let exactMatchBonus = 0;
+                        let exactMatchBonus = -5;
                         let lowuntitle = untitle.toLowerCase();
                         if( lowuntitle.includes(workingQuery.toLowerCase()) ) { exactMatchBonus = 25; }
                         else if( numberOfImportantWords > 1 ) {

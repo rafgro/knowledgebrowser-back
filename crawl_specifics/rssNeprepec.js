@@ -30,7 +30,8 @@ exports.processRssBody = function( sh, body ) {
 
                     let hour = (new Date).getUTCHours();
                     let myDate = element["dc:date"]; //format: 2019-06-04 08:00:00
-                    if( myDate.length < 8 ) myDate += '-01';
+                    if( myDate.length == 7 ) myDate += '-01';
+                    if( myDate.length == 4 ) myDate += '-01-01';
                     if( hour < 10 ) myDate += ' 0'+hour+':00:00';
                     else myDate += ' '+hour+':00:00';
     
