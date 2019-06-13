@@ -80,7 +80,6 @@ server.use((request,response)=>{
 
 server.listen(3000, ()=>{
   logger.info('Listening');
-  //managerCrawling.start();
 });
 
 process.on('unhandledRejection', (reason, promise) => {
