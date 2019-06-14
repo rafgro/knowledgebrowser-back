@@ -36,6 +36,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
         // working on specific words
         queryNlp = nlp(workingQuery);
         let words = queryNlp.terms().data();
+        //console.log(JSON.stringify(words));
         //resolve(JSON.stringify(words));
 
         function populateWordToForms( noun ) {
@@ -66,11 +67,13 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
         let checkIfAcronym = (word) => { return word == "Acronym"; }
         let checkIfValue = (word) => { return word == "Value"; }
         let checkIfVerb = (word) => { return word == "Verb"; }
+        let checkIfPreposition = (word) => { return word == "Preposition"; }
         let numberOfImportantWords = 0;
         if( oneword == false ) {
             for( let i = 0; i < words.length; i++ ) {
                 if( words[i].tags.find( checkIfNoun ) || words[i].tags.find( checkIfAdjective ) || words[i].tags.find( checkIfAcronym )
-                || words[i].tags.find( checkIfValue ) || words[i].tags.find( checkIfVerb ) ) { numberOfImportantWords++; }
+                || words[i].tags.find( checkIfValue ) || words[i].tags.find( checkIfVerb ) || words[i].tags.find( checkIfPreposition ) )
+                  { numberOfImportantWords++; }
 
                 if( words[i].tags.find( checkIfNoun ) ) {
     
@@ -143,6 +146,9 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                 else if( word.tags.find( checkIfAdjective ) ) {
                     queriesToDb.push( { q: word.normal, w: 3 } );
                     populateWordToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 2 } ) );
+                }
+                else if( word.tags.find( checkIfPreposition ) ) {
+                    queriesToDb.push( { q: word.normal, w: 2 } );
                 }
                 else { queriesToDb.push( { q: word.normal, w: 1 } ); }
             });
@@ -280,91 +286,164 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                     }
                 }
 
-                //expanding id to the whole publication
-                sh.select('id','title','authors','abstract','doi','link','date').from('content_preprints')
-                .where('id','IN','('+originalMultipliedRelevant.map(e => e.p).join(", ")+')').run()
-                .then( andwhat => {
+                function whatsTheLimit( noOfWords ) {
+                    switch( noOfWords ) {
+                        case 1: return 15;
+                        case 2: return 35;
+                        case 3: return 70;
+                        case 4: return 80;
+                        default: return 80+((noOfWords-4)*10);
+                    }
+                }
+                let limitOfRelevancy = whatsTheLimit( numberOfImportantWords );
 
-                    //mergin weight with rest of the data
-                    let publications = andwhat.map( (value) => {
+                //idea: node is stalling during mapping results to weights when there are thousands of them,
+                // so we need to pass to node only the last step of processing,
+                // so we can: 1. divide pubs to two arrays - relevant and low relevancy (just one foreach!)
+                // then: 2. ask for them in two queries BUT leave sorting by date and limiting for faster postgres
+                // then: 3. merge both queries and map only that part that will be sent by api
+                // maybe three arrays: relevant, grey area (3-2/10) and then unrelevant (1/10)
+
+                //1
+                let moreRelevantIds = new Array();
+                let lessRelevantIds = new Array();
+                let weightsById = new Array();
+                originalMultipliedRelevant.forEach( element => {
+                    weightsById[parseInt(element.p)] = element.w;
+                    if( element.w > limitOfRelevancy ) moreRelevantIds.push({p:element.p,w:element.w});
+                    else lessRelevantIds.push({p:element.p,w:element.w});
+                });
+
+                //2
+                let arrayOfQueries = new Array();
+                let moreRelevantNeeded = false;
+                let moreRelevantOffset = 0;
+                let moreRelevantLimit = 0;
+                let lessRelevantNeeded = false;
+                let lessRelevantOffset = 0;
+                let lessRelevantLimit = 0;
+                
+                let offsetAsNumber = parseInt(offset);
+                if( moreRelevantIds.length > 0 && lessRelevantIds.length > 0 ) {
+
+                    if( offsetAsNumber == 0 ) {
+                        moreRelevantNeeded = true;
+                        moreRelevantOffset = 0;
+                        if( moreRelevantIds.length > 10 ) {
+                            moreRelevantLimit = 10;
+                            lessRelevantNeeded = false;
+                        }
+                        else {
+                            moreRelevantLimit = moreRelevantIds.length;
+                            lessRelevantNeeded = true;
+                            lessRelevantOffset = 0;
+                            if( lessRelevantIds.length > 10-moreRelevantLimit ) lessRelevantLimit = 10-moreRelevantLimit;
+                            else lessRelevantLimit = lessRelevantIds.length;
+                        }
+                    } else {
+                        if( offsetAsNumber < moreRelevantIds.length ) {
+                            moreRelevantNeeded = true;
+                            moreRelevantOffset = offsetAsNumber;
+                            if( moreRelevantIds.length > offsetAsNumber+10 ) {
+                                moreRelevantLimit = 10;
+                                lessRelevantNeeded = false;
+                            }
+                            else {
+                                moreRelevantLimit = moreRelevantIds.length-offsetAsNumber;
+                                lessRelevantNeeded = true;
+                                lessRelevantOffset = 0;
+                                if( lessRelevantIds.length > 10-moreRelevantLimit ) lessRelevantLimit = 10-moreRelevantLimit;
+                                else lessRelevantLimit = lessRelevantIds.length;
+                            }
+                        } else {
+                            moreRelevantNeeded = false;
+                            lessRelevantNeeded = true;
+                            lessRelevantOffset = offsetAsNumber-moreRelevantIds.length;
+                            if( lessRelevantIds.length > offsetAsNumber+10 ) {
+                                lessRelevantLimit = 10;
+                            } else {
+                                lessRelevantLimit = lessRelevantIds.length-offsetAsNumber;
+                            }
+                        }
+                    }
+                } else if( moreRelevantIds.length > 0 ) {
+                    moreRelevantNeeded = true;
+                    if( offsetAsNumber == 0 ) {
+                        moreRelevantOffset = 0;
+                        if( moreRelevantIds.length > 10 ) {
+                            moreRelevantLimit = 10;
+                        }
+                        else {
+                            moreRelevantLimit = moreRelevantIds.length;
+                        }
+                    } else {
+                        moreRelevantOffset = offsetAsNumber;
+                        if( moreRelevantIds.length > offsetAsNumber+10 ) {
+                                moreRelevantLimit = 10;
+                        }
+                        else {
+                            moreRelevantLimit = moreRelevantIds.length-offsetAsNumber;
+                        }
+                    }
+                } else if( lessRelevantIds.length > 0 ) {
+                    lessRelevantNeeded = true;
+                    if( offsetAsNumber == 0 ) {
+                        lessRelevantOffset = 0;
+                        if( lessRelevantIds.length > 10 ) {
+                            lessRelevantLimit = 10;
+                        }
+                        else {
+                            lessRelevantLimit = lessRelevantIds.length;
+                        }
+                    } else {
+                        lessRelevantOffset = offsetAsNumber;
+                        if( lessRelevantIds.length > offsetAsNumber+10 ) {
+                            lessRelevantLimit = 10;
+                        }
+                        else {
+                            lessRelevantLimit = lessRelevantIds.length-offsetAsNumber;
+                        }
+                    }
+                }
+
+                if( moreRelevantNeeded ) { 
+                    arrayOfQueries.push( sh.select('id','title','authors','abstract','doi','link','date','server')
+                    .from('content_preprints')
+                    .where('id','IN','('+moreRelevantIds.map(e => e.p).join(", ")+')')
+                    .orderBy('date','desc')
+                    .orderBy('id','asc')
+                    .limit(moreRelevantLimit, moreRelevantOffset)
+                    .run() );
+                }
+                if( lessRelevantNeeded ) { 
+                    arrayOfQueries.push( sh.select('id','title','authors','abstract','doi','link','date','server')
+                    .from('content_preprints')
+                    .where('id','IN','('+lessRelevantIds.map(e => e.p).join(", ")+')')
+                    .orderBy('date','desc')
+                    .orderBy('id','asc')
+                    .limit(lessRelevantLimit, lessRelevantOffset)
+                    .run() );
+                }
+
+                Promise.all( arrayOfQueries )
+                .then( arrayOfResults => {
+
+                    let properArray = new Array();
+                    if( arrayOfQueries.length > 1 ) properArray = arrayOfResults[0].concat(arrayOfResults[1]);
+                    else properArray = arrayOfResults[0];
+
+                    let highestRelevancy = 0;
+                    let newestResult = (new Date(properArray[0].date)).getTime();
+                    let publications = properArray.map( (value) => {
                         let untitle = unescape(value.title).replace(RegExp("\\. \\(arXiv:.*\\)"),"");
                         value.title = strongifyText( untitle, originalTerms ).replace(RegExp("\\$","g"),"").replace("\\","");
                         value.authors = unescape(value.authors);
                         let unabstract = unescape(value.abstract).replace("\n"," ").replace("\\","").replace("<p>","").replace("$","");
                         value.abstract = unabstract.substring(0,unabstract.indexOf(". "));
-
-                        let weight = 0;
-                        originalMultipliedRelevant.forEach( (element) => {
-                            if( element.p == value.id ) { weight = element.w; }
-                        });
-                        let shortTitleBonus = 0;
-                        if( untitle.split(" ").length < (words.length+5) ) shortTitleBonus = 5;
-                        let exactMatchBonus = -5;
-                        let lowuntitle = untitle.toLowerCase();
-                        if( lowuntitle.includes(workingQuery.toLowerCase()) ) { exactMatchBonus = 25; }
-                        else if( numberOfImportantWords > 1 ) {
-                            let fulfill = 0;
-                            let splitted = workingQuery.toLowerCase().split(" ");
-                            splitted.forEach( aword => {
-                                if( lowuntitle.includes(aword) ) { fulfill++; }
-                            });
-                            if( fulfill == splitted.length ) exactMatchBonus = 23;
-                        }
-                        value.weight = weight+shortTitleBonus+exactMatchBonus;
-                        value.relativeWeight = calculateRelativeWeight( value.weight, numberOfImportantWords );
-
+                        value.weight = weightsById[parseInt(value.id)];
+                        value.relativeWeight = calculateRelativeWeight(value.weight,numberOfImportantWords);
                         return value;
-                    });
-
-                    //now we can sort publications by various means
-                    function compare(a,b) {
-                        if( a.weight > b.weight ) { return -1; }
-                        else if( a.weight < b.weight ) { return 1; }
-                        return 0;
-                    }
-                    publications.sort(compare);
-                    
-                    let highestRelevancy = 0;
-                    if( publications.length > 0 ) highestRelevancy = publications[0].relativeWeight;
-                    let whereIsFour = 0;
-                    for( let i = 0; i < publications.length; i++ ) {
-                        if( publications[i].relativeWeight >= 4 ) whereIsFour = i+1;
-                        else break;
-                    }
-                    let newestResult = 0;
-
-                    if( freshmode == 1 ) {
-                        function compare2(a,b) {
-                            let aDate = (new Date(a.date)).getTime();
-                            let bDate = (new Date(b.date)).getTime();
-                            if( aDate > bDate ) { return -1; }
-                            else if( aDate < bDate ) { return 1; }
-                            else if( a.relativeWeight > b.relativeWeight ) { return -1; }
-                            else if( a.relativeWeight < b.relativeWeight ) { return 1; }
-                            return 0;
-                        }
-                        function compare3(a,b) {
-                            if( a.relativeWeight > b.relativeWeight ) { return -1; }
-                            else if( a.relativeWeight < b.relativeWeight ) { return 1; }
-                            else {
-                                let aDate = (new Date(a.date)).getTime();
-                                let bDate = (new Date(b.date)).getTime();
-                                if( aDate > bDate ) { return -1; }
-                                else if( aDate < bDate ) { return 1; }
-                            }
-                            return 0;
-                        }
-                        if( whereIsFour > 0 ) {
-                            publications = publications.slice(0,whereIsFour).sort(compare2)
-                                .concat(publications.slice(whereIsFour).sort(compare3));
-                        } else {
-                            publications = publications.sort(compare3);
-                        }
-                        newestResult = (new Date(publications[0].date)).getTime();
-                    }
-
-                    // and deleting duplicated pubs, just in case
-                    publications = publications.filter( function (a) { return !this[a.doi] && (this[a.doi] = true); }, Object.create(null) );
+                    } );
 
                     if( parseInt(offset) == 0 ) {
                         let quality = 0;
@@ -374,17 +453,20 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
 
                         let hrend = process.hrtime(hrstart);
 
-                        let details = '{"timestamp":"'+Date.now()+'","howManyRelevant":"'+whereIsFour+
+                        let details = '{"timestamp":"'+Date.now()+'","howManyRelevant":"'+moreRelevantIds.length+
                           '","highestRelevancy":"'+highestRelevancy+'","executionTime":"'+(hrend[1]/1000000+hrend[0]*1000).toFixed(0)+
                           '","newestResult":"'+newestResult.toFixed(0)+'"}';
                         registerQueryInStats( sh, workingQuery, quality.toFixed(0), details );
                     }
-                    resolve({ numberofall: publications.length, results: publications.slice(parseInt(offset),parseInt(offset)+limit) });
 
+                    resolve({ numberofall: originalMultipliedRelevant.length,
+                        results: publications });
+                    
                 })
                 .catch(e=>{
                     registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'"}' );
-                    reject( { "message": "Sorry, we have encountered an error." } );
+                    reject( { "message": e.toString() } );
+                    //reject( { "message": "Sorry, we have encountered an error." } );
                 });
 
             }
