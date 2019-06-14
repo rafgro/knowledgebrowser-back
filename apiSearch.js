@@ -415,22 +415,67 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                     .limit(moreRelevantLimit, moreRelevantOffset)
                     .run() );
                 }
-                if( lessRelevantNeeded ) { 
-                    arrayOfQueries.push( sh.select('id','title','authors','abstract','doi','link','date','server')
-                    .from('content_preprints')
-                    .where('id','IN','('+lessRelevantIds.map(e => e.p).join(", ")+')')
-                    .orderBy('date','desc')
-                    .orderBy('id','asc')
-                    .limit(lessRelevantLimit, lessRelevantOffset)
-                    .run() );
+                if( lessRelevantNeeded ) {
+
+                    // dividing to more and less relevant one step further
+                    let furtherHigher = new Array();
+                    let furtherLower = new Array();
+                    let boundary = limitOfRelevancy*0.8;
+                    lessRelevantIds.forEach( element => {
+                        if( element.w > boundary ) furtherHigher.push({p:element.p,w:element.w});
+                        else furtherLower.push({p:element.p,w:element.w});
+                    });
+
+                    // taking all from higher boundary first
+                    if( lessRelevantOffset+10 < furtherHigher.length ) {
+                        arrayOfQueries.push( sh.select('id','title','authors','abstract','doi','link','date','server')
+                        .from('content_preprints')
+                        .where('id','IN','('+furtherHigher.map(e => e.p).join(", ")+')')
+                        .orderBy('date','desc')
+                        .orderBy('id','asc')
+                        .limit(10, lessRelevantOffset)
+                        .run() );
+                    }
+                    // taking from both sides
+                    else if( furtherHigher.length > 0 && furtherLower.length > 0 ) {
+                        arrayOfQueries.push( sh.select('id','title','authors','abstract','doi','link','date','server')
+                        .from('content_preprints')
+                        .where('id','IN','('+furtherHigher.map(e => e.p).join(", ")+')')
+                        .orderBy('date','desc')
+                        .orderBy('id','asc')
+                        .limit(10, lessRelevantOffset)
+                        .run() );
+                        arrayOfQueries.push( sh.select('id','title','authors','abstract','doi','link','date','server')
+                        .from('content_preprints')
+                        .where('id','IN','('+furtherLower.map(e => e.p).join(", ")+')')
+                        .orderBy('date','desc')
+                        .orderBy('id','asc')
+                        .limit(10, 0)
+                        .run() );
+                    }
+                    // taking from lower boundary if we are past higher
+                    else {
+                        arrayOfQueries.push( sh.select('id','title','authors','abstract','doi','link','date','server')
+                        .from('content_preprints')
+                        .where('id','IN','('+furtherLower.map(e => e.p).join(", ")+')')
+                        .orderBy('date','desc')
+                        .orderBy('id','asc')
+                        .limit(10, lessRelevantOffset-furtherHigher.length)
+                        .run() );
+                    }
+
                 }
 
+                // 3
                 Promise.all( arrayOfQueries )
                 .then( arrayOfResults => {
 
                     let properArray = new Array();
-                    if( arrayOfQueries.length > 1 ) properArray = arrayOfResults[0].concat(arrayOfResults[1]);
+                    if( arrayOfQueries.length == 3 ) properArray = arrayOfResults[0].concat(arrayOfResults[1],arrayOfResults[2]);
+                    else if( arrayOfQueries.length == 2 ) properArray = arrayOfResults[0].concat(arrayOfResults[1]);
                     else properArray = arrayOfResults[0];
+
+                    if(properArray.length > 10) properArray = properArray.slice(0,10);
 
                     let highestRelevancy = 0;
                     let newestResult = (new Date(properArray[0].date)).getTime();
