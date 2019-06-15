@@ -37,15 +37,17 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
         queryNlp = nlp(workingQuery);
         let words = queryNlp.terms().data();
         //console.log(JSON.stringify(words));
-        //resolve(JSON.stringify(words));
+        //reject(words);
 
-        function populateWordToForms( noun ) {
+        function populateNounToForms( noun ) {
             let lastCase = noun.charAt( noun.length-1 );
             let processedNoun = noun;
             if( lastCase == 'e' || lastCase == 'y' || lastCase == 'i' || lastCase == 'o' || lastCase == 'a' ) {
                 processedNoun = noun.substring(0,noun.length-1);
-            }
-            if( lastCase == 's' && noun.charAt(noun.length-2) == 'c' ) {
+            } else if( lastCase == 's' && noun.charAt(noun.length-2) == 'c' ) {
+                processedNoun = noun.substring(0,noun.length-1);
+            } else if( lastCase == 'n' && noun.charAt(noun.length-2) == 'o' && noun.charAt(noun.length-3) == 'i' ) {
+                // expression, evolution
                 processedNoun = noun.substring(0,noun.length-1);
             }
             let toReturn = new Array();
@@ -56,9 +58,28 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
             toReturn.push( processedNoun + 'ous' );
             toReturn.push( processedNoun + 'ational' );
             toReturn.push( processedNoun + 'ary' );
+            toReturn.push( processedNoun + 'ed' );
             if( noun.includes('ity') ) toReturn.push( noun.substring(0,noun.length-3) );
             if( noun.includes('al') ) toReturn.push( noun.substring(0,noun.length-2) );
             return toReturn;
+        }
+
+        function populateVerbToForms( verb ) {
+            let lastCase = verb.charAt( verb.length-1 );
+            let toReturn = new Array();
+            if( lastCase == 'e' ) {
+                // drive -> drives, drived, driving, drivion
+                toReturn.push( verb + 's' );
+                toReturn.push( verb + 'd' );
+                toReturn.push( verb.substring(0,verb.length-1) + 'ing' );
+            } else if( lastCase == 'g' ) {
+                // expressing -> expresses, expressed, expression
+                // sequencing -> sequences, sequenced
+                let withoutIng = verb.substring(0,verb.length-3);
+                toReturn.push( withoutIng + 'es' );
+                toReturn.push( withoutIng + 'ed' );
+                toReturn.push( withoutIng + 'ion' );
+            }
         }
 
         // pairs with nouns: adjectives, verbs, acronyms, other nouns
@@ -100,8 +121,13 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                                 queriesToDb.push( { q: nlp(words[i-1].normal+" "+words[i].normal).nouns()
                                 .toSingular().all().normalize().out(), w: weight-1 } );
                             }
-                            populateWordToForms(words[i].normal).forEach( 
+                            populateNounToForms(words[i].normal).forEach( 
                                 e => queriesToDb.push( { q: words[i-1].normal+" "+e, w: weight } ) );
+
+                            if( words[i-1].tags.find( checkIfVerb ) ) {
+                                populateVerbToForms(words[i-1].normal).forEach( 
+                                    e => queriesToDb.push( { q: e+" "+words[i].normal, w: weight } ) );
+                            }
                         }
                     }
                     if( i+1 < words.length ) {
@@ -124,8 +150,13 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                                 queriesToDb.push( { q: nlp(words[i].normal+" "+words[i+1].normal).nouns()
                                 .toSingular().all().normalize().out(), w: weight-1 } );
                             }
-                            populateWordToForms(words[i].normal).forEach( 
+                            populateNounToForms(words[i].normal).forEach( 
                                 e => queriesToDb.push( { q: e+" "+words[i+1].normal, w: weight } ) );
+
+                            if( words[i+1].tags.find( checkIfVerb ) ) {
+                                populateVerbToForms(words[i+1].normal).forEach( 
+                                    e => queriesToDb.push( { q: words[i].normal+" "+e, w: weight } ) );
+                            }
                         }
 
                     }
@@ -139,13 +170,16 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
             words.forEach( function(word) {
                 if( word.tags.find( checkIfNoun ) ) {
                     queriesToDb.push( { q: word.normal, w: 4 } );
-                    populateWordToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 3 } ) );
+                    populateNounToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 3 } ) );
                     queriesToDb.push( { q: nlp(word.normal).nouns().toSingular().all().normalize().out(), w: 3 } );
                     queriesToDb.push( { q: nlp(word.normal).nouns().toPlural().all().normalize().out(), w: 3 } );
                 }
+                else if( word.tags.find( checkIfVerb ) ) {
+                    populateVerbToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 3 } ) );
+                }
                 else if( word.tags.find( checkIfAdjective ) ) {
                     queriesToDb.push( { q: word.normal, w: 3 } );
-                    populateWordToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 2 } ) );
+                    populateNounToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 2 } ) );
                 }
                 else if( word.tags.find( checkIfPreposition ) ) {
                     queriesToDb.push( { q: word.normal, w: 2 } );
@@ -476,11 +510,23 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                     else properArray = arrayOfResults[0];
 
                     if(properArray.length > 10) properArray = properArray.slice(0,10);
+                    if( properArray[0] == undefined ) {
+                        reject( { "message": "Sorry, there are no more results for <i>"+query+"</i>." });
+                    }
+
+                    function correctScreamingTitle(whatTitle) {
+                        let tempTitle = whatTitle;
+                        let numLow = tempTitle.replace(/[A-Z]/g, '').length;
+                        if( numLow < 20 ) {
+                            tempTitle = temptitle.charAt(0) + tempTitle.substring(1).toLowerCase();
+                        }
+                        return tempTitle;
+                    }
 
                     let highestRelevancy = 0;
                     let newestResult = (new Date(properArray[0].date)).getTime();
                     let publications = properArray.map( (value) => {
-                        let untitle = unescape(value.title).replace(RegExp("\\. \\(arXiv:.*\\)"),"");
+                        let untitle = correctScreamingTitle(unescape(value.title).replace(RegExp("\\. \\(arXiv:.*\\)"),""));
                         value.title = strongifyText( untitle, originalTerms ).replace(RegExp("\\$","g"),"").replace("\\","");
                         value.authors = unescape(value.authors);
                         let unabstract = unescape(value.abstract).replace("\n"," ").replace("\\","").replace("<p>","").replace("$","");
