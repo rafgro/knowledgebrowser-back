@@ -80,6 +80,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                 toReturn.push( withoutIng + 'ed' );
                 toReturn.push( withoutIng + 'ion' );
             }
+            return toReturn;
         }
 
         // pairs with nouns: adjectives, verbs, acronyms, other nouns
@@ -471,7 +472,8 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         .run() );
                     }
                     // taking from both sides
-                    else if( furtherHigher.length > 0 && furtherLower.length > 0 ) {
+                    else if( lessRelevantOffset+10 > furtherHigher.length && lessRelevantOffset < furtherHigher.length ) {
+                    //else if( furtherHigher.length > 0 && furtherLower.length > 0 ) {
                         arrayOfQueries.push( sh.select('id','title','authors','abstract','doi','link','date','server')
                         .from('content_preprints')
                         .where('id','IN','('+furtherHigher.map(e => e.p).join(", ")+')')
@@ -494,8 +496,9 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         .where('id','IN','('+furtherLower.map(e => e.p).join(", ")+')')
                         .orderBy('date','desc')
                         .orderBy('id','asc')
-                        .limit(10, lessRelevantOffset-furtherHigher.length)
+                        .limit(10, lessRelevantOffset-furtherHigher.length)//lessRelevantOffset-furtherHigher.length)
                         .run() );
+                        //reject( {less: lessRelevantOffset, highLen: furtherHigher.length, lowLen: furtherLower.length} );
                     }
 
                 }
