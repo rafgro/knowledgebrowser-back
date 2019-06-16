@@ -2,6 +2,7 @@ const express = require('express'),
       server = express(),
       managerIndexing = require('./manager-indexing'),
       managerCrawling = require('./manager-crawling'),
+      managerCorrecting = require('./manager-correcting'),
       apiSearch = require('./apiSearch'),
       apiStats = require('./apiStats'),
       logging = require('./logger');
@@ -24,6 +25,12 @@ server.get('/ops/index', (request,response)=>{
 server.get('/ops/discover', (request,response)=>{
   response.send('Started job');
   managerCrawling.start();
+});
+
+/* Correcting */
+server.get('/ops/correct', (request,response)=>{
+  response.send('Started job');
+  managerCorrecting.start();
 });
 
 const {shiphold} = require('ship-hold');
