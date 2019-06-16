@@ -39,13 +39,13 @@ const sh = shiphold({
     user     : process.env.RDS_USERNAME,
     password : process.env.RDS_PASSWORD,
     port     : process.env.RDS_PORT,
-    database : 'postgres'
+  database: 'postgres'
 });
 /*const sh = shiphold({
-    host     : '127.0.0.1',
-    user     : 'crawler',
-    password : 'blackseo666',
-    database : 'preprint-crawls'
+  host     : '127.0.0.1',
+  user     : 'crawler',
+  password : 'blackseo666',
+  database : 'preprint-crawls'
 });*/
 
 /* API */

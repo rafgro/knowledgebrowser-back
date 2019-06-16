@@ -521,7 +521,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         let tempTitle = whatTitle;
                         let numLow = tempTitle.replace(/[A-Z]/g, '').length;
                         if( numLow < 20 ) {
-                            tempTitle = temptitle.charAt(0) + tempTitle.substring(1).toLowerCase();
+                            tempTitle = tempTitle.charAt(0) + tempTitle.substring(1).toLowerCase();
                         }
                         return tempTitle;
                     }
