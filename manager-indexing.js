@@ -21,7 +21,7 @@ const sh = shiphold({
 exports.start = function () {
 
     logger.info( '------------------INDEXING START------------------' );
-    /*sh.select('value').from('manager').where('option','=', 'indexing_offset')
+    sh.select('value').from('manager').where('option','=', 'indexing_offset')
     .run()
     .then(result => {
 
@@ -69,7 +69,7 @@ exports.start = function () {
     })
     .catch(e => {
         logger.error(e);
-    });*/
+    });
     
     sh.select('value').from('manager').where('option','=', 'indexing_offset_abstract')
     .run()

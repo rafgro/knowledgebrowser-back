@@ -11,7 +11,7 @@ const sh = shiphold({
   database: 'postgres'
 });
 
-exports.indexTitle = function(whichId,canStop) {
+exports.index = function(whichId,canStop) {
     
     sh.select('title','id').from("content_preprints").where('id','=', whichId)
     .run()

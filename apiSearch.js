@@ -11,7 +11,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
         if( query === undefined ) { reject( { "message": "Please enter your query." }); }
         if( query.length < 1 || query == " " ) { reject( { "message": "Please enter your query." }); }
         let workingQuery = query;
-        if( query.length > 100 ) { workingQuery = workingQuery.substring(0,100); }
+        if( query.length > 60 ) { workingQuery = workingQuery.substring(0,60); }
         workingQuery = workingQuery.replace(/\'/g,"").replace(/\:/g," ").replace(/\;/g," ").replace(/\"/g,"")
           .replace(/\//g," ").replace(/\\/g," ");
         if( query.length < 1 || query == " " ) { reject( { "message": "Please enter your query." }); }
@@ -26,7 +26,6 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
 
         // different forms are of lower weight when less words
         let lowerWeight = 9;
-        if( oneword ) lowerWeight = 8;
 
         // three initial ways: original query, singular query, plural query
         queriesToDb.push( { q: queryNlp.normalize().toLowerCase().out(), w: 10 } );
@@ -59,6 +58,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
             toReturn.push( processedNoun + 'ational' );
             toReturn.push( processedNoun + 'ary' );
             toReturn.push( processedNoun + 'ed' );
+            toReturn.push( processedNoun + 'ely' );
             if( noun.includes('ity') ) toReturn.push( noun.substring(0,noun.length-3) );
             if( noun.includes('al') ) toReturn.push( noun.substring(0,noun.length-2) );
             return toReturn;
@@ -195,7 +195,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
 
         // database querying
 
-        sh.select('term','relevant').from('index_title')
+        sh.select('term','relevant','relevant_abstract').from('index_title')
         .where('term','IN','(\''+queriesToDb.map(e => e.q).join('\', \'')+'\')').run()
         .then(result => {
 
@@ -204,6 +204,8 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
             if( Object.keys(result).length !== 0 ) {
 
                 let originalTerms = []; //for adding strong around words
+                let pubVsAbstractTerm = []; //for finding all occurences of query in an abstract
+                let pubVsTitleTerm = []; //for finding all occurences of query in an abstract
                 //assemble all variants the results, multipliying base weights by relevancy weights
                 let multipliedRelevant = new Array();
                 for( let i = 0; i < result.length; i++ ) {
@@ -211,12 +213,33 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         return e.q == result[i].term;
                     }).w;
                     originalTerms.push(result[i].term);
-                    JSON.parse( result[i].relevant ).forEach( e => multipliedRelevant.push( { p: e.p, w: e.w * queryWeight } ) );
+                    if( result[i].relevant != null ) {
+                        //there are terms with null relevant (title) because they have only abstract relevant (abstract)
+                        JSON.parse( result[i].relevant_abstract ).forEach( e => {
+                            multipliedRelevant.push( { p: e.p, w: parseFloat(e.w) * queryWeight } );
+                            if( pubVsTitleTerm[parseInt(e.p)] == undefined ) {
+                                pubVsTitleTerm[parseInt(e.p)] = result[i].term;
+                            } else {
+                                pubVsTitleTerm[parseInt(e.p)] += ','+result[i].term;
+                            }
+                        });
+                    }
+                    if( result[i].relevant_abstract != null ) {
+                        JSON.parse( result[i].relevant_abstract ).forEach( e => {
+                            multipliedRelevant.push( { p: e.p, w: parseFloat(e.w) * queryWeight } );
+                            if( pubVsAbstractTerm[parseInt(e.p)] == undefined ) {
+                                pubVsAbstractTerm[parseInt(e.p)] = result[i].term;
+                            } else {
+                                pubVsAbstractTerm[parseInt(e.p)] += ','+result[i].term;
+                            }
+                        });
+                    }
                 }
 
                 //adding weights of repeated pubs
                 let originalMultipliedRelevant = new Array();
                 for( let i = 0; i < multipliedRelevant.length; i++ ) {
+                    //todo optimize this to smaller number of loops
                     let howManyIdenticalPubs = multipliedRelevant.filter( function(e) {
                         return multipliedRelevant[i].p == e.p
                     });
@@ -258,64 +281,90 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                     return tempText;
                 }
 
+                function verifyQueryCoverage( titleTerms, abstractTerms ) {
+                    let dividedQuery = workingQuery.toLowerCase().split(" ");
+                    if( abstractTerms == undefined ) {
+                        let counterOfMatches = 0;
+                        dividedQuery.forEach( element => {
+                            if( titleTerms.includes(element) ) counterOfMatches++;
+                        });
+                        if( counterOfMatches == dividedQuery.length ) { return 1; }
+                        else { return 0.5; }
+                    } else {
+                        let counterOfMatches = 0;
+                        dividedQuery.forEach( element => {
+                            if( abstractTerms.includes(element) ) counterOfMatches++;
+                        });
+                        if( counterOfMatches == dividedQuery.length ) {
+                            counterOfMatches = 0;
+                            dividedQuery.forEach( element => {
+                                if( titleTerms.includes(element) ) counterOfMatches++;
+                            });
+                            if( counterOfMatches == dividedQuery.length ) { return 1; }
+                            else { return 0.8; }
+                        }
+                        else { return 0.3; }
+                    }
+                }
+
                 function calculateRelativeWeight( originalWeight, noOfWords ) {
                     switch( noOfWords ) {
                         case 1:
-                            if( originalWeight > 80 ) return 9;
-                            else if( originalWeight > 70 ) return 8;
-                            else if( originalWeight > 60 ) return 7;
-                            else if( originalWeight > 50 ) return 6;
-                            else if( originalWeight > 30 ) return 5;
-                            else if( originalWeight > 15 ) return 4;
-                            else if( originalWeight > 10 ) return 3;
-                            else if( originalWeight > 6 ) return 2;
+                            if( originalWeight > 125 ) return 9;
+                            else if( originalWeight > 115 ) return 8;
+                            else if( originalWeight > 90 ) return 7;
+                            else if( originalWeight > 70 ) return 6;
+                            else if( originalWeight > 50 ) return 5;
+                            else if( originalWeight > 25 ) return 4;
+                            else if( originalWeight > 12 ) return 3;
+                            else if( originalWeight > 7 ) return 2;
                             else { return 1; }
                             break;
                         case 2:
-                            if( originalWeight > 100 ) return 10;
-                            else if( originalWeight > 90 ) return 9;
-                            else if( originalWeight > 80 ) return 8;
-                            else if( originalWeight > 70 ) return 7;
-                            else if( originalWeight > 50 ) return 6;
-                            else if( originalWeight > 40 ) return 5;
-                            else if( originalWeight > 35 ) return 4;
-                            else if( originalWeight > 30 ) return 3;
-                            else if( originalWeight > 25 ) return 2;
+                            if( originalWeight > 190 ) return 10;
+                            else if( originalWeight > 170 ) return 9;
+                            else if( originalWeight > 145 ) return 8;
+                            else if( originalWeight > 110 ) return 7;
+                            else if( originalWeight > 105 ) return 6;
+                            else if( originalWeight > 90 ) return 5;
+                            else if( originalWeight > 65 ) return 4;
+                            else if( originalWeight > 35 ) return 3;
+                            else if( originalWeight > 20 ) return 2;
                             else { return 1; }
                             break;
                         case 3:
                             if( originalWeight > 170 ) return 10;
-                            else if( originalWeight > 140 ) return 9;
-                            else if( originalWeight > 110 ) return 8;
-                            else if( originalWeight > 100 ) return 7;
-                            else if( originalWeight > 90 ) return 6;
-                            else if( originalWeight > 80 ) return 5;
-                            else if( originalWeight > 70 ) return 4;
-                            else if( originalWeight > 50 ) return 3;
-                            else if( originalWeight > 30 ) return 2;
+                            else if( originalWeight > 120 ) return 9;
+                            else if( originalWeight > 115 ) return 8;
+                            else if( originalWeight > 110 ) return 7;
+                            else if( originalWeight > 100 ) return 6;
+                            else if( originalWeight > 90 ) return 5;
+                            else if( originalWeight > 84 ) return 4;
+                            else if( originalWeight > 60 ) return 3;
+                            else if( originalWeight > 40 ) return 2;
                             else { return 1; }
                             break;
                         case 4:
-                            if( originalWeight > 170 ) return 10;
-                            else if( originalWeight > 140 ) return 9;
+                            if( originalWeight > 150 ) return 10;
+                            else if( originalWeight > 130 ) return 9;
                             else if( originalWeight > 120 ) return 8;
                             else if( originalWeight > 110 ) return 7;
                             else if( originalWeight > 100 ) return 6;
                             else if( originalWeight > 90 ) return 5;
-                            else if( originalWeight > 80 ) return 4;
-                            else if( originalWeight > 70 ) return 3;
+                            else if( originalWeight > 84 ) return 4;
+                            else if( originalWeight > 65 ) return 3;
                             else if( originalWeight > 50 ) return 2;
                             else { return 1; }
                             break;
                         default:
-                            if( originalWeight > 170+((noOfWords-4)*10) ) return 10;
+                            if( originalWeight > 160+((noOfWords-4)*10) ) return 10;
                             else if( originalWeight > 140+((noOfWords-4)*10) ) return 9;
-                            else if( originalWeight > 120+((noOfWords-4)*10) ) return 8;
-                            else if( originalWeight > 110+((noOfWords-4)*10) ) return 7;
-                            else if( originalWeight > 100+((noOfWords-4)*10) ) return 6;
-                            else if( originalWeight > 90+((noOfWords-4)*10) ) return 5;
-                            else if( originalWeight > 80+((noOfWords-4)*10) ) return 4;
-                            else if( originalWeight > 70+((noOfWords-4)*10) ) return 3;
+                            else if( originalWeight > 130+((noOfWords-4)*10) ) return 8;
+                            else if( originalWeight > 120+((noOfWords-4)*10) ) return 7;
+                            else if( originalWeight > 110+((noOfWords-4)*10) ) return 6;
+                            else if( originalWeight > 100+((noOfWords-4)*10) ) return 5;
+                            else if( originalWeight > 90+((noOfWords-4)*10) ) return 4;
+                            else if( originalWeight > 65+((noOfWords-4)*10) ) return 3;
                             else if( originalWeight > 50+((noOfWords-4)*10) ) return 2;
                             else { return 1; }
                     }
@@ -323,11 +372,11 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
 
                 function whatsTheLimit( noOfWords ) {
                     switch( noOfWords ) {
-                        case 1: return 15;
-                        case 2: return 35;
-                        case 3: return 70;
-                        case 4: return 80;
-                        default: return 80+((noOfWords-4)*10);
+                        case 1: return 25;
+                        case 2: return 65;
+                        case 3: return 84;
+                        case 4: return 84;
+                        default: return 90+((noOfWords-4)*10);
                     }
                 }
                 let limitOfRelevancy = whatsTheLimit( numberOfImportantWords );
@@ -344,9 +393,9 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                 let lessRelevantIds = new Array();
                 let weightsById = new Array();
                 originalMultipliedRelevant.forEach( element => {
-                    weightsById[parseInt(element.p)] = element.w;
-                    if( element.w > limitOfRelevancy ) moreRelevantIds.push({p:element.p,w:element.w});
-                    else lessRelevantIds.push({p:element.p,w:element.w});
+                    weightsById[parseInt(element.p)] = element.w * verifyQueryCoverage(  pubVsTitleTerm[parseInt(element.p)], pubVsAbstractTerm[parseInt(element.p)] );
+                    if( weightsById[parseInt(element.p)] > limitOfRelevancy ) moreRelevantIds.push({p:element.p,w:weightsById[parseInt(element.p)]});
+                    else lessRelevantIds.push({p:element.p,w:weightsById[parseInt(element.p)]});
                 });
 
                 //2
@@ -519,8 +568,8 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
 
                     function correctScreamingTitle(whatTitle) {
                         let tempTitle = whatTitle;
-                        let numLow = tempTitle.replace(/[A-Z]/g, '').length;
-                        if( numLow < 20 ) {
+                        let numLow = tempTitle.replace(/[A-Z]/g, '').toString().length;
+                        if( numLow < 30 ) {
                             tempTitle = tempTitle.charAt(0) + tempTitle.substring(1).toLowerCase();
                         }
                         return tempTitle;
@@ -536,6 +585,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         value.abstract = unabstract.substring(0,unabstract.indexOf(". "));
                         value.weight = weightsById[parseInt(value.id)];
                         value.relativeWeight = calculateRelativeWeight(value.weight,numberOfImportantWords);
+                        value.debug = verifyExistenceInAbstract_debug( pubVsAbstractTerm[parseInt(value.id)] );
                         return value;
                     } );
 
@@ -573,6 +623,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
         })
         .catch(e=>{
             registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'"}' );
+            reject( { "message": e.toString() } );
             reject( { "message": "Sorry, we have encountered an error." } );
         });
     
