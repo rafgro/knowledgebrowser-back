@@ -204,8 +204,6 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
             if( Object.keys(result).length !== 0 ) {
 
                 let originalTerms = []; //for adding strong around words
-                let pubVsAbstractTerm = []; //for finding all occurences of query in an abstract
-                let pubVsTitleTerm = []; //for finding all occurences of query in an abstract
                 //assemble all variants the results, multipliying base weights by relevancy weights
                 let multipliedRelevant = new Array();
                 for( let i = 0; i < result.length; i++ ) {
@@ -216,31 +214,26 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                     if( result[i].relevant != null ) {
                         //there are terms with null relevant (title) because they have only abstract relevant (abstract)
                         JSON.parse( result[i].relevant_abstract ).forEach( e => {
-                            multipliedRelevant.push( { p: e.p, w: parseFloat(e.w) * queryWeight } );
-                            if( pubVsTitleTerm[parseInt(e.p)] == undefined ) {
-                                pubVsTitleTerm[parseInt(e.p)] = result[i].term;
-                            } else {
-                                pubVsTitleTerm[parseInt(e.p)] += ','+result[i].term;
-                            }
+                            multipliedRelevant.push( { p: parseInt(e.p), w: parseFloat(e.w) * queryWeight } );
                         });
                     }
                     if( result[i].relevant_abstract != null ) {
                         JSON.parse( result[i].relevant_abstract ).forEach( e => {
-                            multipliedRelevant.push( { p: e.p, w: parseFloat(e.w) * queryWeight } );
-                            if( pubVsAbstractTerm[parseInt(e.p)] == undefined ) {
-                                pubVsAbstractTerm[parseInt(e.p)] = result[i].term;
-                            } else {
-                                pubVsAbstractTerm[parseInt(e.p)] += ','+result[i].term;
-                            }
+                            multipliedRelevant.push( { p: parseInt(e.p), w: parseFloat(e.w) * queryWeight * 0.8 } );
                         });
                     }
                 }
 
                 //adding weights of repeated pubs
-                let originalMultipliedRelevant = new Array();
+                let originalMultipliedRelevant = new Map();
                 for( let i = 0; i < multipliedRelevant.length; i++ ) {
-                    //todo optimize this to smaller number of loops
-                    let howManyIdenticalPubs = multipliedRelevant.filter( function(e) {
+                    if( originalMultipliedRelevant.has( multipliedRelevant[i].p ) ) {
+                        originalMultipliedRelevant.set( multipliedRelevant[i].p,
+                            multipliedRelevant[i].w + originalMultipliedRelevant.get(multipliedRelevant[i].p) );
+                    } else {
+                        originalMultipliedRelevant.set( multipliedRelevant[i].p, multipliedRelevant[i].w );
+                    }
+                    /*let howManyIdenticalPubs = multipliedRelevant.filter( function(e) {
                         return multipliedRelevant[i].p == e.p
                     });
                     if( howManyIdenticalPubs.length > 1 ) {
@@ -250,10 +243,10 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                     }
                     else {
                         originalMultipliedRelevant.push( multipliedRelevant[i] );
-                    }
+                    }*/
                 }
-                originalMultipliedRelevant = originalMultipliedRelevant.filter(
-                    function (a) { return !this[a.p] && (this[a.p] = true); }, Object.create(null) );
+                /*originalMultipliedRelevant = originalMultipliedRelevant.filter(
+                    function (a) { return !this[a.p] && (this[a.p] = true); }, Object.create(null) );*/
                 //resolve(originalMultipliedRelevant);
 
                 function strongifyText( text, listToStrong ) {
@@ -279,32 +272,6 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         }
                     });
                     return tempText;
-                }
-
-                function verifyQueryCoverage( titleTerms, abstractTerms ) {
-                    let dividedQuery = workingQuery.toLowerCase().split(" ");
-                    if( abstractTerms == undefined ) {
-                        let counterOfMatches = 0;
-                        dividedQuery.forEach( element => {
-                            if( titleTerms.includes(element) ) counterOfMatches++;
-                        });
-                        if( counterOfMatches == dividedQuery.length ) { return 1; }
-                        else { return 0.5; }
-                    } else {
-                        let counterOfMatches = 0;
-                        dividedQuery.forEach( element => {
-                            if( abstractTerms.includes(element) ) counterOfMatches++;
-                        });
-                        if( counterOfMatches == dividedQuery.length ) {
-                            counterOfMatches = 0;
-                            dividedQuery.forEach( element => {
-                                if( titleTerms.includes(element) ) counterOfMatches++;
-                            });
-                            if( counterOfMatches == dividedQuery.length ) { return 1; }
-                            else { return 0.8; }
-                        }
-                        else { return 0.3; }
-                    }
                 }
 
                 function calculateRelativeWeight( originalWeight, noOfWords ) {
@@ -391,11 +358,9 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                 //1
                 let moreRelevantIds = new Array();
                 let lessRelevantIds = new Array();
-                let weightsById = new Array();
-                originalMultipliedRelevant.forEach( element => {
-                    weightsById[parseInt(element.p)] = element.w * verifyQueryCoverage(  pubVsTitleTerm[parseInt(element.p)], pubVsAbstractTerm[parseInt(element.p)] );
-                    if( weightsById[parseInt(element.p)] > limitOfRelevancy ) moreRelevantIds.push({p:element.p,w:weightsById[parseInt(element.p)]});
-                    else lessRelevantIds.push({p:element.p,w:weightsById[parseInt(element.p)]});
+                originalMultipliedRelevant.forEach( (pubWeight,pubId) => {
+                    if( pubWeight > limitOfRelevancy ) moreRelevantIds.push({p:pubId,w:pubWeight});
+                    else lessRelevantIds.push({p:pubId,w:pubWeight});
                 });
 
                 //2
@@ -583,9 +548,9 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         value.authors = unescape(value.authors);
                         let unabstract = unescape(value.abstract).replace("\n"," ").replace("\\","").replace("<p>","").replace("$","");
                         value.abstract = unabstract.substring(0,unabstract.indexOf(". "));
-                        value.weight = weightsById[parseInt(value.id)];
+                        value.weight = originalMultipliedRelevant.get(parseInt(value.id));
                         value.relativeWeight = calculateRelativeWeight(value.weight,numberOfImportantWords);
-                        value.debug = verifyQueryCoverage( pubVsTitleTerm[parseInt(value.id)], pubVsAbstractTerm[parseInt(value.id)] );
+                        //value.debug = verifyQueryCoverage( pubVsTitleTerm[parseInt(value.id)], pubVsAbstractTerm[parseInt(value.id)] );
                         return value;
                     } );
 
@@ -603,7 +568,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         registerQueryInStats( sh, workingQuery, quality.toFixed(0), details );
                     }
 
-                    resolve({ numberofall: originalMultipliedRelevant.length,
+                    resolve({ numberofall: originalMultipliedRelevant.size,
                         results: publications });
                     
                 })
