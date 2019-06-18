@@ -585,7 +585,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         value.abstract = unabstract.substring(0,unabstract.indexOf(". "));
                         value.weight = weightsById[parseInt(value.id)];
                         value.relativeWeight = calculateRelativeWeight(value.weight,numberOfImportantWords);
-                        value.debug = verifyExistenceInAbstract_debug( pubVsAbstractTerm[parseInt(value.id)] );
+                        value.debug = verifyQueryCoverage( pubVsTitleTerm[parseInt(value.id)], pubVsAbstractTerm[parseInt(value.id)] );
                         return value;
                     } );
 
