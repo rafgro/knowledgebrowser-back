@@ -60,7 +60,7 @@ server.get('/api/search', (request,response)=>{
   })
   .catch( e=> {
     response.send( e );
-    logger.error(e);
+    logger.error(e.toString());
   });
 
 });

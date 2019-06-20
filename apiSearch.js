@@ -140,11 +140,11 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                             queriesToDb.push( { q: words[i].normal+" "+words[i+1].normal, w: weight, s: words[i].text+" "+words[i+1].text, a: true } );
                             if( words[i].normal.charAt( words[i].normal.length-1 ) != 's' ) {
                                 queriesToDb.push( { q: words[i].normal+"s "+words[i+1].normal,
-                                w: weight-1, s: words[i-1].text+" "+words[i].text, a: true } );
+                                w: weight-1, s: words[i].text+" "+words[i+1].text, a: true } );
                             }
                             else {
                                 queriesToDb.push( { q:words[i].normal.substring(0,words[i].normal.length-1)+" "+words[i+1].normal,
-                                w: weight-1, s: words[i-1].text+" "+words[i].text, a: true } );
+                                w: weight-1, s: words[i].text+" "+words[i+1].text, a: true } );
                             }
                             populateNounToForms(words[i].normal).forEach( 
                                 e => queriesToDb.push( { q: e+" "+words[i+1].normal, w: weight, s: words[i].text+" "+words[i+1].text, a: true } ) );
