@@ -1,5 +1,6 @@
 const {shiphold} = require('ship-hold');
 var nlp = require('compromise');
+const striptags = require('striptags');
 
 exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
 
@@ -13,7 +14,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
         let workingQuery = query;
         if( query.length > 60 ) { workingQuery = workingQuery.substring(0,60); }
         workingQuery = workingQuery.replace(/\'/g,"").replace(/\:/g," ").replace(/\;/g," ").replace(/\"/g,"")
-          .replace(/\//g," ").replace(/\\/g," ");
+          .replace(/\//g," ").replace(/\\/g," ").replace(/\-/g," ");
         if( query.length < 1 || query == " " ) { reject( { "message": "Please enter your query." }); }
 
         // query processing
@@ -24,16 +25,9 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
         let oneword = true;
         if( workingQuery.includes(' ') ) oneword = false;
 
-        // different forms are of lower weight when less words
-        let lowerWeight = 9;
+        /* q: query to database, w: weight of this query, s: scope of coverage of original query, a: true if look in abstract */
 
-        // three initial ways: original query, singular query, plural query
-        queriesToDb.push( { q: queryNlp.normalize().toLowerCase().out(), w: 10 } );
-        queriesToDb.push( { q: queryNlp.nouns().toSingular().all().normalize().toLowerCase().out(), w: lowerWeight } );
-        queriesToDb.push( { q: queryNlp.nouns().toPlural().all().normalize().toLowerCase().out(), w: lowerWeight } );
-        
         // working on specific words
-        queryNlp = nlp(workingQuery);
         let words = queryNlp.terms().data();
         //console.log(JSON.stringify(words));
         //reject(words);
@@ -41,15 +35,19 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
         function populateNounToForms( noun ) {
             let lastCase = noun.charAt( noun.length-1 );
             let processedNoun = noun;
+            let toReturn = new Array();
+            if( lastCase != 's' ) {
+                toReturn.push( processedNoun+'s' );
+            }
             if( lastCase == 'e' || lastCase == 'y' || lastCase == 'i' || lastCase == 'o' || lastCase == 'a' ) {
                 processedNoun = noun.substring(0,noun.length-1);
             } else if( lastCase == 's' && noun.charAt(noun.length-2) == 'c' ) {
+                toReturn.push( processedNoun );
                 processedNoun = noun.substring(0,noun.length-1);
             } else if( lastCase == 'n' && noun.charAt(noun.length-2) == 'o' && noun.charAt(noun.length-3) == 'i' ) {
                 // expression, evolution
                 processedNoun = noun.substring(0,noun.length-1);
             }
-            let toReturn = new Array();
             toReturn.push( processedNoun + 'ic' );
             toReturn.push( processedNoun + 'al' );
             toReturn.push( processedNoun + 'ial' );
@@ -99,9 +97,6 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
 
                 if( words[i].tags.find( checkIfNoun ) ) {
     
-                    let singular = true;
-                    if( nlp(words[i].normal).nouns().isPlural().out().length > 0 ) singular = false;
-    
                     if( i > 0 ) {
                         let weight = 0;
                         if( words[i-1].tags.find( checkIfAdjective ) ) { weight = 9; }
@@ -113,21 +108,21 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         if( weight > 0 ) {
                             // the second word is noun
 
-                            queriesToDb.push( { q: words[i-1].normal+" "+words[i].normal, w: weight } );
-                            if( singular ) {
-                                queriesToDb.push( { q: nlp(words[i-1].normal+" "+words[i].normal).nouns()
-                                .toPlural().all().normalize().out(), w: weight-1 } );
+                            queriesToDb.push( { q: words[i-1].normal+" "+words[i].normal, w: weight, s: words[i-1].text+" "+words[i].text, a: true } );
+                            if( words[i].normal.charAt( words[i].normal.length-1 ) != 's' ) {
+                                queriesToDb.push( { q: words[i-1].normal+" "+words[i].normal+"s",
+                                w: weight-1, s: words[i-1].text+" "+words[i].text, a: true } );
                             }
                             else {
-                                queriesToDb.push( { q: nlp(words[i-1].normal+" "+words[i].normal).nouns()
-                                .toSingular().all().normalize().out(), w: weight-1 } );
+                                queriesToDb.push( { q:words[i-1].normal+" "+words[i].normal.substring(0,words[i].normal.length-1),
+                                w: weight-1, s: words[i-1].text+" "+words[i].text, a: true } );
                             }
                             populateNounToForms(words[i].normal).forEach( 
-                                e => queriesToDb.push( { q: words[i-1].normal+" "+e, w: weight } ) );
+                                e => queriesToDb.push( { q: words[i-1].normal+" "+e, w: weight, s: words[i-1].text+" "+words[i].text, a: true } ) );
 
                             if( words[i-1].tags.find( checkIfVerb ) ) {
                                 populateVerbToForms(words[i-1].normal).forEach( 
-                                    e => queriesToDb.push( { q: e+" "+words[i].normal, w: weight } ) );
+                                    e => queriesToDb.push( { q: e+" "+words[i].normal, w: weight, s: words[i-1].text+" "+words[i].text, a: true } ) );
                             }
                         }
                     }
@@ -142,21 +137,21 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         if( weight > 0 ) {
                             // the first word is noun
 
-                            queriesToDb.push( { q: words[i].normal+" "+words[i+1].normal, w: weight } );
-                            if( singular ) {
-                                queriesToDb.push( { q: nlp(words[i].normal+" "+words[i+1].normal).nouns()
-                                .toPlural().all().normalize().out(), w: weight-1 } );
+                            queriesToDb.push( { q: words[i].normal+" "+words[i+1].normal, w: weight, s: words[i].text+" "+words[i+1].text, a: true } );
+                            if( words[i].normal.charAt( words[i].normal.length-1 ) != 's' ) {
+                                queriesToDb.push( { q: words[i].normal+"s "+words[i+1].normal,
+                                w: weight-1, s: words[i-1].text+" "+words[i].text, a: true } );
                             }
                             else {
-                                queriesToDb.push( { q: nlp(words[i].normal+" "+words[i+1].normal).nouns()
-                                .toSingular().all().normalize().out(), w: weight-1 } );
+                                queriesToDb.push( { q:words[i].normal.substring(0,words[i].normal.length-1)+" "+words[i+1].normal,
+                                w: weight-1, s: words[i-1].text+" "+words[i].text, a: true } );
                             }
                             populateNounToForms(words[i].normal).forEach( 
-                                e => queriesToDb.push( { q: e+" "+words[i+1].normal, w: weight } ) );
+                                e => queriesToDb.push( { q: e+" "+words[i+1].normal, w: weight, s: words[i].text+" "+words[i+1].text, a: true } ) );
 
                             if( words[i+1].tags.find( checkIfVerb ) ) {
                                 populateVerbToForms(words[i+1].normal).forEach( 
-                                    e => queriesToDb.push( { q: words[i].normal+" "+e, w: weight } ) );
+                                    e => queriesToDb.push( { q: words[i].normal+" "+e, w: weight, s: words[i].text+" "+words[i+1].text, a: true } ) );
                             }
                         }
 
@@ -170,28 +165,40 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
         if( oneword == false ) {
             words.forEach( function(word) {
                 if( word.tags.find( checkIfNoun ) ) {
-                    queriesToDb.push( { q: word.normal, w: 4 } );
-                    populateNounToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 3 } ) );
-                    queriesToDb.push( { q: nlp(word.normal).nouns().toSingular().all().normalize().out(), w: 3 } );
-                    queriesToDb.push( { q: nlp(word.normal).nouns().toPlural().all().normalize().out(), w: 3 } );
+                    queriesToDb.push( { q: word.normal, w: 4, s: word.text, a: true } );
+                    populateNounToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 3, s: word.text, a: true } ) );
+                    //queriesToDb.push( { q: nlp(word.normal).nouns().toSingular().all().normalize().out(), w: 3, s: word.text, a: true } );
+                    //queriesToDb.push( { q: nlp(word.normal).nouns().toPlural().all().normalize().out(), w: 3, s: word.text, a: true } );
                 }
                 else if( word.tags.find( checkIfVerb ) ) {
-                    populateVerbToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 3 } ) );
+                    populateVerbToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 3, s: word.text, a: true } ) );
                 }
                 else if( word.tags.find( checkIfAdjective ) ) {
-                    queriesToDb.push( { q: word.normal, w: 3 } );
-                    populateNounToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 2 } ) );
+                    queriesToDb.push( { q: word.normal, w: 3, s: word.text } );
+                    populateNounToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 2, s: word.text, a: true } ) );
                 }
                 else if( word.tags.find( checkIfPreposition ) ) {
-                    queriesToDb.push( { q: word.normal, w: 2 } );
+                    queriesToDb.push( { q: word.normal, w: 2, s: word.text, a: false } );
                 }
-                else { queriesToDb.push( { q: word.normal, w: 1 } ); }
+                else { queriesToDb.push( { q: word.normal, w: 1, s: word.text, a: true } ); }
             });
         }
+        
+        // different forms are of lower weight when less words
+        let lowerWeight = 10;
+
+        // three initial ways: original query, singular query, plural query
+        queriesToDb.unshift( { q: queryNlp.normalize().toLowerCase().out(), w: 10, s: workingQuery, a: true } );
+        queriesToDb.unshift( { q: queryNlp.nouns().toSingular().all().normalize().toLowerCase().out(), w: lowerWeight, s: workingQuery, a: true } );
+        queriesToDb.unshift( { q: queryNlp.nouns().toPlural().all().normalize().toLowerCase().out(), w: lowerWeight, s: workingQuery, a: true } );
 
         // deleting duplications
         queriesToDb = queriesToDb.filter( function (a) { return !this[a.q] && (this[a.q] = true); }, Object.create(null) );
-        //resolve(queriesToDb);
+        let queriesMap = new Map();
+        queriesToDb.forEach( e => {
+            queriesMap.set( e.q, { w: e.w, s: e.s, a: e.a } );
+        });
+        //reject(queriesToDb);
 
         // database querying
 
@@ -205,74 +212,93 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
 
                 let originalTerms = []; //for adding strong around words
                 //assemble all variants the results, multipliying base weights by relevancy weights
-                let multipliedRelevant = new Array();
+                //let multipliedRelevant = new Array();
+                let originalMultipliedRelevant = new Map();
+                let scopesOfPubs = new Map();
+                for( let i = 0; i < result.length; i++ ) {
+                    /*let queryWeight = queriesToDb.find( function(e) {
+                        return e.q == result[i].term;
+                    }).w;
+                    let queryScope = queriesToDb.find( function(e) {
+                        return e.q == result[i].term;
+                    }).s;*/
+                    let queryWeight = queriesMap.get(result[i].term).w;
+                    let queryScope = queriesMap.get(result[i].term).s;
+                    let queryAbstractable = queriesMap.get(result[i].term).a;
+                    originalTerms.push(result[i].term);
+                    if( result[i].relevant != null ) {
+                        //there are terms with null relevant (title) because they have only abstract relevant (abstract)
+                        JSON.parse( result[i].relevant ).forEach( e => {
+
+                            let tempid = parseInt(e.p);
+
+                            if( originalMultipliedRelevant.has( tempid ) ) {
+                                originalMultipliedRelevant.set( tempid,
+                                    parseFloat(e.w) * queryWeight + originalMultipliedRelevant.get(tempid) );
+                                scopesOfPubs.set( tempid,
+                                    queryScope + ' ' + scopesOfPubs.get(tempid) );
+                            } else {
+                                originalMultipliedRelevant.set( tempid, parseFloat(e.w) * queryWeight );
+                                scopesOfPubs.set( tempid, queryScope );
+                            }
+
+                        });
+                    }
+                    if( result[i].relevant_abstract != null && queryAbstractable == true ) {
+                        JSON.parse( result[i].relevant_abstract ).forEach( e => {
+
+                            let tempid = parseInt(e.p);
+
+                            if( originalMultipliedRelevant.has( tempid ) ) {
+                                originalMultipliedRelevant.set( tempid,
+                                    parseFloat(e.w) * queryWeight + originalMultipliedRelevant.get(tempid) );
+                                scopesOfPubs.set( tempid,
+                                    queryScope + ' ' + scopesOfPubs.get(tempid) );
+                            } else {
+                                originalMultipliedRelevant.set( tempid, parseFloat(e.w) * queryWeight );
+                                scopesOfPubs.set( tempid, queryScope );
+                            }
+                            
+                        });
+                    }
+                }
+
+                /*let multipliedRelevant = new Array();
                 for( let i = 0; i < result.length; i++ ) {
                     let queryWeight = queriesToDb.find( function(e) {
                         return e.q == result[i].term;
                     }).w;
+                    let queryScope = queriesToDb.find( function(e) {
+                        return e.q == result[i].term;
+                    }).s;
                     originalTerms.push(result[i].term);
                     if( result[i].relevant != null ) {
                         //there are terms with null relevant (title) because they have only abstract relevant (abstract)
                         JSON.parse( result[i].relevant_abstract ).forEach( e => {
-                            multipliedRelevant.push( { p: parseInt(e.p), w: parseFloat(e.w) * queryWeight } );
+                            multipliedRelevant.push( { p: parseInt(e.p), w: parseFloat(e.w) * queryWeight, s: queryScope } );
                         });
                     }
                     if( result[i].relevant_abstract != null ) {
                         JSON.parse( result[i].relevant_abstract ).forEach( e => {
-                            multipliedRelevant.push( { p: parseInt(e.p), w: parseFloat(e.w) * queryWeight * 0.8 } );
+                            multipliedRelevant.push( { p: parseInt(e.p), w: parseFloat(e.w) * queryWeight, s: queryScope });
                         });
                     }
                 }
 
                 //adding weights of repeated pubs
                 let originalMultipliedRelevant = new Map();
+                let scopesOfPubs = new Map();
                 for( let i = 0; i < multipliedRelevant.length; i++ ) {
                     if( originalMultipliedRelevant.has( multipliedRelevant[i].p ) ) {
                         originalMultipliedRelevant.set( multipliedRelevant[i].p,
                             multipliedRelevant[i].w + originalMultipliedRelevant.get(multipliedRelevant[i].p) );
+                        scopesOfPubs.set( multipliedRelevant[i].p,
+                            multipliedRelevant[i].s + ' ' + scopesOfPubs.get(multipliedRelevant[i].p) );
                     } else {
                         originalMultipliedRelevant.set( multipliedRelevant[i].p, multipliedRelevant[i].w );
+                        scopesOfPubs.set( multipliedRelevant[i].p, multipliedRelevant[i].s );
                     }
-                    /*let howManyIdenticalPubs = multipliedRelevant.filter( function(e) {
-                        return multipliedRelevant[i].p == e.p
-                    });
-                    if( howManyIdenticalPubs.length > 1 ) {
-                        let overallWeight = 0;
-                        howManyIdenticalPubs.forEach( e => overallWeight += e.w );
-                        originalMultipliedRelevant.push( { p: howManyIdenticalPubs[0].p, w: overallWeight } );
-                    }
-                    else {
-                        originalMultipliedRelevant.push( multipliedRelevant[i] );
-                    }*/
-                }
-                /*originalMultipliedRelevant = originalMultipliedRelevant.filter(
-                    function (a) { return !this[a.p] && (this[a.p] = true); }, Object.create(null) );*/
-                //resolve(originalMultipliedRelevant);
-
-                function strongifyText( text, listToStrong ) {
-                    let tempText = text;
-                    let listOfWords = listToStrong.join(" ").split(" ").filter( (v,i,s) => s.indexOf(v) === i );
-                    listOfWords.sort( (a,b) => {
-                        if( a.length > b.length ) return -1;
-                        if( a.length < b.length ) return 1;
-                        return 0;
-                    }); //quickfix to avoid double stronging plurals (like signal and signals)
-                    listOfWords.forEach( word => {
-                        let pos1 = tempText.toLowerCase().indexOf(word);
-                        if( pos1 != -1 ) {
-                            let can = true;
-                            if( pos1 > 0 ) {
-                                can = false;
-                                if( tempText.charAt(pos1-1) != ">" ) { can = true; }
-                            }
-                            if( can ) {
-                                tempText = tempText.substring(0,pos1)+"<strong>"+tempText.substring(pos1,pos1+word.length)
-                                           +"</strong>"+tempText.substring(pos1+word.length);
-                            }
-                        }
-                    });
-                    return tempText;
-                }
+                }*/
 
                 function calculateRelativeWeight( originalWeight, noOfWords ) {
                     switch( noOfWords ) {
@@ -347,6 +373,20 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                     }
                 }
                 let limitOfRelevancy = whatsTheLimit( numberOfImportantWords );
+                
+                //correcting weight of pubs without sufficient coverage
+                let workingWords = workingQuery.split(" ");
+                scopesOfPubs.forEach( (scope,pub) => {
+                    let tempCov = 0;
+                    workingWords.forEach( el => {
+                        if( scope.includes(el) ) tempCov++;
+                    });
+                    if( tempCov < workingWords.length ) {
+                        let newOne = originalMultipliedRelevant.get(pub)*(1/numberOfImportantWords);
+                        if( newOne > limitOfRelevancy ) newOne = limitOfRelevancy-2;
+                        originalMultipliedRelevant.set( pub, newOne );
+                    }
+                });
 
                 //idea: node is stalling during mapping results to weights when there are thousands of them,
                 // so we need to pass to node only the last step of processing,
@@ -359,6 +399,21 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                 let moreRelevantIds = new Array();
                 let lessRelevantIds = new Array();
                 originalMultipliedRelevant.forEach( (pubWeight,pubId) => {
+                    //first correct weight - was in different loop but why use two when can use one
+                    /*let properWeight = pubWeight;
+                    let tempCov = 0;
+                    let tempScope = scopesOfPubs.get(pubId);
+                    workingWords.forEach( el => {
+                        if( tempScope.includes(el) ) tempCov++;
+                    });
+                    if( tempCov < workingWords.length ) {
+                        let newOne = pubWeight*(1/numberOfImportantWords);
+                        if( newOne > limitOfRelevancy ) newOne = limitOfRelevancy-2;
+                        myMap.set(pubId,newOne);
+                        properWeight = newOne;
+                    }*/
+
+                    //final division
                     if( pubWeight > limitOfRelevancy ) moreRelevantIds.push({p:pubId,w:pubWeight});
                     else lessRelevantIds.push({p:pubId,w:pubWeight});
                 });
@@ -531,6 +586,58 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         reject( { "message": "Sorry, there are no more results for <i>"+query+"</i>." });
                     }
 
+                    
+                    function strongifyTitle( text, listToStrong ) {
+                        let tempText = text;
+                        listToStrong.forEach( word => {
+                            let pos1 = tempText.toLowerCase().indexOf(word);
+                            if( pos1 != -1 ) {
+                                let can = true;
+                                if( pos1 > 0 ) {
+                                    can = false;
+                                    if( tempText.charAt(pos1-1) != ">" ) { can = true; }
+                                }
+                                if( can ) {
+                                    tempText = tempText.substring(0,pos1)+"<strong>"+tempText.substring(pos1,pos1+word.length)
+                                            +"</strong>"+tempText.substring(pos1+word.length);
+                                }
+                            }
+                        });
+                        return tempText;
+                    }
+
+                    function strongifyAbstract( text, listToStrong ) {
+                        let sentences = text.replace(/([.?])\s*(?=[A-Z])/g, "$1|").split("|");
+                        let highestScore = 0;
+                        let highestWhich = sentences[0];
+                        sentences.forEach( sentence => {
+                            let score = 0;
+                            listToStrong.forEach( word => {
+                                if( sentence.toLowerCase().includes(word) ) score++;
+                            });
+                            if( score >= highestScore ) {
+                                highestScore = score;
+                                highestWhich = sentence;
+                            }
+                        });
+                        let tempText = highestWhich;
+                        listToStrong.forEach( word => {
+                            let pos1 = tempText.toLowerCase().indexOf(word);
+                            if( pos1 != -1 ) {
+                                let can = true;
+                                if( pos1 > 0 ) {
+                                    can = false;
+                                    if( tempText.charAt(pos1-1) != ">" ) { can = true; }
+                                }
+                                if( can ) {
+                                    tempText = tempText.substring(0,pos1)+"<strong>"+tempText.substring(pos1,pos1+word.length)
+                                            +"</strong>"+tempText.substring(pos1+word.length);
+                                }
+                            }
+                        });
+                        return tempText;
+                    }
+
                     function correctScreamingTitle(whatTitle) {
                         let tempTitle = whatTitle;
                         let numLow = tempTitle.replace(/[A-Z]/g, '').toString().length;
@@ -540,14 +647,23 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         return tempTitle;
                     }
 
+                    let listOfWords = originalTerms.join(" ").split(" ").filter( (v,i,s) => s.indexOf(v) === i );
+                    listOfWords.sort( (a,b) => {
+                        if( a.length > b.length ) return -1;
+                        if( a.length < b.length ) return 1;
+                        return 0;
+                    }); //quickfix to avoid double stronging plurals (like signal and signals)
+
                     let highestRelevancy = 0;
                     let newestResult = (new Date(properArray[0].date)).getTime();
                     let publications = properArray.map( (value) => {
                         let untitle = correctScreamingTitle(unescape(value.title).replace(RegExp("\\. \\(arXiv:.*\\)"),""));
-                        value.title = strongifyText( untitle, originalTerms ).replace(RegExp("\\$","g"),"").replace("\\","");
+                        value.title = strongifyTitle( untitle, listOfWords ).replace(RegExp("\\$","g"),"").replace("\\","");
                         value.authors = unescape(value.authors);
-                        let unabstract = unescape(value.abstract).replace("\n"," ").replace("\\","").replace("<p>","").replace("$","");
-                        value.abstract = unabstract.substring(0,unabstract.indexOf(". "));
+                        if( value.abstract.length > 5 ) {
+                            let unabstract = striptags(unescape(value.abstract).replace(/\r?\n|\r/g," ").toString());
+                            value.abstract = strongifyAbstract( unabstract, listOfWords );
+                        }
                         value.weight = originalMultipliedRelevant.get(parseInt(value.id));
                         value.relativeWeight = calculateRelativeWeight(value.weight,numberOfImportantWords);
                         //value.debug = verifyQueryCoverage( pubVsTitleTerm[parseInt(value.id)], pubVsAbstractTerm[parseInt(value.id)] );
