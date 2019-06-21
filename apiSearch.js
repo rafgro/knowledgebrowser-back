@@ -175,10 +175,13 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                 }
                 else if( word.tags.find( checkIfAdjective ) ) {
                     queriesToDb.push( { q: word.normal, w: 3, s: word.text } );
-                    populateNounToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 2, s: word.text, a: true } ) );
+                    populateNounToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 2, s: word.text, a: false } ) );
                 }
                 else if( word.tags.find( checkIfPreposition ) ) {
                     queriesToDb.push( { q: word.normal, w: 2, s: word.text, a: false } );
+                }
+                else if( word.tags.find( checkIfValue ) ) {
+                    queriesToDb.push( { q: word.normal, w: 1, s: word.text, a: false } );
                 }
                 else { queriesToDb.push( { q: word.normal, w: 1, s: word.text, a: true } ); }
             });
@@ -586,13 +589,20 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         reject( { "message": "Sorry, there are no more results for <i>"+query+"</i>." });
                     }
 
-                    
                     function strongifyTitle( text, listToStrong ) {
                         let tempText = text;
+                        let lower = tempText.toLowerCase();
                         listToStrong.forEach( word => {
-                            let pos1 = tempText.toLowerCase().indexOf(word);
+                            let toAdd = 0;
+                            let pos1 = lower.lastIndexOf('> '+word+' '); toAdd = 2;
+                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(' '+word+' <'); toAdd = 1;
+                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(' '+word+' '); toAdd = 1;
+                            if( pos1 == -1 ) pos1 = lower.lastIndexOf('-'+word+' '); toAdd = 1;
+                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(' '+word+'-'); toAdd = 1;
+                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(word); toAdd = 0;
                             if( pos1 != -1 ) {
                                 let can = true;
+                                pos1 += toAdd;
                                 if( pos1 > 0 ) {
                                     can = false;
                                     if( tempText.charAt(pos1-1) != ">" ) { can = true; }
@@ -610,6 +620,8 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         let sentences = text.replace(/([.?])\s*(?=[A-Z])/g, "$1|").split("|");
                         let highestScore = 0;
                         let highestWhich = sentences[0];
+                        if( highestWhich.length < 50 ) highestWhich = sentences[0]+' '+sentences[1];
+                        if( text.includes('$') ) { return highestWhich; } //quickfix to not fuck up latex
                         sentences.forEach( sentence => {
                             let score = 0;
                             listToStrong.forEach( word => {
@@ -621,10 +633,18 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                             }
                         });
                         let tempText = highestWhich;
+                        let lower = tempText.toLowerCase();
                         listToStrong.forEach( word => {
-                            let pos1 = tempText.toLowerCase().indexOf(word);
+                            let toAdd = 0;
+                            let pos1 = lower.lastIndexOf('> '+word+' '); toAdd = 2;
+                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(' '+word+' <'); toAdd = 1;
+                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(' '+word+' '); toAdd = 1;
+                            if( pos1 == -1 ) pos1 = lower.lastIndexOf('-'+word+' '); toAdd = 1;
+                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(' '+word+'-'); toAdd = 1;
+                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(word); toAdd = 0;
                             if( pos1 != -1 ) {
                                 let can = true;
+                                pos1 += toAdd;
                                 if( pos1 > 0 ) {
                                     can = false;
                                     if( tempText.charAt(pos1-1) != ">" ) { can = true; }
@@ -658,7 +678,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                     let newestResult = (new Date(properArray[0].date)).getTime();
                     let publications = properArray.map( (value) => {
                         let untitle = correctScreamingTitle(unescape(value.title).replace(RegExp("\\. \\(arXiv:.*\\)"),""));
-                        value.title = strongifyTitle( untitle, listOfWords ).replace(RegExp("\\$","g"),"").replace("\\","");
+                        value.title = strongifyTitle( untitle, listOfWords );
                         value.authors = unescape(value.authors);
                         if( value.abstract.length > 5 ) {
                             let unabstract = striptags(unescape(value.abstract).replace(/\r?\n|\r/g," ").toString());
