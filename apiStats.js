@@ -8,33 +8,58 @@ exports.doYourJob = function( sh ) {
         const askForIndexingOffsetAbstract = sh.select('value').from('manager').where('option','=','indexing_offset_abstract').run();
         let date = new Date(Date.now());
         const askForPubToday = sh.select('COUNT(*)').from('content_preprints')
-          .where('date','>=',date.getUTCFullYear() + (((date.getUTCMonth()+1) < 10) ? "-0" : "-") + (date.getUTCMonth()+1)
+          .where('date','=',date.getUTCFullYear() + (((date.getUTCMonth()+1) < 10) ? "-0" : "-") + (date.getUTCMonth()+1)
           + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" 00:00:00").run();
+        let dateMinusOne = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);
+        const askForPubYesterday = sh.select('COUNT(*)').from('content_preprints')
+          .where('date','=',dateMinusOne.getUTCFullYear() + (((dateMinusOne.getUTCMonth()+1) < 10) ? "-0" : "-")
+          + (dateMinusOne.getUTCMonth()+1) + ((dateMinusOne.getUTCDate() < 10) ? "-0" : "-")
+          + dateMinusOne.getUTCDate()+" 00:00:00").run();
         let dateMinusThree = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
         const askForPubThreeDays = sh.select('COUNT(*)').from('content_preprints')
           .where('date','>=',dateMinusThree.getUTCFullYear() + (((dateMinusThree.getUTCMonth()+1) < 10) ? "-0" : "-")
           + (dateMinusThree.getUTCMonth()+1) + ((dateMinusThree.getUTCDate() < 10) ? "-0" : "-")
-          + dateMinusThree.getUTCDate()+" 00:00:00").run();
+          + dateMinusThree.getUTCDate()+" 00:00:00")
+          .and('date','<=',date.getUTCFullYear() + (((date.getUTCMonth()+1) < 10) ? "-0" : "-") + (date.getUTCMonth()+1)
+          + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" 00:00:00")
+          .run();
         let dateMinusSeven = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
         const askForPubLastWeek = sh.select('COUNT(*)').from('content_preprints')
           .where('date','>=',dateMinusSeven.getUTCFullYear() + (((dateMinusSeven.getUTCMonth()+1) < 10) ? "-0" : "-")
           + (dateMinusSeven.getUTCMonth()+1) + ((dateMinusSeven.getUTCDate() < 10) ? "-0" : "-")
-          + dateMinusSeven.getUTCDate()+" 00:00:00").run();
+          + dateMinusSeven.getUTCDate()+" 00:00:00")
+          .and('date','<=',date.getUTCFullYear() + (((date.getUTCMonth()+1) < 10) ? "-0" : "-") + (date.getUTCMonth()+1)
+          + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" 00:00:00")
+          .run();
+        let dateMinusFourteen = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const askForPubPreviousWeek = sh.select('COUNT(*)').from('content_preprints')
+          .where('date','>=',dateMinusFourteen.getUTCFullYear() + (((dateMinusFourteen.getUTCMonth()+1) < 10) ? "-0" : "-")
+          + (dateMinusFourteen.getUTCMonth()+1) + ((dateMinusFourteen.getUTCDate() < 10) ? "-0" : "-")
+          + dateMinusFourteen.getUTCDate()+" 00:00:00")
+          .and('date','<',date.getUTCFullYear() + (((dateMinusSeven.getUTCMonth()+1) < 10) ? "-0" : "-") + (dateMinusSeven.getUTCMonth()+1)
+          + ((dateMinusSeven.getUTCDate() < 10) ? "-0" : "-")+dateMinusSeven.getUTCDate()+" 00:00:00")
+          .run();
         let dateMinusThirty = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const askForPubLastMonth = sh.select('COUNT(*)').from('content_preprints')
           .where('date','>=',dateMinusThirty.getUTCFullYear() + (((dateMinusThirty.getUTCMonth()+1) < 10) ? "-0" : "-")
           + (dateMinusThirty.getUTCMonth()+1) + ((dateMinusThirty.getUTCDate() < 10) ? "-0" : "-")
-          + dateMinusThirty.getUTCDate()+" 00:00:00").run();
+          + dateMinusThirty.getUTCDate()+" 00:00:00")
+          .and('date','<=',date.getUTCFullYear() + (((date.getUTCMonth()+1) < 10) ? "-0" : "-") + (date.getUTCMonth()+1)
+          + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" 00:00:00")
+          .run();
           
         const askForLastTenQueries = sh.select('query').from('query_stats').orderBy('id','desc').limit(10).run();
         const askForLastQueryQualities = sh.select('lastquality').from('query_stats').run();
         const askForLowQualityQueries = sh.select('query').from('query_stats').where('lastquality','<',3).run();
 
-        const askForLastFivePreprints = sh.select('date','title').from('content_preprints').orderBy('date','desc').limit(5,0).run();
+        const askForLastFivePreprints = sh.select('date','link','title').from('content_preprints')
+         .where('date','<=',date.getUTCFullYear() + (((date.getUTCMonth()+1) < 10) ? "-0" : "-") + (date.getUTCMonth()+1)
+         + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" 00:00:00")
+         .orderBy('date','desc').limit(5,0).run();
 
         let arrayOfQueries = [ askForPubCount, askForIndexingOffset, askForIndexingOffsetAbstract, askForPubToday, askForPubThreeDays,
           askForPubLastWeek, askForPubLastMonth, askForLastTenQueries, askForLastQueryQualities, askForLowQualityQueries,
-          askForLastFivePreprints ];
+          askForLastFivePreprints, askForPubYesterday, askForPubPreviousWeek ];
 
         sh.select('name').from('manager_lines')
         .run()
@@ -59,6 +84,7 @@ exports.doYourJob = function( sh ) {
 
             Promise.all( arrayOfQueries )
             .then( arrayOfResults => {
+
               let toResolve = [ { total: arrayOfResults[0][0].count },
                 { queueInitial: (parseInt(arrayOfResults[0][0].count)-parseInt(arrayOfResults[1][0].value)) },
                 { queueDeep: (parseInt(arrayOfResults[0][0].count)-parseInt(arrayOfResults[2][0].value)) },
@@ -67,13 +93,15 @@ exports.doYourJob = function( sh ) {
                 { lastWeek: arrayOfResults[5][0].count },
                 { lastMonth: arrayOfResults[6][0].count },
                 { old: (parseInt(arrayOfResults[0][0].count)-parseInt(arrayOfResults[6][0].count)) },
-                { lastPreprints: arrayOfResults[10] }];
+                { lastPreprints: arrayOfResults[10] },
+                { yesterday: arrayOfResults[11].count },
+                { previousWeek: arrayOfResults[12].count }];
 
               let today = Date.now();
               
               let preprintServers = new Array();
-              for( let i = 11; i < arrayOfResults.length; i+=3 ) {
-                let noOfName = i-11;
+              for( let i = 13; i < arrayOfResults.length; i+=3 ) {
+                let noOfName = i-13;
                 if( noOfName > 0 ) noOfName = noOfName/3;
                 if( result[noOfName].name != 'OSF' ) {
                   let lastPreprint = '';
@@ -93,8 +121,8 @@ exports.doYourJob = function( sh ) {
                 }
               }
               function compare(a,b) {
-                if( a.lastWeek > b.lastWeek ) { return -1; }
-                else if( a.lastWeek < b.lastWeek ) { return 1; }
+                if( a.lastMonth > b.lastMonth ) { return -1; }
+                else if( a.lastMonth < b.lastMonth ) { return 1; }
                 return 0;
               }
               preprintServers.sort(compare);
