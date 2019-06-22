@@ -43,9 +43,12 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                 processedNoun = noun.substring(0,noun.length-1);
             } else if( lastCase == 's' && noun.charAt(noun.length-2) == 'c' ) {
                 toReturn.push( processedNoun );
-                processedNoun = noun.substring(0,noun.length-1);
+                processedNoun = noun.substring(0,noun.length-2);
             } else if( lastCase == 'n' && noun.charAt(noun.length-2) == 'o' && noun.charAt(noun.length-3) == 'i' ) {
                 // expression, evolution
+                processedNoun = noun.substring(0,noun.length-1);
+            } else if( lastCase == 'm' && noun.charAt(noun.length-2) == 's' ) {
+                // autism
                 processedNoun = noun.substring(0,noun.length-1);
             }
             toReturn.push( processedNoun + 'ic' );
@@ -57,6 +60,8 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
             toReturn.push( processedNoun + 'ary' );
             toReturn.push( processedNoun + 'ed' );
             toReturn.push( processedNoun + 'ely' );
+            toReturn.push( processedNoun + 'ation' );
+            toReturn.push( processedNoun + 'tic' );
             if( noun.includes('ity') ) toReturn.push( noun.substring(0,noun.length-3) );
             if( noun.includes('al') ) toReturn.push( noun.substring(0,noun.length-2) );
             return toReturn;
@@ -591,15 +596,15 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
 
                     function strongifyTitle( text, listToStrong ) {
                         let tempText = text;
-                        let lower = tempText.toLowerCase();
                         listToStrong.forEach( word => {
                             let toAdd = 0;
-                            let pos1 = lower.lastIndexOf('> '+word+' '); toAdd = 2;
-                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(' '+word+' <'); toAdd = 1;
-                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(' '+word+' '); toAdd = 1;
-                            if( pos1 == -1 ) pos1 = lower.lastIndexOf('-'+word+' '); toAdd = 1;
-                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(' '+word+'-'); toAdd = 1;
-                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(word); toAdd = 0;
+                            let lower = tempText.toLowerCase();
+                            let pos1 = lower.indexOf('g> '+word+' '); toAdd = 3;
+                            if( pos1 == -1 ) { pos1 = lower.indexOf(' '+word+' <s'); toAdd = 1; }
+                            if( pos1 == -1 ) { pos1 = lower.indexOf(' '+word+' '); toAdd = 1; }
+                            if( pos1 == -1 ) { pos1 = lower.indexOf('-'+word+' '); toAdd = 1; }
+                            if( pos1 == -1 ) { pos1 = lower.indexOf(' '+word+'-'); toAdd = 1; }
+                            if( pos1 == -1 ) { pos1 = lower.indexOf(word); toAdd = 0; }
                             if( pos1 != -1 ) {
                                 let can = true;
                                 pos1 += toAdd;
@@ -636,12 +641,13 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         let lower = tempText.toLowerCase();
                         listToStrong.forEach( word => {
                             let toAdd = 0;
-                            let pos1 = lower.lastIndexOf('> '+word+' '); toAdd = 2;
-                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(' '+word+' <'); toAdd = 1;
-                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(' '+word+' '); toAdd = 1;
-                            if( pos1 == -1 ) pos1 = lower.lastIndexOf('-'+word+' '); toAdd = 1;
-                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(' '+word+'-'); toAdd = 1;
-                            if( pos1 == -1 ) pos1 = lower.lastIndexOf(word); toAdd = 0;
+                            let lower = tempText.toLowerCase();
+                            let pos1 = lower.indexOf('g> '+word+' '); toAdd = 3;
+                            if( pos1 == -1 ) { pos1 = lower.indexOf(' '+word+' <s'); toAdd = 1; }
+                            if( pos1 == -1 ) { pos1 = lower.indexOf(' '+word+' '); toAdd = 1; }
+                            if( pos1 == -1 ) { pos1 = lower.indexOf('-'+word+' '); toAdd = 1; }
+                            if( pos1 == -1 ) { pos1 = lower.indexOf(' '+word+'-'); toAdd = 1; }
+                            if( pos1 == -1 ) { pos1 = lower.indexOf(word); toAdd = 0; }
                             if( pos1 != -1 ) {
                                 let can = true;
                                 pos1 += toAdd;
