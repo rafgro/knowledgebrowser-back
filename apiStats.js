@@ -7,45 +7,59 @@ exports.doYourJob = function( sh ) {
         const askForIndexingOffset = sh.select('value').from('manager').where('option','=','indexing_offset').run();
         const askForIndexingOffsetAbstract = sh.select('value').from('manager').where('option','=','indexing_offset_abstract').run();
         let date = new Date(Date.now());
-        const askForPubToday = sh.select('COUNT(*)').from('content_preprints')
-          .where('date','=',date.getUTCFullYear() + (((date.getUTCMonth()+1) < 10) ? "-0" : "-") + (date.getUTCMonth()+1)
-          + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" 00:00:00").run();
+        let currentHour = (date.getUTCHours() < 10 ? "0" : "") + date.getUTCHours();
+        currentHour = currentHour.toString();
+        let previousHour = date.getUTCHours() - 1;
+        if( previousHour < 0 ) previousHour = 23;
+        previousHour = (previousHour < 10 ? "0" : "") + previousHour;
+        previousHour = previousHour.toString();
         let dateMinusOne = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);
+        //reject( { currentHour, previousHour } );
+        const askForPubToday = sh.select('COUNT(*)').from('content_preprints')
+          .where('date','>=',dateMinusOne.getUTCFullYear() + (((dateMinusOne.getUTCMonth()+1) < 10) ? "-0" : "-") + (dateMinusOne.getUTCMonth()+1)
+          + ((dateMinusOne.getUTCDate() < 10) ? "-0" : "-")+dateMinusOne.getUTCDate()+" "+currentHour+":00:00")
+          .and('date','<=',date.getUTCFullYear() + (((date.getUTCMonth()+1) < 10) ? "-0" : "-") + (date.getUTCMonth()+1)
+          + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" "+currentHour+":59:59")
+          .run();
         const askForPubYesterday = sh.select('COUNT(*)').from('content_preprints')
-          .where('date','=',dateMinusOne.getUTCFullYear() + (((dateMinusOne.getUTCMonth()+1) < 10) ? "-0" : "-")
+          .where('date','>=',dateMinusOne.getUTCFullYear() + (((dateMinusOne.getUTCMonth()+1) < 10) ? "-0" : "-")
           + (dateMinusOne.getUTCMonth()+1) + ((dateMinusOne.getUTCDate() < 10) ? "-0" : "-")
-          + dateMinusOne.getUTCDate()+" 00:00:00").run();
+          + dateMinusOne.getUTCDate()+" "+currentHour+":00:00")
+          .where('date','<=',dateMinusOne.getUTCFullYear() + (((dateMinusOne.getUTCMonth()+1) < 10) ? "-0" : "-")
+          + (dateMinusOne.getUTCMonth()+1) + ((dateMinusOne.getUTCDate() < 10) ? "-0" : "-")
+          + dateMinusOne.getUTCDate()+" "+previousHour+":59:59")
+          .run();
         let dateMinusThree = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
         const askForPubThreeDays = sh.select('COUNT(*)').from('content_preprints')
           .where('date','>=',dateMinusThree.getUTCFullYear() + (((dateMinusThree.getUTCMonth()+1) < 10) ? "-0" : "-")
           + (dateMinusThree.getUTCMonth()+1) + ((dateMinusThree.getUTCDate() < 10) ? "-0" : "-")
-          + dateMinusThree.getUTCDate()+" 00:00:00")
+          + dateMinusThree.getUTCDate()+" "+currentHour+":00:00")
           .and('date','<=',date.getUTCFullYear() + (((date.getUTCMonth()+1) < 10) ? "-0" : "-") + (date.getUTCMonth()+1)
-          + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" 00:00:00")
+          + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" "+previousHour+":59:59")
           .run();
         let dateMinusSeven = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
         const askForPubLastWeek = sh.select('COUNT(*)').from('content_preprints')
           .where('date','>=',dateMinusSeven.getUTCFullYear() + (((dateMinusSeven.getUTCMonth()+1) < 10) ? "-0" : "-")
           + (dateMinusSeven.getUTCMonth()+1) + ((dateMinusSeven.getUTCDate() < 10) ? "-0" : "-")
-          + dateMinusSeven.getUTCDate()+" 00:00:00")
+          + dateMinusSeven.getUTCDate()+" "+previousHour+":59:59")
           .and('date','<=',date.getUTCFullYear() + (((date.getUTCMonth()+1) < 10) ? "-0" : "-") + (date.getUTCMonth()+1)
-          + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" 00:00:00")
+          + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" "+previousHour+":59:59")
           .run();
-        let dateMinusFourteen = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        let dateMinusFourteen = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
         const askForPubPreviousWeek = sh.select('COUNT(*)').from('content_preprints')
           .where('date','>=',dateMinusFourteen.getUTCFullYear() + (((dateMinusFourteen.getUTCMonth()+1) < 10) ? "-0" : "-")
           + (dateMinusFourteen.getUTCMonth()+1) + ((dateMinusFourteen.getUTCDate() < 10) ? "-0" : "-")
-          + dateMinusFourteen.getUTCDate()+" 00:00:00")
-          .and('date','<',date.getUTCFullYear() + (((dateMinusSeven.getUTCMonth()+1) < 10) ? "-0" : "-") + (dateMinusSeven.getUTCMonth()+1)
-          + ((dateMinusSeven.getUTCDate() < 10) ? "-0" : "-")+dateMinusSeven.getUTCDate()+" 00:00:00")
+          + dateMinusFourteen.getUTCDate()+" "+currentHour+":00:00")
+          .and('date','<',dateMinusSeven.getUTCFullYear() + (((dateMinusSeven.getUTCMonth()+1) < 10) ? "-0" : "-") + (dateMinusSeven.getUTCMonth()+1)
+          + ((dateMinusSeven.getUTCDate() < 10) ? "-0" : "-")+dateMinusSeven.getUTCDate()+" "+previousHour+":59:59")
           .run();
         let dateMinusThirty = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const askForPubLastMonth = sh.select('COUNT(*)').from('content_preprints')
           .where('date','>=',dateMinusThirty.getUTCFullYear() + (((dateMinusThirty.getUTCMonth()+1) < 10) ? "-0" : "-")
           + (dateMinusThirty.getUTCMonth()+1) + ((dateMinusThirty.getUTCDate() < 10) ? "-0" : "-")
-          + dateMinusThirty.getUTCDate()+" 00:00:00")
+          + dateMinusThirty.getUTCDate()+" "+currentHour+":00:00")
           .and('date','<=',date.getUTCFullYear() + (((date.getUTCMonth()+1) < 10) ? "-0" : "-") + (date.getUTCMonth()+1)
-          + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" 00:00:00")
+          + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" "+previousHour+":59:59")
           .run();
           
         const askForLastTenQueries = sh.select('query').from('query_stats').orderBy('id','desc').limit(10).run();
@@ -54,8 +68,8 @@ exports.doYourJob = function( sh ) {
 
         const askForLastFivePreprints = sh.select('date','link','title').from('content_preprints')
          .where('date','<=',date.getUTCFullYear() + (((date.getUTCMonth()+1) < 10) ? "-0" : "-") + (date.getUTCMonth()+1)
-         + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" 00:00:00")
-         .orderBy('date','desc').limit(5,0).run();
+         + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" "+previousHour+":59:59")
+         .orderBy('date','desc').limit(6,0).run();
 
         let arrayOfQueries = [ askForPubCount, askForIndexingOffset, askForIndexingOffsetAbstract, askForPubToday, askForPubThreeDays,
           askForPubLastWeek, askForPubLastMonth, askForLastTenQueries, askForLastQueryQualities, askForLowQualityQueries,
@@ -69,12 +83,12 @@ exports.doYourJob = function( sh ) {
               arrayOfQueries.push( sh.select('COUNT(*)').from('content_preprints')
               .where('date','>=',dateMinusSeven.getUTCFullYear() + (((dateMinusSeven.getUTCMonth()+1) < 10) ? "-0" : "-")
               + (dateMinusSeven.getUTCMonth()+1) + ((dateMinusSeven.getUTCDate() < 10) ? "-0" : "-")
-              + dateMinusSeven.getUTCDate()+" 00:00:00").and('server','=',element.name).run() );
+              + dateMinusSeven.getUTCDate()+" "+currentHour+":00:00").and('server','=',element.name).run() );
 
               arrayOfQueries.push( sh.select('COUNT(*)').from('content_preprints')
               .where('date','>=',dateMinusThirty.getUTCFullYear() + (((dateMinusThirty.getUTCMonth()+1) < 10) ? "-0" : "-")
               + (dateMinusThirty.getUTCMonth()+1) + ((dateMinusThirty.getUTCDate() < 10) ? "-0" : "-")
-              + dateMinusThirty.getUTCDate()+" 00:00:00").and('server','=',element.name).run() );
+              + dateMinusThirty.getUTCDate()+" "+currentHour+":00:00").and('server','=',element.name).run() );
 
               arrayOfQueries.push( sh.select('date','title').from('content_preprints')
               .where('server','=',element.name)
@@ -94,8 +108,8 @@ exports.doYourJob = function( sh ) {
                 { lastMonth: arrayOfResults[6][0].count },
                 { old: (parseInt(arrayOfResults[0][0].count)-parseInt(arrayOfResults[6][0].count)) },
                 { lastPreprints: arrayOfResults[10] },
-                { yesterday: arrayOfResults[11].count },
-                { previousWeek: arrayOfResults[12].count }];
+                { yesterday: arrayOfResults[11][0].count },
+                { previousWeek: arrayOfResults[12][0].count }];
 
               let today = Date.now();
               
@@ -114,8 +128,9 @@ exports.doYourJob = function( sh ) {
                     else if( days < 2 ) lastPreprint = "1 day ago";
                     if( hours <= 1.1 ) lastPreprint = "less than hour ago";
                     else if( hours < 2 ) lastPreprint = "1 hour ago";
+                    if( result[noOfName].name == 'NEP RePEc' ) lastPreprint = "1 day ago";
                   }
-                  let serverObj = { name: result[noOfName].name, lastMonth: arrayOfResults[i+1][0].count,
+                  let serverObj = { name: result[noOfName].name, lastMonth: parseInt(arrayOfResults[i+1][0].count),
                     lastWeek: parseInt(arrayOfResults[i][0].count), lastPreprint: lastPreprint };
                   preprintServers.push( serverObj );
                 }

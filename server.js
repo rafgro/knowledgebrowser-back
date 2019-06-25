@@ -5,6 +5,7 @@ const express = require('express'),
       managerCorrecting = require('./manager-correcting'),
       apiSearch = require('./apiSearch'),
       apiStats = require('./apiStats'),
+      apiStats2 = require('./apiStats2'),
       logging = require('./logger');
 
 require('events').EventEmitter.prototype._maxListeners = 100;
@@ -69,6 +70,19 @@ server.get('/api/search', (request,response)=>{
 server.get('/api/stats', (request,response)=>{
 
   apiStats.doYourJob( sh )
+  .then( results => {
+    response.send( results );
+  })
+  .catch( e=> {
+    response.send( [ { "text": JSON.stringify(e) } ] );
+  });
+
+});
+
+/* API */
+server.get('/api/stats2', (request,response)=>{
+
+  apiStats2.doYourJob( sh )
   .then( results => {
     response.send( results );
   })

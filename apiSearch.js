@@ -70,6 +70,14 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
         function populateVerbToForms( verb ) {
             let lastCase = verb.charAt( verb.length-1 );
             let toReturn = new Array();
+            if( lastCase == 's' ) {
+                // waves, creates, regulates
+                toReturn.push( verb.substring(0,verb.length-1) );
+                toReturn.push( verb.substring(0,verb.length-1) + 'd' );
+                toReturn.push( verb.substring(0,verb.length-2) + 'ion' );
+                toReturn.push( verb.substring(0,verb.length-2) + 'ing' );
+                toReturn.push( verb.substring(0,verb.length-2) + 'ory' );
+            }
             if( lastCase == 'e' ) {
                 // drive -> drives, drived, driving, drivion
                 toReturn.push( verb + 's' );
@@ -104,11 +112,11 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
     
                     if( i > 0 ) {
                         let weight = 0;
-                        if( words[i-1].tags.find( checkIfAdjective ) ) { weight = 9; }
-                        else if( words[i-1].tags.find( checkIfVerb ) ) { weight = 7; }
+                        if( words[i-1].tags.find( checkIfAdjective ) ) { weight = 9.5; }
+                        else if( words[i-1].tags.find( checkIfVerb ) ) { weight = 9; }
                         else if( words[i-1].tags.find( checkIfAcronym ) ) { weight = 8; }
-                        else if( words[i-1].tags.find( checkIfValue ) ) { weight = 6; }
-                        else if( words[i-1].tags.find( checkIfNoun ) ) { weight = 8; }
+                        else if( words[i-1].tags.find( checkIfValue ) ) { weight = 7; }
+                        else if( words[i-1].tags.find( checkIfNoun ) ) { weight = 9.5; }
 
                         if( weight > 0 ) {
                             // the second word is noun
@@ -116,11 +124,19 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                             queriesToDb.push( { q: words[i-1].normal+" "+words[i].normal, w: weight, s: words[i-1].text+" "+words[i].text, a: true } );
                             if( words[i].normal.charAt( words[i].normal.length-1 ) != 's' ) {
                                 queriesToDb.push( { q: words[i-1].normal+" "+words[i].normal+"s",
-                                w: weight-1, s: words[i-1].text+" "+words[i].text, a: true } );
+                                w: weight, s: words[i-1].text+" "+words[i].text, a: true } );
                             }
                             else {
                                 queriesToDb.push( { q:words[i-1].normal+" "+words[i].normal.substring(0,words[i].normal.length-1),
-                                w: weight-1, s: words[i-1].text+" "+words[i].text, a: true } );
+                                w: weight, s: words[i-1].text+" "+words[i].text, a: true } );
+                            }
+                            if( words[i-1].normal.charAt( words[i-1].normal.length-1 ) != 's' ) {
+                                queriesToDb.push( { q: words[i-1].normal+"s "+words[i].normal,
+                                w: weight, s: words[i-1].text+" "+words[i].text, a: true } );
+                            }
+                            else {
+                                queriesToDb.push( { q:words[i-1].normal.substring(0,words[i-1].normal-1)+" "+words[i].normal,
+                                w: weight, s: words[i-1].text+" "+words[i].text, a: true } );
                             }
                             populateNounToForms(words[i].normal).forEach( 
                                 e => queriesToDb.push( { q: words[i-1].normal+" "+e, w: weight, s: words[i-1].text+" "+words[i].text, a: true } ) );
@@ -133,11 +149,11 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                     }
                     if( i+1 < words.length ) {
                         let weight = 0;
-                        if( words[i+1].tags.find( checkIfAdjective ) ) { weight = 9; }
-                        else if( words[i+1].tags.find( checkIfVerb ) ) { weight = 7; }
+                        if( words[i+1].tags.find( checkIfAdjective ) ) { weight = 9.5; }
+                        else if( words[i+1].tags.find( checkIfVerb ) ) { weight = 9; }
                         else if( words[i+1].tags.find( checkIfAcronym ) ) { weight = 8; }
-                        else if( words[i+1].tags.find( checkIfValue ) ) { weight = 6; }
-                        else if( words[i+1].tags.find( checkIfNoun ) ) { weight = 8; }
+                        else if( words[i+1].tags.find( checkIfValue ) ) { weight = 7; }
+                        else if( words[i+1].tags.find( checkIfNoun ) ) { weight = 9.5; }
 
                         if( weight > 0 ) {
                             // the first word is noun
@@ -145,11 +161,19 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                             queriesToDb.push( { q: words[i].normal+" "+words[i+1].normal, w: weight, s: words[i].text+" "+words[i+1].text, a: true } );
                             if( words[i].normal.charAt( words[i].normal.length-1 ) != 's' ) {
                                 queriesToDb.push( { q: words[i].normal+"s "+words[i+1].normal,
-                                w: weight-1, s: words[i].text+" "+words[i+1].text, a: true } );
+                                w: weight, s: words[i].text+" "+words[i+1].text, a: true } );
                             }
                             else {
                                 queriesToDb.push( { q:words[i].normal.substring(0,words[i].normal.length-1)+" "+words[i+1].normal,
-                                w: weight-1, s: words[i].text+" "+words[i+1].text, a: true } );
+                                w: weight, s: words[i].text+" "+words[i+1].text, a: true } );
+                            }
+                            if( words[i+1].normal.charAt( words[i+1].normal.length-1 ) != 's' ) {
+                                queriesToDb.push( { q: words[i].normal+" "+words[i+1].normal+"s",
+                                w: weight, s: words[i].text+" "+words[i+1].text, a: true } );
+                            }
+                            else {
+                                queriesToDb.push( { q:words[i].normal+" "+words[i+1].normal.substring(0,words[i+1].normal.length-1),
+                                w: weight, s: words[i].text+" "+words[i+1].text, a: true } );
                             }
                             populateNounToForms(words[i].normal).forEach( 
                                 e => queriesToDb.push( { q: e+" "+words[i+1].normal, w: weight, s: words[i].text+" "+words[i+1].text, a: true } ) );
@@ -171,11 +195,12 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
             words.forEach( function(word) {
                 if( word.tags.find( checkIfNoun ) ) {
                     queriesToDb.push( { q: word.normal, w: 4, s: word.text, a: true } );
-                    populateNounToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 3, s: word.text, a: true } ) );
+                    populateNounToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 4, s: word.text, a: true } ) );
                     //queriesToDb.push( { q: nlp(word.normal).nouns().toSingular().all().normalize().out(), w: 3, s: word.text, a: true } );
                     //queriesToDb.push( { q: nlp(word.normal).nouns().toPlural().all().normalize().out(), w: 3, s: word.text, a: true } );
                 }
                 else if( word.tags.find( checkIfVerb ) ) {
+                    queriesToDb.push( { q: word.normal, w: 4, s: word.text, a: true } );
                     populateVerbToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 3, s: word.text, a: true } ) );
                 }
                 else if( word.tags.find( checkIfAdjective ) ) {
@@ -222,6 +247,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                 //assemble all variants the results, multipliying base weights by relevancy weights
                 //let multipliedRelevant = new Array();
                 let originalMultipliedRelevant = new Map();
+                let scopesOfPubsTitle = new Map();
                 let scopesOfPubs = new Map();
                 for( let i = 0; i < result.length; i++ ) {
                     /*let queryWeight = queriesToDb.find( function(e) {
@@ -248,6 +274,12 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                             } else {
                                 originalMultipliedRelevant.set( tempid, parseFloat(e.w) * queryWeight );
                                 scopesOfPubs.set( tempid, queryScope );
+                            }
+                            if( scopesOfPubsTitle.has( tempid ) ) {
+                                scopesOfPubsTitle.set( tempid,
+                                    queryScope + ' ' + scopesOfPubsTitle.get(tempid) );
+                            } else {
+                                scopesOfPubsTitle.set( tempid, queryScope );
                             }
 
                         });
@@ -395,6 +427,16 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         originalMultipliedRelevant.set( pub, newOne );
                     }
                 });
+                scopesOfPubsTitle.forEach( (scope,pub) => {
+                    let tempCov = 0;
+                    workingWords.forEach( el => {
+                        if( scope.includes(el) ) tempCov++;
+                    });
+                    if( tempCov >= workingWords.length ) {
+                        originalMultipliedRelevant.set( pub, originalMultipliedRelevant.get(pub)+25 );
+                    }
+                });
+                //reject( { scope: scopesOfPubs.get() } )
 
                 //idea: node is stalling during mapping results to weights when there are thousands of them,
                 // so we need to pass to node only the last step of processing,
@@ -683,13 +725,14 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                     let highestRelevancy = 0;
                     let newestResult = (new Date(properArray[0].date)).getTime();
                     let publications = properArray.map( (value) => {
-                        let untitle = correctScreamingTitle(unescape(value.title).replace(RegExp("\\. \\(arXiv:.*\\)"),""));
-                        value.title = strongifyTitle( untitle, listOfWords );
+                        let untitle = correctScreamingTitle(unescape(value.title).replace(RegExp("\\. \\(arXiv:.*\\)"),"").replace(/\\'/,"'"));
+                        value.title = strongifyTitle( untitle, listOfWords ).replace("</div>","");
                         value.authors = unescape(value.authors);
                         if( value.abstract.length > 5 ) {
                             let unabstract = striptags(unescape(value.abstract).replace(/\r?\n|\r/g," ").toString());
                             value.abstract = strongifyAbstract( unabstract, listOfWords );
                         }
+                        if( value.abstract.length > 380 ) value.abstract = value.abstract.substring(0,380);
                         value.weight = originalMultipliedRelevant.get(parseInt(value.id));
                         value.relativeWeight = calculateRelativeWeight(value.weight,numberOfImportantWords);
                         //value.debug = verifyQueryCoverage( pubVsTitleTerm[parseInt(value.id)], pubVsAbstractTerm[parseInt(value.id)] );
@@ -707,7 +750,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         let details = '{"timestamp":"'+Date.now()+'","howManyRelevant":"'+moreRelevantIds.length+
                           '","highestRelevancy":"'+highestRelevancy+'","executionTime":"'+(hrend[1]/1000000+hrend[0]*1000).toFixed(0)+
                           '","newestResult":"'+newestResult.toFixed(0)+'"}';
-                        registerQueryInStats( sh, workingQuery, quality.toFixed(0), details );
+                        registerQueryInStats( sh, workingQuery, quality.toFixed(0), details, parseInt((hrend[1]/1000000+hrend[0]*1000).toFixed(0)) );
                     }
 
                     resolve({ numberofall: originalMultipliedRelevant.size,
@@ -738,7 +781,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
 
 };
 
-function registerQueryInStats( sh, query, lastQuality, newDetails ) {
+function registerQueryInStats( sh, query, lastQuality, newDetails, lastExecTime ) {
     sh.select('details').from('query_stats')
         .where('query','=',escape(query)).run()
         .then(result => {
@@ -748,7 +791,8 @@ function registerQueryInStats( sh, query, lastQuality, newDetails ) {
                 sh.insert({ 
                     query: escape(query),
                     lastquality: lastQuality,
-                    details: '\'['+newDetails+']\'' })
+                    details: '\'['+newDetails+']\'',
+                    lastexectime: lastExecTime })
                 .into('query_stats')
                 .run()
                 .then(() => {
