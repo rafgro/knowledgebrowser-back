@@ -6,7 +6,7 @@ exports.doYourJob = function( sh ) {
         const askForPubCount = sh.select('COUNT(*)').from('content_preprints').run();
         const askForIndexingOffset = sh.select('value').from('manager').where('option','=','indexing_offset').run();
         const askForIndexingOffsetAbstract = sh.select('value').from('manager').where('option','=','indexing_offset_abstract').run();
-        const askForLastFiftyQueries = sh.select('query','lastquality','details').from('query_stats')
+        const askForLastFiftyQueries = sh.select('query','lastquality','details','lastexectime').from('query_stats')
           .orderBy('id','desc').limit(50).run();
 
         let arrayOfQueries = [ askForPubCount, askForIndexingOffset, askForIndexingOffsetAbstract, askForLastFiftyQueries ];
@@ -25,10 +25,10 @@ exports.doYourJob = function( sh ) {
                 let parsed = JSON.parse(query.details);
                 let lastOne = parsed[ parsed.length-1 ];
                 let lasted = query.lastexectime;
-                if(lasted == 0) lasted = lastOne.executionTime;
+                if(lasted == undefined) lasted = lastOne.executionTime;
                 let relevantOnes = lastOne.howManyRelevant;
                 let newest = '';
-                    let thatDate = (new Date(lastOne.newestResult)).getTime();
+                    let thatDate = (new Date(parseInt(lastOne.newestResult))).getTime();
                     let days = (today - thatDate) / 86400000;
                     newest = days.toFixed(0)+" days ago";
                     let hours = ((today - thatDate) / 3600000);
@@ -36,7 +36,7 @@ exports.doYourJob = function( sh ) {
                     else if( days < 2 ) newest = "1 day ago";
                     if( hours <= 1.1 ) newest = "less than hour ago";
                     else if( hours < 2 ) newest = "1 hour ago";
-                toResolve.push( { 'text': query.query + ' (<strong>'+lasted+' ms</strong>, '
+                toResolve.push( { 'text': unescape(query.query) + ' (<strong>'+lasted+' ms</strong>, '
                   +query.lastquality+'/10, '+relevantOnes+' relevant, newest '+newest+')' } );
               });
               

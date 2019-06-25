@@ -782,7 +782,24 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
 };
 
 function registerQueryInStats( sh, query, lastQuality, newDetails, lastExecTime ) {
-    sh.select('details').from('query_stats')
+    
+    sh.insert({ 
+        query: query,
+        lastquality: lastQuality,
+        details: '\'['+newDetails+']\'',
+        lastexectime: lastExecTime })
+    .into('query_stats')
+    .run()
+    .then(() => {
+        //console.log('ok');
+    })
+    .catch(e => {
+        console.log(e);
+    });
+
+    //changed to record every query in a new record
+
+    /*sh.select('details').from('query_stats')
         .where('query','=',escape(query)).run()
         .then(result => {
 
@@ -807,7 +824,8 @@ function registerQueryInStats( sh, query, lastQuality, newDetails, lastExecTime 
                 sh.update('query_stats')
                 .set({
                   lastquality: lastQuality,
-                  details: '\''+result[0].details.substring(0,result[0].details.length-1)+","+newDetails+']\'' })
+                  details: '\''+result[0].details.substring(0,result[0].details.length-1)+","+newDetails+']\'',
+                  lastexectime: lastExecTime })
                 .where('query','=',escape(query))
                 .run()
                 .then(() => {
@@ -822,5 +840,5 @@ function registerQueryInStats( sh, query, lastQuality, newDetails, lastExecTime 
     })
     .catch(e=>{
         logger.info("error during query stats insertion");
-    });
+    });*/
 }
