@@ -21,10 +21,11 @@ exports.doYourJob = function( sh ) {
           .and('date','<=',date.getUTCFullYear() + (((date.getUTCMonth()+1) < 10) ? "-0" : "-") + (date.getUTCMonth()+1)
           + ((date.getUTCDate() < 10) ? "-0" : "-")+date.getUTCDate()+" "+currentHour+":59:59")
           .run();
+        let dateMinusTwo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
         const askForPubYesterday = sh.select('COUNT(*)').from('content_preprints')
-          .where('date','>=',dateMinusOne.getUTCFullYear() + (((dateMinusOne.getUTCMonth()+1) < 10) ? "-0" : "-")
-          + (dateMinusOne.getUTCMonth()+1) + ((dateMinusOne.getUTCDate() < 10) ? "-0" : "-")
-          + dateMinusOne.getUTCDate()+" "+currentHour+":00:00")
+          .where('date','>=',dateMinusTwo.getUTCFullYear() + (((dateMinusTwo.getUTCMonth()+1) < 10) ? "-0" : "-")
+          + (dateMinusTwo.getUTCMonth()+1) + ((dateMinusTwo.getUTCDate() < 10) ? "-0" : "-")
+          + dateMinusTwo.getUTCDate()+" "+currentHour+":00:00")
           .where('date','<=',dateMinusOne.getUTCFullYear() + (((dateMinusOne.getUTCMonth()+1) < 10) ? "-0" : "-")
           + (dateMinusOne.getUTCMonth()+1) + ((dateMinusOne.getUTCDate() < 10) ? "-0" : "-")
           + dateMinusOne.getUTCDate()+" "+previousHour+":59:59")

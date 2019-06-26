@@ -2,8 +2,11 @@
 const logging = require('../logger');
 const {shiphold} = require('ship-hold');
 const striptags = require('striptags');
+const logContinuity = require('./logContinuity');
 
-exports.processRssBody = function( sh, body ) {
+exports.processRssBody = function( sh, body, name ) {
+
+    let isContinuous = false;
 
     body.rss.channel[0].item.forEach( element => {
 
@@ -19,6 +22,8 @@ exports.processRssBody = function( sh, body ) {
 
                 if( doi.length == 0 ) {
                     nonDuplicated = true;
+                } else {
+                    isContinuous = true;
                 }
 
                 if( nonDuplicated == true ) {
@@ -54,5 +59,9 @@ exports.processRssBody = function( sh, body ) {
         }
 
     });
+
+    setTimeout( () => {
+        logContinuity.logIt( sh, isContinuous, name );
+    }, 3000 );
 
 }

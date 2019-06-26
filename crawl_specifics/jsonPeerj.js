@@ -2,8 +2,11 @@
 const logging = require('../logger');
 const {shiphold} = require('ship-hold');
 const striptags = require('striptags');
+const logContinuity = require('./logContinuity');
 
-exports.processJsonBody = function( sh, body ) {
+exports.processJsonBody = function( sh, body, name ) {
+
+    let isContinuous = false;
 
     body._items.forEach( element => {
 
@@ -15,6 +18,8 @@ exports.processJsonBody = function( sh, body ) {
 
             if( doi.length == 0 ) {
                 nonDuplicated = true;
+            } else {
+                isContinuous = true;
             }
 
             if( nonDuplicated == true ) {
@@ -52,5 +57,9 @@ exports.processJsonBody = function( sh, body ) {
         });
 
     });
+    
+    setTimeout( () => {
+        logContinuity.logIt( sh, isContinuous, name );
+    }, 3000 );
 
 }

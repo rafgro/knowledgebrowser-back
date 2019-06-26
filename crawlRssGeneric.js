@@ -73,16 +73,16 @@ function processAndUploadToDatabase (err, result, name) {
     else {
 
         switch( name ) {
-            case 'arXiv': rssArxiv.processRssBody( sh, result ); break;
-            case 'bioRxiv': rssBiorxiv.processRssBody( sh, result ); break;
-            case 'chemRxiv': rssChemrxiv.processRssBody( sh, result ); break;
-            case 'OSF': rssOsf.processRssBody( sh, result ); break;
-            case 'ESSOAr': rssEssoar.processRssBody( sh, result ); break;
-            case 'Preprints.org': rssPreprintsorg.processRssBody( sh, result ); break;
-            case 'NEP RePEc': rssNeprepec.processRssBody( sh, result ); break;
-            case 'NBER': rssNber.processRssBody( sh, result ); break;
-            case 'viXra': rssVixra.processRssBody( sh, result ); break;
-            case 'PhilSci': rssPhilsci.processRssBody( sh, result ); break;
+            case 'arXiv': rssArxiv.processRssBody( sh, result, name ); break;
+            case 'bioRxiv': rssBiorxiv.processRssBody( sh, result, name ); break;
+            case 'chemRxiv': rssChemrxiv.processRssBody( sh, result, name ); break;
+            case 'OSF': rssOsf.processRssBody( sh, result, name ); break;
+            case 'ESSOAr': rssEssoar.processRssBody( sh, result, name ); break;
+            case 'Preprints.org': rssPreprintsorg.processRssBody( sh, result, name ); break;
+            case 'NEP RePEc': rssNeprepec.processRssBody( sh, result, name ); break;
+            case 'NBER': rssNber.processRssBody( sh, result, name ); break;
+            case 'viXra': rssVixra.processRssBody( sh, result, name ); break;
+            case 'PhilSci': rssPhilsci.processRssBody( sh, result, name ); break;
         }
 
     }

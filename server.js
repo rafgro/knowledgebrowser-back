@@ -54,7 +54,7 @@ server.get('/api/search', (request,response)=>{
 
   let hrstart = process.hrtime();
 
-  apiSearch.doYourJob( sh, request.query.q, 10, request.query.offset || 0, request.query.freshmode || 0 )
+  apiSearch.doYourJob( sh, request.query.q, 10, request.query.offset || 0, request.query.stats || 1 )
   .then( results => {
     let hrend = process.hrtime(hrstart);
     response.send( { "message": + hrend[1] / 1000000, "numberofall": results.numberofall, "results": results.results } );

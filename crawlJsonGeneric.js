@@ -59,7 +59,7 @@ function processResponseOfJson (error, response, body, name) {
 function processAndUploadToDatabase(name,what) {
 
     switch( name ) {
-        case 'PeerJ Preprints': jsonPeerj.processJsonBody( sh, what ); break;
+        case 'PeerJ Preprints': jsonPeerj.processJsonBody( sh, what, name ); break;
     }
 
 }

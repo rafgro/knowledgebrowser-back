@@ -2,7 +2,7 @@ const {shiphold} = require('ship-hold');
 var nlp = require('compromise');
 const striptags = require('striptags');
 
-exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
+exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
 
     return new Promise( ( resolve, reject ) => {
 
@@ -739,7 +739,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                         return value;
                     } );
 
-                    if( parseInt(offset) == 0 ) {
+                    if( parseInt(offset) == 0 && stats == 1 ) {
                         let quality = 0;
                         quality = publications[0].relativeWeight/2;
                         if( publications.length >= 5 ) quality += publications[4].relativeWeight/4;
@@ -758,22 +758,22 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, freshmode=0 ) {
                     
                 })
                 .catch(e=>{
-                    registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'"}' );
-                    reject( { "message": e.toString() } );
-                    //reject( { "message": "Sorry, we have encountered an error." } );
+                    registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'","error":"'+escape(e.toString())+'"}' );
+                    //reject( { "message": e.toString() } );
+                    reject( { "message": "Sorry, we have encountered an error." } );
                 });
 
             }
             else {
-                registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'","howManyRelevant":"0"}' );
+                registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'","error":"no results"}' );
                 reject( { "message": "Sorry, there are no results for <i>"+query+"</i>. Would you like to rephrase your query?" });
             }
             
 
         })
         .catch(e=>{
-            registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'"}' );
-            reject( { "message": e.toString() } );
+            registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'","error":"'+escape(e.toString())+'"}' );
+            //reject( { "message": e.toString() } );
             reject( { "message": "Sorry, we have encountered an error." } );
         });
     
