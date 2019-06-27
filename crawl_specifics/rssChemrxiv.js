@@ -39,13 +39,13 @@ exports.processRssBody = function( sh, body, name ) {
                     logger.info('Inserted '+chemrxivDoi+' / '+element["pubDate"].toString());
                 })
                 .catch(e => {
-                    logger.error(e);
+                    logger.error(e.toString());
                 });
             }
 
         })
         .catch(e => {
-            logger.error(e);
+            logger.error(e.toString());
         });
 
     });

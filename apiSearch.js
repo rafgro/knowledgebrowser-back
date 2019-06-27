@@ -470,6 +470,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
 
                 //2
                 let arrayOfQueries = new Array();
+                let arrayOfQueriesDEBUG = new Array();
                 let moreRelevantNeeded = false;
                 let moreRelevantOffset = 0;
                 let moreRelevantLimit = 0;
@@ -568,6 +569,14 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
                     .orderBy('id','asc')
                     .limit(moreRelevantLimit, moreRelevantOffset)
                     .run() );
+
+                    arrayOfQueriesDEBUG.push( sh.select('id','title','authors','abstract','doi','link','date','server')
+                    .from('content_preprints')
+                    .where('id','IN','('+moreRelevantIds.map(e => e.p).join(", ")+')')
+                    .orderBy('date','desc')
+                    .orderBy('id','asc')
+                    .limit(moreRelevantLimit, moreRelevantOffset)
+                    .build() );
                 }
                 if( lessRelevantNeeded ) {
 
@@ -589,6 +598,13 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
                         .orderBy('id','asc')
                         .limit(10, lessRelevantOffset)
                         .run() );
+                        arrayOfQueriesDEBUG.push( sh.select('id','title','authors','abstract','doi','link','date','server')
+                        .from('content_preprints')
+                        .where('id','IN','('+furtherHigher.map(e => e.p).join(", ")+')')
+                        .orderBy('date','desc')
+                        .orderBy('id','asc')
+                        .limit(10, lessRelevantOffset)
+                        .build() );
                     }
                     // taking from both sides
                     else if( lessRelevantOffset+10 > furtherHigher.length && lessRelevantOffset < furtherHigher.length ) {
@@ -607,6 +623,20 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
                         .orderBy('id','asc')
                         .limit(10, 0)
                         .run() );
+                        arrayOfQueriesDEBUG.push( sh.select('id','title','authors','abstract','doi','link','date','server')
+                        .from('content_preprints')
+                        .where('id','IN','('+furtherHigher.map(e => e.p).join(", ")+')')
+                        .orderBy('date','desc')
+                        .orderBy('id','asc')
+                        .limit(10, lessRelevantOffset)
+                        .build() );
+                        arrayOfQueriesDEBUG.push( sh.select('id','title','authors','abstract','doi','link','date','server')
+                        .from('content_preprints')
+                        .where('id','IN','('+furtherLower.map(e => e.p).join(", ")+')')
+                        .orderBy('date','desc')
+                        .orderBy('id','asc')
+                        .limit(10, 0)
+                        .build() );
                     }
                     // taking from lower boundary if we are past higher
                     else {
@@ -617,6 +647,13 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
                         .orderBy('id','asc')
                         .limit(10, lessRelevantOffset-furtherHigher.length)//lessRelevantOffset-furtherHigher.length)
                         .run() );
+                        arrayOfQueriesDEBUG.push( sh.select('id','title','authors','abstract','doi','link','date','server')
+                        .from('content_preprints')
+                        .where('id','IN','('+furtherLower.map(e => e.p).join(", ")+')')
+                        .orderBy('date','desc')
+                        .orderBy('id','asc')
+                        .limit(10, lessRelevantOffset-furtherHigher.length)//lessRelevantOffset-furtherHigher.length)
+                        .build() );
                         //reject( {less: lessRelevantOffset, highLen: furtherHigher.length, lowLen: furtherLower.length} );
                     }
 
@@ -759,13 +796,17 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
                 })
                 .catch(e=>{
                     registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'","error":"'+escape(e.toString())+'"}' );
-                    //reject( { "message": e.toString() } );
+                    logger.error(e.toString());
+                    logger.error( sh.select('term','relevant','relevant_abstract').from('index_title')
+                    .where('term','IN','(\''+queriesToDb.map(e => e.q).join('\', \'')+'\')').build() );
+                    logger.error( arrayOfQueriesDEBUG );
                     reject( { "message": "Sorry, we have encountered an error." } );
                 });
 
             }
             else {
                 registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'","error":"no results"}' );
+                logger.error("no results for "+query);
                 reject( { "message": "Sorry, there are no results for <i>"+query+"</i>. Would you like to rephrase your query?" });
             }
             
@@ -773,7 +814,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
         })
         .catch(e=>{
             registerQueryInStats( sh, workingQuery, '0', '{"timestamp":"'+Date.now()+'","error":"'+escape(e.toString())+'"}' );
-            //reject( { "message": e.toString() } );
+            logger.error(e.toString());
             reject( { "message": "Sorry, we have encountered an error." } );
         });
     
@@ -794,7 +835,7 @@ function registerQueryInStats( sh, query, lastQuality, newDetails, lastExecTime 
         //console.log('ok');
     })
     .catch(e => {
-        console.log(e);
+        logger.error(e.toString());
     });
 
     //changed to record every query in a new record

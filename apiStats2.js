@@ -8,7 +8,7 @@ exports.doYourJob = function( sh ) {
         const askForIndexingOffset = sh.select('value').from('manager').where('option','=','indexing_offset').run();
         const askForIndexingOffsetAbstract = sh.select('value').from('manager').where('option','=','indexing_offset_abstract').run();
         const askForLastFiftyQueries = sh.select('query','lastquality','details','lastexectime').from('query_stats')
-          .orderBy('id','desc').limit(50).run();
+          .orderBy('id','desc').limit(20).run();
         const askForLogsOfCrawling = sh.select('name','log').from('manager_lines').where('log','IS NOT',null)
           .orderBy('name','asc').run();
 
@@ -22,7 +22,7 @@ exports.doYourJob = function( sh ) {
                 { 'text': 'Initial indexing queue: '+(parseInt(arrayOfResults[0][0].count)-parseInt(arrayOfResults[1][0].value)) },
                 { 'text': 'Deep indexing queue: '+(parseInt(arrayOfResults[0][0].count)-parseInt(arrayOfResults[2][0].value)) },
                 { 'text': '___' },
-                { 'text': 'Queries:' }];
+                { 'text': 'Last queries:' }];
 
               let today = Date.now();
 
@@ -89,10 +89,14 @@ exports.doYourJob = function( sh ) {
               let fileReading = [ readLastLines.read('winston-error.log', 100), readLastLines.read('winston-combined.log', 500) ];
               Promise.all(fileReading)
               .then(arrayOfRead => {
-                  if( arrayOfRead[0].length > 0 ) arrayOfRead[0].split("\n").forEach( line => toResolve.push({'text': line }) );
+                  if( arrayOfRead[0].length > 0 ) {
+                    arrayOfRead[0].split("\n").reverse().forEach( line => toResolve.push({'text': line }) );
+                  }
                   toResolve.push({ 'text': '___' });
                   toResolve.push({ 'text': 'Combined log, 500 last lines:' });
-                  if( arrayOfRead[1].length > 0 ) arrayOfRead[1].split("\n").forEach( line => toResolve.push({'text': line }) );
+                  if( arrayOfRead[1].length > 0 ) {
+                    arrayOfRead[1].split("\n").reverse().forEach( line => toResolve.push({'text': line }) );
+                  }
                   resolve( toResolve );
               })
               .catch(e=>{

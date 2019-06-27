@@ -4,10 +4,10 @@ const request = require('request');
 
 const {shiphold} = require('ship-hold');
 const sh = shiphold({
-    host     : process.env.RDS_HOSTNAME,
+    host     : "aa1f3ajh2rexsb4c.ca68v3nuzco0.us-east-2.rds.amazonaws.com",
     user     : process.env.RDS_USERNAME,
     password : process.env.RDS_PASSWORD,
-    port     : process.env.RDS_PORT,
+    port     : 5432,
   database: 'postgres'
 });
 /*const sh = shiphold({

@@ -43,13 +43,13 @@ exports.processRssBody = function( sh, body, name ) {
                     logger.info('Inserted '+element["dc:identifier"]+' / '+myDate);
                 })
                 .catch(e => {
-                    logger.error(e);
+                    logger.error(e.toString());
                 });
             }
 
         })
         .catch(e => {
-            logger.error(e);
+            logger.error(e.toString());
         });
 
     });

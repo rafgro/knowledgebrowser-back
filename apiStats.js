@@ -137,8 +137,10 @@ exports.doYourJob = function( sh ) {
                 }
               }
               function compare(a,b) {
-                if( a.lastMonth > b.lastMonth ) { return -1; }
-                else if( a.lastMonth < b.lastMonth ) { return 1; }
+                /*if( a.lastMonth > b.lastMonth ) { return -1; }
+                else if( a.lastMonth < b.lastMonth ) { return 1; }*/
+                if( a.lastWeek > b.lastWeek ) { return -1; }
+                else if( a.lastWeek < b.lastWeek ) { return 1; }
                 return 0;
               }
               preprintServers.sort(compare);

@@ -4,10 +4,10 @@ var nlp = require('compromise');
 
 const {shiphold} = require('ship-hold');
 const sh = shiphold({
-    host     : process.env.RDS_HOSTNAME,
+    host     : "aa1f3ajh2rexsb4c.ca68v3nuzco0.us-east-2.rds.amazonaws.com",
     user     : process.env.RDS_USERNAME,
     password : process.env.RDS_PASSWORD,
-    port     : process.env.RDS_PORT,
+    port     : 5432,
   database: 'postgres'
 });
 
@@ -290,7 +290,7 @@ exports.index = function(whichId,canStop) {
                             checkInsertionCounter();
                         })
                         .catch(e => {
-                            logger.error(e);
+                            logger.error(e.toString());
                             logger.error( sh.update('index_title').set('relevant','\''+JSON.stringify(relevant)+'\'')
                                             .where('term','=',element.t).build() );
                         });
@@ -316,7 +316,7 @@ exports.index = function(whichId,canStop) {
                         checkInsertionCounter();
                     })
                     .catch(e => {
-                        logger.error(e);
+                        logger.error(e.toString());
                         logger.error( sh.insert({ term:element.t, relevant:'\'[{"p":"'+id+'","w":'+element.w+'}]\'' })
                                         .into('index_title').build() );
                     });
@@ -324,7 +324,7 @@ exports.index = function(whichId,canStop) {
 
             })
             .catch(e => {
-                logger.error(e);
+                logger.error(e.toString());
                 logger.error( sh.select('term','relevant').from('index_title').where('term','=',element.t).build() );
             });
 
@@ -332,7 +332,7 @@ exports.index = function(whichId,canStop) {
 
     })
     .catch(e => {
-        logger.error(e);
+        logger.error(e.toString());
         logger.error(sh.select('title','id').from("content_preprints").where('id','=', whichId).build());
     });
 };

@@ -36,10 +36,10 @@ server.get('/ops/correct', (request,response)=>{
 
 const {shiphold} = require('ship-hold');
 const sh = shiphold({
-    host     : process.env.RDS_HOSTNAME,
+    host     : "aa1f3ajh2rexsb4c.ca68v3nuzco0.us-east-2.rds.amazonaws.com",
     user     : process.env.RDS_USERNAME,
     password : process.env.RDS_PASSWORD,
-    port     : process.env.RDS_PORT,
+    port     : 5432,
   database: 'postgres'
 });
 /*const sh = shiphold({
@@ -60,8 +60,9 @@ server.get('/api/search', (request,response)=>{
     response.send( { "message": + hrend[1] / 1000000, "numberofall": results.numberofall, "results": results.results } );
   })
   .catch( e=> {
+    logger.error(JSON.stringify(e));
+    logger.error('request: '+JSON.stringify(request));
     response.send( e );
-    logger.error(e.toString());
   });
 
 });
@@ -74,6 +75,7 @@ server.get('/api/stats', (request,response)=>{
     response.send( results );
   })
   .catch( e=> {
+    logger.error(JSON.stringify(e));
     response.send( [ { "text": JSON.stringify(e) } ] );
   });
 
@@ -87,6 +89,7 @@ server.get('/api/stats2', (request,response)=>{
     response.send( results );
   })
   .catch( e=> {
+    logger.error(JSON.stringify(e));
     response.send( [ { "text": JSON.stringify(e) } ] );
   });
 

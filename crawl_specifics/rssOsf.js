@@ -57,7 +57,7 @@ exports.processRssBody = function( sh, body, name ) {
                         logger.info('Inserted '+id+' / '+element.published);
                     })
                     .catch(e => {
-                        logger.error(e);
+                        logger.error(e.toString());
                     });
 
                 }
@@ -65,7 +65,7 @@ exports.processRssBody = function( sh, body, name ) {
 
         })
         .catch(e => {
-            logger.error(e);
+            logger.error(e.toString());
         });
 
     });

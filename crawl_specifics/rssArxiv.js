@@ -50,7 +50,7 @@ exports.processRssBody = function( sh, body, name ) {
                         logger.info('Inserted '+id+' / '+myDate);
                     })
                     .catch(e => {
-                        logger.error(e);
+                        logger.error(e.toString());
                     });
                 }
 
@@ -74,19 +74,20 @@ exports.processRssBody = function( sh, body, name ) {
                         doi: id,
                         title: escape(element["title"]),
                         server: 'arXiv' })
+                    .where('doi','=',id)
                     .run()
                     .then(() => {
                         logger.info('Updated '+id+' / '+myDate);
                     })
                     .catch(e => {
-                        logger.error(e);
+                        logger.error(e.toString());
                     });
                 }
             }
 
         })
         .catch(e => {
-            logger.error(e);
+            logger.error(e.toString());
         });
 
     });

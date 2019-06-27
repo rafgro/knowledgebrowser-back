@@ -5,10 +5,10 @@ const indexPublicationAbstract = require('./indexPublicationAbstract');
 
 const {shiphold} = require('ship-hold');
 const sh = shiphold({
-    host     : process.env.RDS_HOSTNAME,
+    host     : "aa1f3ajh2rexsb4c.ca68v3nuzco0.us-east-2.rds.amazonaws.com",
     user     : process.env.RDS_USERNAME,
     password : process.env.RDS_PASSWORD,
-    port     : process.env.RDS_PORT,
+    port     : 5432,
   database: 'postgres'
 });
 /*const sh = shiphold({
@@ -49,7 +49,7 @@ exports.start = function () {
                     logger.info('Offset set to '+value);
                 })
                 .catch(e => {
-                    logger.error(e);
+                    logger.error(e.toString());
                 })
                 .finally(() => {
                     //logger.info('Stopping manager 1');
@@ -63,12 +63,12 @@ exports.start = function () {
 
         })
         .catch( e => {
-            logger.error(e);
+            logger.error(e.toString());
         });
         
     })
     .catch(e => {
-        logger.error(e);
+        logger.error(e.toString());
     });
     
     sh.select('value').from('manager').where('option','=', 'indexing_offset_abstract')
@@ -99,7 +99,7 @@ exports.start = function () {
                     logger.info('Offset set to '+value);
                 })
                 .catch(e => {
-                    logger.error(e);
+                    logger.error(e.toString());
                 })
                 .finally(() => {
                     //logger.info('Stopping manager 1');
@@ -113,11 +113,11 @@ exports.start = function () {
 
         })
         .catch( e => {
-            logger.error(e);
+            logger.error(e.toString());
         });
         
     })
     .catch(e => {
-        logger.error(e);
+        logger.error(e.toString());
     });
 };
