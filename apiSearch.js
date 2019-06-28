@@ -14,7 +14,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
         let workingQuery = query;
         if( query.length > 60 ) { workingQuery = workingQuery.substring(0,60); }
         workingQuery = workingQuery.replace(/\'/g,"").replace(/\:/g," ").replace(/\;/g," ").replace(/\"/g,"")
-          .replace(/\//g," ").replace(/\\/g," ").replace(/\-/g," ");
+          .replace(/\//g," ").replace(/\\/g," ").replace(/\-/g," ").replace(/\(/g,"").replace(/\)/g,"");
         if( query.length < 1 || query == " " ) { reject( { "message": "Please enter your query." }); }
 
         // query processing
@@ -45,23 +45,23 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
                 toReturn.push( processedNoun );
                 processedNoun = noun.substring(0,noun.length-2);
             } else if( lastCase == 'n' && noun.charAt(noun.length-2) == 'o' && noun.charAt(noun.length-3) == 'i' ) {
-                // expression, evolution
-                processedNoun = noun.substring(0,noun.length-1);
+                // expression, evolution -> express, evolut
+                processedNoun = noun.substring(0,noun.length-3);
             } else if( lastCase == 'm' && noun.charAt(noun.length-2) == 's' ) {
-                // autism
-                processedNoun = noun.substring(0,noun.length-1);
+                // autism -> autist
+                processedNoun = noun.substring(0,noun.length-1)+"t";
             }
+            toReturn.push( processedNoun + 'ed' );
+            toReturn.push( processedNoun + 'ely' );
+            toReturn.push( processedNoun + 'ary' );
+            toReturn.push( processedNoun + 'ory' );
             toReturn.push( processedNoun + 'ic' );
             toReturn.push( processedNoun + 'al' );
             toReturn.push( processedNoun + 'ial' );
             toReturn.push( processedNoun + 'ical' );
             toReturn.push( processedNoun + 'ous' );
             toReturn.push( processedNoun + 'ational' );
-            toReturn.push( processedNoun + 'ary' );
-            toReturn.push( processedNoun + 'ed' );
-            toReturn.push( processedNoun + 'ely' );
             toReturn.push( processedNoun + 'ation' );
-            toReturn.push( processedNoun + 'tic' );
             if( noun.includes('ity') ) toReturn.push( noun.substring(0,noun.length-3) );
             if( noun.includes('al') ) toReturn.push( noun.substring(0,noun.length-2) );
             return toReturn;
@@ -207,9 +207,9 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
                     queriesToDb.push( { q: word.normal, w: 3, s: word.text } );
                     populateNounToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 2, s: word.text, a: false } ) );
                 }
-                else if( word.tags.find( checkIfPreposition ) ) {
+                /*else if( word.tags.find( checkIfPreposition ) ) {
                     queriesToDb.push( { q: word.normal, w: 2, s: word.text, a: false } );
-                }
+                } ? */
                 else if( word.tags.find( checkIfValue ) ) {
                     queriesToDb.push( { q: word.normal, w: 1, s: word.text, a: false } );
                 }
@@ -763,13 +763,16 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
                     let newestResult = (new Date(properArray[0].date)).getTime();
                     let publications = properArray.map( (value) => {
                         let untitle = correctScreamingTitle(unescape(value.title).replace(RegExp("\\. \\(arXiv:.*\\)"),"").replace(/\\'/,"'"));
-                        value.title = strongifyTitle( untitle, listOfWords ).replace("</div>","");
+                        value.title = strongifyTitle( untitle, listOfWords ).replace(/\<\/\d\i\v\>/g,"");
                         value.authors = unescape(value.authors);
                         if( value.abstract.length > 5 ) {
-                            let unabstract = striptags(unescape(value.abstract).replace(/\r?\n|\r/g," ").toString());
+                            let unabstract = striptags(unescape(value.abstract).replace(/\r?\n|\r/g," ").replace(/\<\/\d\i\v\>/g,"").toString());
                             value.abstract = strongifyAbstract( unabstract, listOfWords );
                         }
-                        if( value.abstract.length > 380 ) value.abstract = value.abstract.substring(0,380);
+                        if( value.abstract.length > 360 ) {
+                            let where = value.abstract.indexOf(" ",350);
+                            value.abstract = value.abstract.substring(0,where)+"...";
+                        }
                         value.weight = originalMultipliedRelevant.get(parseInt(value.id));
                         value.relativeWeight = calculateRelativeWeight(value.weight,numberOfImportantWords);
                         //value.debug = verifyQueryCoverage( pubVsTitleTerm[parseInt(value.id)], pubVsAbstractTerm[parseInt(value.id)] );

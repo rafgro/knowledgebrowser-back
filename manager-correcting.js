@@ -1,6 +1,7 @@
 
 const logging = require('./logger');
 const correctTerms = require('./correctTerms');
+const correctArxiv = require('./correctArxiv');
 
 const {shiphold} = require('ship-hold');
 const sh = shiphold({
@@ -19,7 +20,38 @@ const sh = shiphold({
 
 exports.start = function () {
 
-    sh.select('value').from('manager').where('option','=', 'correcting_terms_offset')
+    sh.select('value').from('manager').where('option','=', 'correcting_arxiv_offset')
+    .run()
+    .then(result => {
+
+        sh.select('id','title','server').from("content_preprints").orderBy('id').limit(100,result[0].value).run()
+        .then( results => {
+            
+            correctArxiv.process(results);
+
+            if( results.length != 0 ) {
+                let value = parseInt(result[0].value) +results.length;//+1;
+                sh.update('manager').set('value',value.toString()).where('option','=','correcting_arxiv_offset')
+                .run()
+                .then(() => {
+                    logger.info('Correction offset set to '+value);
+                })
+                .catch(e => {
+                    logger.error(e.toString());
+                });
+            }
+
+        })
+        .catch( e => {
+            logger.error(e.toString());
+        });
+        
+    })
+    .catch(e => {
+        logger.error(e.toString());
+    });
+
+    /*sh.select('value').from('manager').where('option','=', 'correcting_terms_offset')
     .run()
     .then(result => {
 
@@ -48,5 +80,5 @@ exports.start = function () {
     })
     .catch(e => {
         logger.error(e.toString());
-    });
+    });*/
 };
