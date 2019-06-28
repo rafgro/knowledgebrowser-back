@@ -193,7 +193,8 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
         // single words
         if( oneword == false ) {
             words.forEach( function(word) {
-                if( word.tags.find( checkIfNoun ) ) {
+                if( word.normal == "on" || word.normal == "of" || word.normal == "in" ) { } //no action
+                else if( word.tags.find( checkIfNoun ) ) {
                     queriesToDb.push( { q: word.normal, w: 4, s: word.text, a: true } );
                     populateNounToForms(word.normal).forEach( e => queriesToDb.push( { q: e, w: 4, s: word.text, a: true } ) );
                     //queriesToDb.push( { q: nlp(word.normal).nouns().toSingular().all().normalize().out(), w: 3, s: word.text, a: true } );
@@ -771,7 +772,7 @@ exports.doYourJob = function( sh, query, limit=10, offset=0, stats=1 ) {
                         }
                         if( value.abstract.length > 360 ) {
                             let where = value.abstract.indexOf(" ",350);
-                            value.abstract = value.abstract.substring(0,where)+"...";
+                            if( where > -1 ) value.abstract = value.abstract.substring(0,where)+"...";
                         }
                         value.weight = originalMultipliedRelevant.get(parseInt(value.id));
                         value.relativeWeight = calculateRelativeWeight(value.weight,numberOfImportantWords);
