@@ -1,58 +1,55 @@
-
 const logContinuity = require('./logContinuity');
 
-exports.processRssBody = function( sh, body, name ) {
+exports.processRssBody = function (sh, body, name) {
+  let isContinuous = false;
 
-    let isContinuous = false;
+  body['rdf:RDF'].item.forEach((element) => {
+    let nonDuplicated = false;
 
-    body["rdf:RDF"].item.forEach( element => {
+    sh.select('doi')
+      .from('content_preprints')
+      .where('doi', '=', element['dc:identifier'])
+      .run()
+      .then((doi) => {
+        if (doi.length === 0) {
+          nonDuplicated = true;
+        } else {
+          isContinuous = true;
+        }
 
-        let nonDuplicated = false;
+        if (nonDuplicated === true) {
+          const hour = new Date().getUTCHours();
+          let myDate = ''; // format: 2019-06-04 08:00:00
+          if (hour < 10) myDate = element['dc:date'] + ' 0' + hour + ':00:00';
+          else myDate = element['dc:date'] + ' ' + hour + ':00:00';
 
-        sh.select('doi').from('content_preprints').where('doi','=',element["dc:identifier"])
-        .run()
-        .then(doi => {
+          sh.insert({
+            link: element.link.toString().replace('\n', ''),
+            abstract: "(\'" + escape(element.description) + "\')",
+            authors: escape(element['dc:creator']),
+            date: myDate,
+            doi: element['dc:identifier'],
+            title: escape(element['dc:title']),
+            server: 'medRxiv',
+          })
+            .into('content_preprints')
+            .run()
+            .then(() => {
+              logger.info(
+                'Inserted ' + element['dc:identifier'] + ' / ' + myDate,
+              );
+            })
+            .catch((e) => {
+              logger.error(e.toString());
+            });
+        }
+      })
+      .catch((e) => {
+        logger.error(e.toString());
+      });
+  });
 
-            if( doi.length == 0 ) {
-                nonDuplicated = true;
-            } else {
-                isContinuous = true;
-            }
-
-            if( nonDuplicated == true ) {
-
-                let hour = (new Date).getUTCHours();
-                let myDate = ''; //format: 2019-06-04 08:00:00
-                if( hour < 10 ) myDate = element["dc:date"]+' 0'+hour+':00:00';
-                else myDate = element["dc:date"]+' '+hour+':00:00';
-
-                sh.insert({ 
-                    link: element["link"].toString().replace("\n", ""),
-                    abstract: "(\'" + escape(element["description"]) + "\')",
-                    authors: escape(element["dc:creator"]),
-                    date: myDate,
-                    doi: element["dc:identifier"],
-                    title: escape(element["dc:title"]),
-                    server: 'medRxiv' })
-                .into('content_preprints')
-                .run()
-                .then(() => {
-                    logger.info('Inserted '+element["dc:identifier"]+' / '+myDate);
-                })
-                .catch(e => {
-                    logger.error(e.toString());
-                });
-            }
-
-        })
-        .catch(e => {
-            logger.error(e.toString());
-        });
-
-    });
-
-    setTimeout( () => {
-        logContinuity.logIt( sh, isContinuous, name );
-    }, 3000 );
-
-}
+  setTimeout(() => {
+    logContinuity.logIt(sh, isContinuous, name);
+  }, 3000);
+};

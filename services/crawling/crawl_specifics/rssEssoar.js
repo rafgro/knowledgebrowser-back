@@ -1,53 +1,55 @@
-
 const logContinuity = require('./logContinuity');
 
-exports.processRssBody = function( sh, body, name ) {
+exports.processRssBody = function (sh, body, name) {
+  let isContinuous = false;
 
-    let isContinuous = false;
+  body['rdf:RDF'].item.forEach((element) => {
+    let nonDuplicated = false;
 
-    body["rdf:RDF"].item.forEach( element => {
+    sh.select('doi')
+      .from('content_preprints')
+      .where('doi', '=', element['dc:identifier'])
+      .run()
+      .then((doi) => {
+        if (doi.length === 0) {
+          nonDuplicated = true;
+        } else {
+          isContinuous = true;
+        }
 
-        let nonDuplicated = false;
+        if (nonDuplicated === true) {
+          sh.insert({
+            link: element['prism:url'],
+            abstract: ' ',
+            authors: escape(
+              element['dc:creator'].toString().replace(/\\\n/g, ''),
+            ),
+            date: element['prism:coverDate'].toString().substring(0, 18),
+            doi: element['dc:identifier'],
+            title: escape(element['dc:title']),
+            server: 'ESSOAr',
+          })
+            .into('content_preprints')
+            .run()
+            .then(() => {
+              logger.info(
+                'Inserted '
+                  + element['dc:identifier']
+                  + ' / '
+                  + element['prism:coverDate'],
+              );
+            })
+            .catch((e) => {
+              logger.error(e.toString());
+            });
+        }
+      })
+      .catch((e) => {
+        logger.error(e.toString());
+      });
+  });
 
-        sh.select('doi').from('content_preprints').where('doi','=',element["dc:identifier"])
-        .run()
-        .then(doi => {
-
-            if( doi.length == 0 ) {
-                nonDuplicated = true;
-            } else {
-                isContinuous = true;
-            }
-
-            if( nonDuplicated == true ) {
-
-                sh.insert({ 
-                    link: element["prism:url"],
-                    abstract: ' ',
-                    authors: escape(element["dc:creator"].toString().replace(/\\\n/g,"")),
-                    date: element["prism:coverDate"].toString().substring(0,18),
-                    doi: element["dc:identifier"],
-                    title: escape(element["dc:title"]),
-                    server: 'ESSOAr' })
-                .into('content_preprints')
-                .run()
-                .then(() => {
-                    logger.info('Inserted '+element["dc:identifier"]+' / '+element["prism:coverDate"]);
-                })
-                .catch(e => {
-                    logger.error(e.toString());
-                });
-            }
-
-        })
-        .catch(e => {
-            logger.error(e.toString());
-        });
-
-    });
-
-    setTimeout( () => {
-        logContinuity.logIt( sh, isContinuous, name );
-    }, 3000 );
-
-}
+  setTimeout(() => {
+    logContinuity.logIt(sh, isContinuous, name);
+  }, 3000);
+};
