@@ -22,7 +22,7 @@ exports.start = function (name, mainurl, mainsuburls = null) {
       setTimeout(() => {
         logger.info(subject);
         request(mainurl + subject, { timeout: 20000 },
-          (e, r, b) => processResponseOfRss(e, r, b, name, subject));
+          (e, r, b) => processResponseOfRss(e, r, b, name, subject.toString()));
       }, 3000 * index); // slow requesting to avoid one-time ddos
     });
   } else {

@@ -1002,6 +1002,17 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                 return tempText;
               }
 
+              function strongifyAbstractFull(text, listToStrong) {
+                // eslint-disable-next-line prefer-const
+                let tempText = text;
+                listToStrong.forEach((word) => {
+                  tempText = tempText.replace(RegExp(`(${word}) `, 'gi'), '<strong>$1</strong> ');
+                  tempText = tempText.replace(RegExp(` (${word})\\.`, 'gi'), ' <strong>$1</strong>.');
+                  tempText = tempText.replace(RegExp(` (${word}) `, 'gi'), ' <strong>$1</strong> ');
+                });
+                return tempText;
+              }
+
               function correctScreamingTitle(whatTitle) {
                 let tempTitle = whatTitle;
                 const numLow = tempTitle.replace(/[A-Z]/g, '').toString()
@@ -1043,6 +1054,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                       .toString(),
                   );
                   value.abstract = strongifyAbstract(unabstract, listOfWords);
+                  value.abstractFull = strongifyAbstractFull(unabstract, listOfWords);
                 }
                 if (value.abstract.length > 360) {
                   const where = value.abstract.indexOf(' ', 350);
