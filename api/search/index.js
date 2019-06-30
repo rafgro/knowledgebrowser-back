@@ -316,68 +316,66 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1) {
     if (numberOfImportantWords === 0) numberOfImportantWords = 1;
 
     // single words
-    if (oneword === false) {
-      words.forEach((word) => {
-        // eslint-disable-next-line no-empty
-        if (
-          word.normal === 'on'
-          || word.normal === 'of'
-          || word.normal === 'in'
-        ) {
-          // no action
-        } else if (word.tags.find(checkIfNoun)) {
-          queriesToDb.push({
-            q: word.normal,
-            w: 4,
-            s: word.text,
-            a: true,
-          });
-          populateNounToForms(word.normal).forEach(e => queriesToDb.push({
-            q: e,
-            w: 4,
-            s: word.text,
-            a: true,
-          }));
-          // queriesToDb.push( { q: nlp(word.normal).nouns().toSingular().all().normalize().out(), w: 3, s: word.text, a: true } );
-          // queriesToDb.push( { q: nlp(word.normal).nouns().toPlural().all().normalize().out(), w: 3, s: word.text, a: true } );
-        } else if (word.tags.find(checkIfVerb)) {
-          queriesToDb.push({
-            q: word.normal,
-            w: 4,
-            s: word.text,
-            a: true,
-          });
-          populateVerbToForms(word.normal).forEach(e => queriesToDb.push({
-            q: e,
-            w: 3,
-            s: word.text,
-            a: true,
-          }));
-        } else if (word.tags.find(checkIfAdjective)) {
-          queriesToDb.push({ q: word.normal, w: 3, s: word.text });
-          populateNounToForms(word.normal).forEach(e => queriesToDb.push({
-            q: e,
-            w: 2,
-            s: word.text,
-            a: false,
-          }));
-        } else if (word.tags.find(checkIfValue)) {
-          queriesToDb.push({
-            q: word.normal,
-            w: 1,
-            s: word.text,
-            a: false,
-          });
-        } else {
-          queriesToDb.push({
-            q: word.normal,
-            w: 1,
-            s: word.text,
-            a: true,
-          });
-        }
-      });
-    }
+    words.forEach((word) => {
+      // eslint-disable-next-line no-empty
+      if (
+        word.normal === 'on'
+        || word.normal === 'of'
+        || word.normal === 'in'
+      ) {
+        // no action
+      } else if (word.tags.find(checkIfNoun)) {
+        queriesToDb.push({
+          q: word.normal,
+          w: 4,
+          s: word.text,
+          a: true,
+        });
+        populateNounToForms(word.normal).forEach(e => queriesToDb.push({
+          q: e,
+          w: 4,
+          s: word.text,
+          a: true,
+        }));
+        // queriesToDb.push( { q: nlp(word.normal).nouns().toSingular().all().normalize().out(), w: 3, s: word.text, a: true } );
+        // queriesToDb.push( { q: nlp(word.normal).nouns().toPlural().all().normalize().out(), w: 3, s: word.text, a: true } );
+      } else if (word.tags.find(checkIfVerb)) {
+        queriesToDb.push({
+          q: word.normal,
+          w: 4,
+          s: word.text,
+          a: true,
+        });
+        populateVerbToForms(word.normal).forEach(e => queriesToDb.push({
+          q: e,
+          w: 3,
+          s: word.text,
+          a: true,
+        }));
+      } else if (word.tags.find(checkIfAdjective)) {
+        queriesToDb.push({ q: word.normal, w: 3, s: word.text });
+        populateNounToForms(word.normal).forEach(e => queriesToDb.push({
+          q: e,
+          w: 2,
+          s: word.text,
+          a: false,
+        }));
+      } else if (word.tags.find(checkIfValue)) {
+        queriesToDb.push({
+          q: word.normal,
+          w: 1,
+          s: word.text,
+          a: false,
+        });
+      } else {
+        queriesToDb.push({
+          q: word.normal,
+          w: 1,
+          s: word.text,
+          a: true,
+        });
+      }
+    });
 
     // different forms are of lower weight when less words
     const lowerWeight = 10;
