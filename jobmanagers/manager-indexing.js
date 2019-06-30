@@ -44,7 +44,7 @@ exports.start = function () {
                 logger.info('Offset set to ' + value);
               })
               .catch((e) => {
-                logger.error(e.toString());
+                logger.error(JSON.stringify(e));
               })
               .finally(() => {
                 // logger.info('Stopping manager 1');
@@ -56,11 +56,11 @@ exports.start = function () {
           }
         })
         .catch((e) => {
-          logger.error(e.toString());
+          logger.error(JSON.stringify(e));
         });
     })
     .catch((e) => {
-      logger.error(e.toString());
+      logger.error(JSON.stringify(e));
     });
 
   loader.database
@@ -102,7 +102,7 @@ exports.start = function () {
                 logger.info('Offset set to ' + value);
               })
               .catch((e) => {
-                logger.error(e.toString());
+                logger.error(JSON.stringify(e));
               })
               .finally(() => {
                 // logger.info('Stopping manager 1');
@@ -114,10 +114,10 @@ exports.start = function () {
           }
         })
         .catch((e) => {
-          logger.error(e.toString());
+          logger.error(JSON.stringify(e));
         });
     })
     .catch((e) => {
-      logger.error(e.toString());
+      logger.error(JSON.stringify(e));
     });
 };

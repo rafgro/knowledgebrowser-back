@@ -395,8 +395,8 @@ exports.index = function (whichId) {
                     logger.info('Updated ' + element.t);
                   })
                   .catch((e) => {
-                    logger.error(e.toString());
-                    logger.error(
+                    logger.error(JSON.stringify(e));
+                    logger.error(JSON.stringify(
                       loader.database
                         .update('index_title')
                         .set(
@@ -405,7 +405,7 @@ exports.index = function (whichId) {
                         )
                         .where('term', '=', element.t)
                         .build(),
-                    );
+                    ));
                   });
               } else {
                 logger.info(element.t + ' existed');
@@ -423,8 +423,8 @@ exports.index = function (whichId) {
                   logger.info('Inserted ' + element.t);
                 })
                 .catch((e) => {
-                  logger.error(e.toString());
-                  logger.error(
+                  logger.error(JSON.stringify(e));
+                  logger.error(JSON.stringify(
                     loader.database
                       .insert({
                         term: element.t,
@@ -433,23 +433,23 @@ exports.index = function (whichId) {
                       })
                       .into('index_title')
                       .build(),
-                  );
+                  ));
                 });
             }
           })
           .catch((e) => {
-            logger.error(e.toString());
-            logger.error(
+            logger.error(JSON.stringify(e));
+            logger.error(JSON.stringify(
               loader.database
                 .select('term', 'relevant_abstract')
                 .from('index_title')
                 .where('term', '=', element.t)
                 .build(),
-            );
+            ));
           });
       });
     })
     .catch((e) => {
-      logger.error(e.toString());
+      logger.error(JSON.stringify(e));
     });
 };

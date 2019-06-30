@@ -370,14 +370,14 @@ exports.index = function (whichId, canStop) {
                     checkInsertionCounter();
                   })
                   .catch((e) => {
-                    logger.error(e.toString());
-                    logger.error(
+                    logger.error(JSON.stringify(e));
+                    logger.error(JSON.stringify(
                       loader.database
                         .update('index_title')
                         .set('relevant', "'" + JSON.stringify(relevant) + "'")
                         .where('term', '=', element.t)
                         .build(),
-                    );
+                    ));
                   });
               } else {
                 logger.info(element.t + ' existed');
@@ -398,8 +398,8 @@ exports.index = function (whichId, canStop) {
                   checkInsertionCounter();
                 })
                 .catch((e) => {
-                  logger.error(e.toString());
-                  logger.error(
+                  logger.error(JSON.stringify(e));
+                  logger.error(JSON.stringify(
                     loader.database
                       .insert({
                         term: element.t,
@@ -408,30 +408,30 @@ exports.index = function (whichId, canStop) {
                       })
                       .into('index_title')
                       .build(),
-                  );
+                  ));
                 });
             }
           })
           .catch((e) => {
-            logger.error(e.toString());
-            logger.error(
+            logger.error(JSON.stringify(e));
+            logger.error(JSON.stringify(
               loader.database
                 .select('term', 'relevant')
                 .from('index_title')
                 .where('term', '=', element.t)
                 .build(),
-            );
+            ));
           });
       });
     })
     .catch((e) => {
-      logger.error(e.toString());
-      logger.error(
+      logger.error(JSON.stringify(e));
+      logger.error(JSON.stringify(
         loader.database
           .select('title', 'id')
           .from('content_preprints')
           .where('id', '=', whichId)
           .build(),
-      );
+      ));
     });
 };

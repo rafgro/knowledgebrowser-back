@@ -25,6 +25,6 @@ exports.logIt = function (sh, trueOrFalse, what) {
       }
     })
     .catch((e) => {
-      logger.error(e.toString());
+      logger.error(JSON.stringify(e));
     });
 };

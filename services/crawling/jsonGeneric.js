@@ -22,7 +22,7 @@ exports.start = function (name, mainurl, mainsuburls = null) {
 
 function processResponseOfJson(error, response, body, name) {
   if (error) {
-    logger.error(error.toString());
+    logger.error(JSON.stringify(error));
   } else {
     // logger.info(body.substring(0, 5));
 
@@ -30,7 +30,7 @@ function processResponseOfJson(error, response, body, name) {
       const res = JSON.parse(body);
       processAndUploadToDatabase(name, res);
     } catch (e) {
-      logger.error(e.toString());
+      logger.error(JSON.stringify(e));
     }
   }
 }

@@ -57,6 +57,6 @@ exports.start = function () {
       });
     })
     .catch((e) => {
-      logger.error(e.toString());
+      logger.error(JSON.stringify(e));
     });
 };

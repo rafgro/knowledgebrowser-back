@@ -30,16 +30,16 @@ exports.start = function () {
                 logger.info('Correction offset set to ' + value);
               })
               .catch((e) => {
-                logger.error(e.toString());
+                logger.error(JSON.stringify(e));
               });
           }
         })
         .catch((e) => {
-          logger.error(e.toString());
+          logger.error(JSON.stringify(e));
         });
     })
     .catch((e) => {
-      logger.error(e.toString());
+      logger.error(JSON.stringify(e));
     });
 
   /* sh.select('value').from('manager').where('option','=', 'correcting_terms_offset')

@@ -38,7 +38,7 @@ exports.process = function (preprints) {
         logger.info(`good: updated ${arrayOfQueries.length} arxiv preprints`);
       })
       .catch((e) => {
-        logger.error(e.toString());
+        logger.error(JSON.stringify(e));
       });
   }
 };

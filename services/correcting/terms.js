@@ -45,11 +45,11 @@ exports.process = function (terms) {
             );
           })
           .catch((e) => {
-            logger.error(e.toString());
+            logger.error(JSON.stringify(e));
           });
       }
     })
     .catch((e) => {
-      logger.error(e.toString());
+      logger.error(JSON.stringify(e));
     });
 };

@@ -4,7 +4,7 @@ exports.processRssBody = function (sh, body, name) {
   let isContinuous = false;
 
   body.rss.channel[0].item.forEach((element) => {
-    const chemrxivDoi =      'chemRxiv:'
+    const chemrxivDoi = 'chemRxiv:'
       + element.link
         .toString()
         .substring(element.link.toString().lastIndexOf('/') + 1);
@@ -39,12 +39,12 @@ exports.processRssBody = function (sh, body, name) {
               );
             })
             .catch((e) => {
-              logger.error(e.toString());
+              logger.error(JSON.stringify(e));
             });
         }
       })
       .catch((e) => {
-        logger.error(e.toString());
+        logger.error(JSON.stringify(e));
       });
   });
 

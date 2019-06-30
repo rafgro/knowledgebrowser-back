@@ -459,31 +459,32 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1) {
               // there are terms with null relevant (title) because they have only abstract relevant (abstract)
               JSON.parse(result[i].relevant).forEach((e) => {
                 const tempid = parseInt(e.p, 10);
-
-                if (originalMultipliedRelevant.has(tempid)) {
-                  originalMultipliedRelevant.set(
-                    tempid,
-                    parseFloat(e.w) * queryWeight
-                      + originalMultipliedRelevant.get(tempid),
-                  );
-                  scopesOfPubs.set(
-                    tempid,
-                    queryScope + ' ' + scopesOfPubs.get(tempid),
-                  );
-                } else {
-                  originalMultipliedRelevant.set(
-                    tempid,
-                    parseFloat(e.w) * queryWeight,
-                  );
-                  scopesOfPubs.set(tempid, queryScope);
-                }
-                if (scopesOfPubsTitle.has(tempid)) {
-                  scopesOfPubsTitle.set(
-                    tempid,
-                    queryScope + ' ' + scopesOfPubsTitle.get(tempid),
-                  );
-                } else {
-                  scopesOfPubsTitle.set(tempid, queryScope);
+                if (Number.isInteger(tempid)) {
+                  if (originalMultipliedRelevant.has(tempid)) {
+                    originalMultipliedRelevant.set(
+                      tempid,
+                      parseFloat(e.w) * queryWeight
+                        + originalMultipliedRelevant.get(tempid),
+                    );
+                    scopesOfPubs.set(
+                      tempid,
+                      queryScope + ' ' + scopesOfPubs.get(tempid),
+                    );
+                  } else {
+                    originalMultipliedRelevant.set(
+                      tempid,
+                      parseFloat(e.w) * queryWeight,
+                    );
+                    scopesOfPubs.set(tempid, queryScope);
+                  }
+                  if (scopesOfPubsTitle.has(tempid)) {
+                    scopesOfPubsTitle.set(
+                      tempid,
+                      queryScope + ' ' + scopesOfPubsTitle.get(tempid),
+                    );
+                  } else {
+                    scopesOfPubsTitle.set(tempid, queryScope);
+                  }
                 }
               });
             }
@@ -493,23 +494,24 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1) {
             ) {
               JSON.parse(result[i].relevant_abstract).forEach((e) => {
                 const tempid = parseInt(e.p, 10);
-
-                if (originalMultipliedRelevant.has(tempid)) {
-                  originalMultipliedRelevant.set(
-                    tempid,
-                    parseFloat(e.w) * queryWeight
-                      + originalMultipliedRelevant.get(tempid),
-                  );
-                  scopesOfPubs.set(
-                    tempid,
-                    queryScope + ' ' + scopesOfPubs.get(tempid),
-                  );
-                } else {
-                  originalMultipliedRelevant.set(
-                    tempid,
-                    parseFloat(e.w) * queryWeight,
-                  );
-                  scopesOfPubs.set(tempid, queryScope);
+                if (Number.isInteger(tempid)) {
+                  if (originalMultipliedRelevant.has(tempid)) {
+                    originalMultipliedRelevant.set(
+                      tempid,
+                      parseFloat(e.w) * queryWeight
+                        + originalMultipliedRelevant.get(tempid),
+                    );
+                    scopesOfPubs.set(
+                      tempid,
+                      queryScope + ' ' + scopesOfPubs.get(tempid),
+                    );
+                  } else {
+                    originalMultipliedRelevant.set(
+                      tempid,
+                      parseFloat(e.w) * queryWeight,
+                    );
+                    scopesOfPubs.set(tempid, queryScope);
+                  }
                 }
               });
             }
@@ -1144,7 +1146,8 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1) {
                 return value;
               });
 
-              if (parseInt(offset, 10) === 0 && stats === 1) {
+              // eslint-disable-next-line eqeqeq
+              if (parseInt(offset, 10) == 0 && stats == 1) {
                 let quality = 0;
                 quality = publications[0].relativeWeight / 2;
                 if (publications.length >= 5) { quality += publications[4].relativeWeight / 4; }
@@ -1191,19 +1194,9 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1) {
                   + escape(e.toString())
                   + '"}',
               );
-              logger.error(e.toString());
-              logger.error(
-                sh
-                  .select('term', 'relevant', 'relevant_abstract')
-                  .from('index_title')
-                  .where(
-                    'term',
-                    'IN',
-                    "('" + queriesToDb.map(ele => ele.q).join("', '") + "')",
-                  )
-                  .build(),
-              );
-              logger.error(arrayOfQueriesDEBUG);
+              logger.error('line 1194');
+              logger.error(JSON.stringify(e));
+              logger.error(JSON.stringify(arrayOfQueriesDEBUG));
               reject({ message: 'Sorry, we have encountered an error.' });
             });
         } else {
@@ -1213,6 +1206,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1) {
             '0',
             '{"timestamp":"' + Date.now() + '","error":"no results"}',
           );
+          logger.error('line 1217');
           logger.error('no results for ' + query);
           reject({
             message:
@@ -1233,7 +1227,15 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1) {
             + escape(e.toString())
             + '"}',
         );
-        logger.error(e.toString());
+        logger.error('line 1238');
+        logger.error(JSON.stringify(
+          sh
+            .select('term', 'relevant', 'relevant_abstract')
+            .from('index_title')
+            .where('term', 'IN', "('" + queriesToDb.map(es => es.q).join("', '") + "')")
+            .build(),
+        ));
+        logger.error(JSON.stringify(e));
         reject({ message: 'Sorry, we have encountered an error.' });
       });
   });
@@ -1249,16 +1251,27 @@ function registerQueryInStats(
   sh.insert({
     query,
     lastquality: lastQuality,
-    details: "'[" + newDetails + "]'",
+    details: "\'[" + newDetails + "]\'",
     lastexectime: lastExecTime,
   })
     .into('query_stats')
     .run()
     .then(() => {
-      // console.log('ok');
+      logger.info(`Logged query ${query}`);
     })
     .catch((e) => {
-      logger.error(e.toString());
+      logger.error('line 1271');
+      logger.error(JSON.stringify(
+        sh.insert({
+          query,
+          lastquality: lastQuality,
+          details: "\'[" + newDetails + "]\'",
+          lastexectime: lastExecTime,
+        })
+          .into('query_stats')
+          .build(),
+      ));
+      logger.error(JSON.stringify(e));
     });
 
   // changed to record every query in a new record

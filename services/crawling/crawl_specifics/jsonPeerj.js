@@ -43,12 +43,12 @@ exports.processJsonBody = function (sh, body, name) {
               logger.info(`Inserted doi: ${element.doi} / ${myDate}`);
             })
             .catch((e) => {
-              logger.error(e.toString());
+              logger.error(JSON.stringify(e));
             });
         }
       })
       .catch((e) => {
-        logger.error(e.toString());
+        logger.error(JSON.stringify(e));
       });
   });
 

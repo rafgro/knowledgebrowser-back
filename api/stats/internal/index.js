@@ -141,8 +141,8 @@ exports.doYourJob = function (sh) {
         toResolve.push({ text: 'Error log, 100 last lines:' });
 
         const fileReading = [
-          readLastLines.read('winston-error.log', 100),
-          readLastLines.read('winston-combined.log', 500),
+          readLastLines.read('winston-error.log', 2000),
+          readLastLines.read('winston-combined.log', 1000),
         ];
         Promise.all(fileReading)
           .then((arrayOfRead) => {
