@@ -8,7 +8,7 @@ exports.logIt = function (sh, trueOrFalse, what, subject) {
 
       if (currentLog[0].log == null) {
         // first time log
-        const logText = `[{"timestamp":${timestamp},"cont":${trueOrFalse}},"sub":${subject}]`;
+        const logText = `[{"timestamp":${timestamp},"cont":${trueOrFalse},"sub":"${subject}"}]`;
         sh.update('manager_lines')
           .set('log', `'${logText}'`)
           .where('name', '=', what)

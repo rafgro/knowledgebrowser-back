@@ -89,9 +89,11 @@ exports.doYourJob = function (sh) {
             toResolve.push({
               text:
                 when
-                + ': '
+                + ': <a href="https://knowledgebrowser.org/preprints/search?q='
+                + unescape(query.query).replace(/ /g, '+')
+                + '&stats=0" target="_blank">'
                 + unescape(query.query)
-                + ' (<strong>'
+                + '</a> (<strong>'
                 + lasted
                 + ' ms</strong>, '
                 + query.lastquality

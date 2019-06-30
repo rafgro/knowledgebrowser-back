@@ -36,24 +36,25 @@ exports.processRssBody = function (sh, body, name, subject) {
             if (myDate.length === 4) myDate += '-01-01';
             if (hour < 10) myDate += ' 0' + hour + ':00:00';
             else myDate += ' ' + hour + ':00:00';
-
-            sh.insert({
-              link: element['rss:link'],
-              abstract: "(\'" + escape(element['rss:description']) + "\')",
-              authors: myAuthors,
-              date: myDate,
-              doi: id,
-              title: escape(element['rss:title']),
-              server: 'NEP RePEc',
-            })
-              .into('content_preprints')
-              .run()
-              .then(() => {
-                logger.info('Inserted ' + id + ' / ' + myDate);
+            if (myDate.length >= 19) {
+              sh.insert({
+                link: element['rss:link'],
+                abstract: "(\'" + escape(element['rss:description']) + "\')",
+                authors: myAuthors,
+                date: myDate,
+                doi: id,
+                title: escape(element['rss:title']),
+                server: 'NEP RePEc',
               })
-              .catch((e) => {
-                logger.error(JSON.stringify(e));
-              });
+                .into('content_preprints')
+                .run()
+                .then(() => {
+                  logger.info('Inserted ' + id + ' / ' + myDate);
+                })
+                .catch((e) => {
+                  logger.error(JSON.stringify(e));
+                });
+            }
           }
         })
         .catch((e) => {
