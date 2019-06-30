@@ -7,7 +7,7 @@ const nlp = require('compromise');
 const striptags = require('striptags');
 
 // eslint-disable-next-line no-unused-vars
-exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1) {
+exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sortMode = 0) {
   return new Promise((resolve, reject) => {
     const hrstart = process.hrtime();
 
@@ -582,370 +582,285 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1) {
           });
           // reject( { scope: scopesOfPubs.get() } )
 
-          // idea: node is stalling during mapping results to weights when there are thousands of them,
-          // so we need to pass to node only the last step of processing,
-          // so we can: 1. divide pubs to two arrays - relevant and low relevancy (just one foreach!)
-          // then: 2. ask for them in two queries BUT leave sorting by date and limiting for faster postgres
-          // then: 3. merge both queries and map only that part that will be sent by api
-          // maybe three arrays: relevant, grey area (3-2/10) and then unrelevant (1/10)
 
-          // 1
-          const moreRelevantIds = [];
-          const lessRelevantIds = [];
-          originalMultipliedRelevant.forEach((pubWeight, pubId) => {
-            // first correct weight - was in different loop but why use two when can use one
-            /* let properWeight = pubWeight;
-                    let tempCov = 0;
-                    let tempScope = scopesOfPubs.get(pubId);
-                    workingWords.forEach( el => {
-                        if( tempScope.includes(el) ) tempCov++;
-                    });
-                    if( tempCov < workingWords.length ) {
-                        let newOne = pubWeight*(1/numberOfImportantWords);
-                        if( newOne > limitOfRelevancy ) newOne = limitOfRelevancy-2;
-                        myMap.set(pubId,newOne);
-                        properWeight = newOne;
-                    } */
-
-            // final division
-            if (pubWeight > limitOfRelevancy) { moreRelevantIds.push({ p: pubId, w: pubWeight }); } else lessRelevantIds.push({ p: pubId, w: pubWeight });
-          });
-
-          // 2
           const arrayOfQueries = [];
-          const arrayOfQueriesDEBUG = [];
-          let moreRelevantNeeded = false;
-          let moreRelevantOffset = 0;
-          let moreRelevantLimit = 0;
-          let lessRelevantNeeded = false;
-          let lessRelevantOffset = 0;
-          // let lessRelevantLimit = 0;
+          let howManyRelevant = 0;
 
-          const offsetAsNumber = parseInt(offset, 10);
-          if (moreRelevantIds.length > 0 && lessRelevantIds.length > 0) {
-            if (offsetAsNumber === 0) {
-              moreRelevantNeeded = true;
-              moreRelevantOffset = 0;
-              if (moreRelevantIds.length > 10) {
-                moreRelevantLimit = 10;
-                lessRelevantNeeded = false;
+          /* Sorting relevant by DATE */
+          // eslint-disable-next-line eqeqeq
+          if (sortMode == 0) {
+            // idea: node is stalling during mapping results to weights when there are thousands of them,
+            // so we need to pass to node only the last step of processing,
+            // so we can: 1. divide pubs to two arrays - relevant and low relevancy (just one foreach!)
+            // then: 2. ask for them in two queries BUT leave sorting by date and limiting for faster postgres
+            // then: 3. merge both queries and map only that part that will be sent by api
+            // maybe three arrays: relevant, grey area (3-2/10) and then unrelevant (1/10)
+
+            // 1
+            const moreRelevantIds = [];
+            const lessRelevantIds = [];
+            originalMultipliedRelevant.forEach((pubWeight, pubId) => {
+              // final division
+              if (pubWeight > limitOfRelevancy) { moreRelevantIds.push({ p: pubId, w: pubWeight }); } else lessRelevantIds.push({ p: pubId, w: pubWeight });
+            });
+            howManyRelevant = moreRelevantIds.length;
+
+            // 2
+            let moreRelevantNeeded = false;
+            let moreRelevantOffset = 0;
+            let moreRelevantLimit = 0;
+            let lessRelevantNeeded = false;
+            let lessRelevantOffset = 0;
+            // let lessRelevantLimit = 0;
+
+            const offsetAsNumber = parseInt(offset, 10);
+            if (moreRelevantIds.length > 0 && lessRelevantIds.length > 0) {
+              if (offsetAsNumber === 0) {
+                moreRelevantNeeded = true;
+                moreRelevantOffset = 0;
+                if (moreRelevantIds.length > 10) {
+                  moreRelevantLimit = 10;
+                  lessRelevantNeeded = false;
+                } else {
+                  moreRelevantLimit = moreRelevantIds.length;
+                  lessRelevantNeeded = true;
+                  lessRelevantOffset = 0;
+                  if (lessRelevantIds.length > 10 - moreRelevantLimit) { lessRelevantLimit = 10 - moreRelevantLimit; } else lessRelevantLimit = lessRelevantIds.length;
+                }
+              } else if (offsetAsNumber < moreRelevantIds.length) {
+                moreRelevantNeeded = true;
+                moreRelevantOffset = offsetAsNumber;
+                if (moreRelevantIds.length > offsetAsNumber + 10) {
+                  moreRelevantLimit = 10;
+                  lessRelevantNeeded = false;
+                } else {
+                  moreRelevantLimit = moreRelevantIds.length - offsetAsNumber;
+                  lessRelevantNeeded = true;
+                  lessRelevantOffset = 0;
+                  if (lessRelevantIds.length > 10 - moreRelevantLimit) { lessRelevantLimit = 10 - moreRelevantLimit; } else lessRelevantLimit = lessRelevantIds.length;
+                }
               } else {
-                moreRelevantLimit = moreRelevantIds.length;
+                moreRelevantNeeded = false;
                 lessRelevantNeeded = true;
-                lessRelevantOffset = 0;
-                if (lessRelevantIds.length > 10 - moreRelevantLimit) { lessRelevantLimit = 10 - moreRelevantLimit; } else lessRelevantLimit = lessRelevantIds.length;
+                lessRelevantOffset = offsetAsNumber - moreRelevantIds.length;
+                if (lessRelevantIds.length > offsetAsNumber + 10) {
+                  lessRelevantLimit = 10;
+                } else {
+                  lessRelevantLimit = lessRelevantIds.length - offsetAsNumber;
+                }
               }
-            } else if (offsetAsNumber < moreRelevantIds.length) {
+            } else if (moreRelevantIds.length > 0) {
               moreRelevantNeeded = true;
-              moreRelevantOffset = offsetAsNumber;
-              if (moreRelevantIds.length > offsetAsNumber + 10) {
-                moreRelevantLimit = 10;
-                lessRelevantNeeded = false;
+              if (offsetAsNumber === 0) {
+                moreRelevantOffset = 0;
+                if (moreRelevantIds.length > 10) {
+                  moreRelevantLimit = 10;
+                } else {
+                  moreRelevantLimit = moreRelevantIds.length;
+                }
               } else {
-                moreRelevantLimit = moreRelevantIds.length - offsetAsNumber;
-                lessRelevantNeeded = true;
-                lessRelevantOffset = 0;
-                if (lessRelevantIds.length > 10 - moreRelevantLimit) { lessRelevantLimit = 10 - moreRelevantLimit; } else lessRelevantLimit = lessRelevantIds.length;
+                moreRelevantOffset = offsetAsNumber;
+                if (moreRelevantIds.length > offsetAsNumber + 10) {
+                  moreRelevantLimit = 10;
+                } else {
+                  moreRelevantLimit = moreRelevantIds.length - offsetAsNumber;
+                }
               }
-            } else {
-              moreRelevantNeeded = false;
+            } else if (lessRelevantIds.length > 0) {
               lessRelevantNeeded = true;
-              lessRelevantOffset = offsetAsNumber - moreRelevantIds.length;
-              if (lessRelevantIds.length > offsetAsNumber + 10) {
-                lessRelevantLimit = 10;
+              if (offsetAsNumber === 0) {
+                lessRelevantOffset = 0;
+                if (lessRelevantIds.length > 10) {
+                  lessRelevantLimit = 10;
+                } else {
+                  lessRelevantLimit = lessRelevantIds.length;
+                }
               } else {
-                lessRelevantLimit = lessRelevantIds.length - offsetAsNumber;
+                lessRelevantOffset = offsetAsNumber;
+                if (lessRelevantIds.length > offsetAsNumber + 10) {
+                  lessRelevantLimit = 10;
+                } else {
+                  lessRelevantLimit = lessRelevantIds.length - offsetAsNumber;
+                }
               }
             }
-          } else if (moreRelevantIds.length > 0) {
-            moreRelevantNeeded = true;
-            if (offsetAsNumber === 0) {
-              moreRelevantOffset = 0;
-              if (moreRelevantIds.length > 10) {
-                moreRelevantLimit = 10;
-              } else {
-                moreRelevantLimit = moreRelevantIds.length;
-              }
-            } else {
-              moreRelevantOffset = offsetAsNumber;
-              if (moreRelevantIds.length > offsetAsNumber + 10) {
-                moreRelevantLimit = 10;
-              } else {
-                moreRelevantLimit = moreRelevantIds.length - offsetAsNumber;
-              }
-            }
-          } else if (lessRelevantIds.length > 0) {
-            lessRelevantNeeded = true;
-            if (offsetAsNumber === 0) {
-              lessRelevantOffset = 0;
-              if (lessRelevantIds.length > 10) {
-                lessRelevantLimit = 10;
-              } else {
-                lessRelevantLimit = lessRelevantIds.length;
-              }
-            } else {
-              lessRelevantOffset = offsetAsNumber;
-              if (lessRelevantIds.length > offsetAsNumber + 10) {
-                lessRelevantLimit = 10;
-              } else {
-                lessRelevantLimit = lessRelevantIds.length - offsetAsNumber;
-              }
-            }
-          }
 
-          if (moreRelevantNeeded) {
-            arrayOfQueries.push(
-              sh
-                .select(
-                  'id',
-                  'title',
-                  'authors',
-                  'abstract',
-                  'doi',
-                  'link',
-                  'date',
-                  'server',
-                )
-                .from('content_preprints')
-                .where(
-                  'id',
-                  'IN',
-                  '(' + moreRelevantIds.map(e => e.p).join(', ') + ')',
-                )
-                .orderBy('date', 'desc')
-                .orderBy('id', 'asc')
-                .limit(moreRelevantLimit, moreRelevantOffset)
-                .run(),
-            );
+            if (moreRelevantNeeded) {
+              arrayOfQueries.push(
+                sh
+                  .select(
+                    'id',
+                    'title',
+                    'authors',
+                    'abstract',
+                    'doi',
+                    'link',
+                    'date',
+                    'server',
+                  )
+                  .from('content_preprints')
+                  .where(
+                    'id',
+                    'IN',
+                    '(' + moreRelevantIds.map(e => e.p).join(', ') + ')',
+                  )
+                  .orderBy('date', 'desc')
+                  .orderBy('id', 'asc')
+                  .limit(moreRelevantLimit, moreRelevantOffset)
+                  .run(),
+              );
+            }
+            if (lessRelevantNeeded) {
+              // dividing to more and less relevant one step further
+              const furtherHigher = [];
+              const furtherLower = [];
+              const boundary = limitOfRelevancy * 0.8;
+              lessRelevantIds.forEach((element) => {
+                if (element.w > boundary) { furtherHigher.push({ p: element.p, w: element.w }); } else furtherLower.push({ p: element.p, w: element.w });
+              });
 
-            arrayOfQueriesDEBUG.push(
-              sh
-                .select(
-                  'id',
-                  'title',
-                  'authors',
-                  'abstract',
-                  'doi',
-                  'link',
-                  'date',
-                  'server',
-                )
-                .from('content_preprints')
-                .where(
-                  'id',
-                  'IN',
-                  '(' + moreRelevantIds.map(e => e.p).join(', ') + ')',
-                )
-                .orderBy('date', 'desc')
-                .orderBy('id', 'asc')
-                .limit(moreRelevantLimit, moreRelevantOffset)
-                .build(),
-            );
+              // taking all from higher boundary first
+              if (lessRelevantOffset + 10 < furtherHigher.length) {
+                arrayOfQueries.push(
+                  sh
+                    .select(
+                      'id',
+                      'title',
+                      'authors',
+                      'abstract',
+                      'doi',
+                      'link',
+                      'date',
+                      'server',
+                    )
+                    .from('content_preprints')
+                    .where(
+                      'id',
+                      'IN',
+                      '(' + furtherHigher.map(e => e.p).join(', ') + ')',
+                    )
+                    .orderBy('date', 'desc')
+                    .orderBy('id', 'asc')
+                    .limit(10, lessRelevantOffset)
+                    .run(),
+                );
+              } else if (
+                lessRelevantOffset + 10 > furtherHigher.length
+                && lessRelevantOffset < furtherHigher.length
+              ) {
+                // taking from both sides
+                arrayOfQueries.push(
+                  sh
+                    .select(
+                      'id',
+                      'title',
+                      'authors',
+                      'abstract',
+                      'doi',
+                      'link',
+                      'date',
+                      'server',
+                    )
+                    .from('content_preprints')
+                    .where(
+                      'id',
+                      'IN',
+                      '(' + furtherHigher.map(e => e.p).join(', ') + ')',
+                    )
+                    .orderBy('date', 'desc')
+                    .orderBy('id', 'asc')
+                    .limit(10, lessRelevantOffset)
+                    .run(),
+                );
+                arrayOfQueries.push(
+                  sh
+                    .select(
+                      'id',
+                      'title',
+                      'authors',
+                      'abstract',
+                      'doi',
+                      'link',
+                      'date',
+                      'server',
+                    )
+                    .from('content_preprints')
+                    .where(
+                      'id',
+                      'IN',
+                      '(' + furtherLower.map(e => e.p).join(', ') + ')',
+                    )
+                    .orderBy('date', 'desc')
+                    .orderBy('id', 'asc')
+                    .limit(10, 0)
+                    .run(),
+                );
+              } else {
+                // taking from lower boundary if we are past higher
+                arrayOfQueries.push(
+                  sh
+                    .select(
+                      'id',
+                      'title',
+                      'authors',
+                      'abstract',
+                      'doi',
+                      'link',
+                      'date',
+                      'server',
+                    )
+                    .from('content_preprints')
+                    .where(
+                      'id',
+                      'IN',
+                      '(' + furtherLower.map(e => e.p).join(', ') + ')',
+                    )
+                    .orderBy('date', 'desc')
+                    .orderBy('id', 'asc')
+                    .limit(10, lessRelevantOffset - furtherHigher.length) // lessRelevantOffset-furtherHigher.length)
+                    .run(),
+                );
+                // reject( {less: lessRelevantOffset, highLen: furtherHigher.length, lowLen: furtherLower.length} );
+              }
+            }
+          // eslint-disable-next-line brace-style
           }
-          if (lessRelevantNeeded) {
-            // dividing to more and less relevant one step further
-            const furtherHigher = [];
-            const furtherLower = [];
-            const boundary = limitOfRelevancy * 0.8;
-            lessRelevantIds.forEach((element) => {
-              if (element.w > boundary) { furtherHigher.push({ p: element.p, w: element.w }); } else furtherLower.push({ p: element.p, w: element.w });
+          /* Sorting relevant by RELEVANCY */
+          else {
+            // idea: provide slice of ten from the most relevant pubs
+
+            const sortedByWeight = [];
+            originalMultipliedRelevant.forEach((pubWeight, pubId) => {
+              sortedByWeight.push({ p: pubId, w: pubWeight });
             });
 
-            // taking all from higher boundary first
-            if (lessRelevantOffset + 10 < furtherHigher.length) {
-              arrayOfQueries.push(
-                sh
-                  .select(
-                    'id',
-                    'title',
-                    'authors',
-                    'abstract',
-                    'doi',
-                    'link',
-                    'date',
-                    'server',
-                  )
-                  .from('content_preprints')
-                  .where(
-                    'id',
-                    'IN',
-                    '(' + furtherHigher.map(e => e.p).join(', ') + ')',
-                  )
-                  .orderBy('date', 'desc')
-                  .orderBy('id', 'asc')
-                  .limit(10, lessRelevantOffset)
-                  .run(),
+            sortedByWeight.sort((a, b) => b.w - a.w);
+            const offsetAsNumber = parseInt(offset, 10);
+
+            const eventualOrder = sortedByWeight.slice(offsetAsNumber, offsetAsNumber + 10);
+
+            let primaryQuery = sh
+              .select(
+                'id',
+                'title',
+                'authors',
+                'abstract',
+                'doi',
+                'link',
+                'date',
+                'server',
+              )
+              .from('content_preprints')
+              .where(
+                'id',
+                'IN',
+                '(' + eventualOrder.map(e => e.p).join(', ') + ')',
               );
-              arrayOfQueriesDEBUG.push(
-                sh
-                  .select(
-                    'id',
-                    'title',
-                    'authors',
-                    'abstract',
-                    'doi',
-                    'link',
-                    'date',
-                    'server',
-                  )
-                  .from('content_preprints')
-                  .where(
-                    'id',
-                    'IN',
-                    '(' + furtherHigher.map(e => e.p).join(', ') + ')',
-                  )
-                  .orderBy('date', 'desc')
-                  .orderBy('id', 'asc')
-                  .limit(10, lessRelevantOffset)
-                  .build(),
-              );
-            } else if (
-              lessRelevantOffset + 10 > furtherHigher.length
-              && lessRelevantOffset < furtherHigher.length
-            ) {
-              // taking from both sides
-              arrayOfQueries.push(
-                sh
-                  .select(
-                    'id',
-                    'title',
-                    'authors',
-                    'abstract',
-                    'doi',
-                    'link',
-                    'date',
-                    'server',
-                  )
-                  .from('content_preprints')
-                  .where(
-                    'id',
-                    'IN',
-                    '(' + furtherHigher.map(e => e.p).join(', ') + ')',
-                  )
-                  .orderBy('date', 'desc')
-                  .orderBy('id', 'asc')
-                  .limit(10, lessRelevantOffset)
-                  .run(),
-              );
-              arrayOfQueries.push(
-                sh
-                  .select(
-                    'id',
-                    'title',
-                    'authors',
-                    'abstract',
-                    'doi',
-                    'link',
-                    'date',
-                    'server',
-                  )
-                  .from('content_preprints')
-                  .where(
-                    'id',
-                    'IN',
-                    '(' + furtherLower.map(e => e.p).join(', ') + ')',
-                  )
-                  .orderBy('date', 'desc')
-                  .orderBy('id', 'asc')
-                  .limit(10, 0)
-                  .run(),
-              );
-              arrayOfQueriesDEBUG.push(
-                sh
-                  .select(
-                    'id',
-                    'title',
-                    'authors',
-                    'abstract',
-                    'doi',
-                    'link',
-                    'date',
-                    'server',
-                  )
-                  .from('content_preprints')
-                  .where(
-                    'id',
-                    'IN',
-                    '(' + furtherHigher.map(e => e.p).join(', ') + ')',
-                  )
-                  .orderBy('date', 'desc')
-                  .orderBy('id', 'asc')
-                  .limit(10, lessRelevantOffset)
-                  .build(),
-              );
-              arrayOfQueriesDEBUG.push(
-                sh
-                  .select(
-                    'id',
-                    'title',
-                    'authors',
-                    'abstract',
-                    'doi',
-                    'link',
-                    'date',
-                    'server',
-                  )
-                  .from('content_preprints')
-                  .where(
-                    'id',
-                    'IN',
-                    '(' + furtherLower.map(e => e.p).join(', ') + ')',
-                  )
-                  .orderBy('date', 'desc')
-                  .orderBy('id', 'asc')
-                  .limit(10, 0)
-                  .build(),
-              );
-            } else {
-              // taking from lower boundary if we are past higher
-              arrayOfQueries.push(
-                sh
-                  .select(
-                    'id',
-                    'title',
-                    'authors',
-                    'abstract',
-                    'doi',
-                    'link',
-                    'date',
-                    'server',
-                  )
-                  .from('content_preprints')
-                  .where(
-                    'id',
-                    'IN',
-                    '(' + furtherLower.map(e => e.p).join(', ') + ')',
-                  )
-                  .orderBy('date', 'desc')
-                  .orderBy('id', 'asc')
-                  .limit(10, lessRelevantOffset - furtherHigher.length) // lessRelevantOffset-furtherHigher.length)
-                  .run(),
-              );
-              arrayOfQueriesDEBUG.push(
-                sh
-                  .select(
-                    'id',
-                    'title',
-                    'authors',
-                    'abstract',
-                    'doi',
-                    'link',
-                    'date',
-                    'server',
-                  )
-                  .from('content_preprints')
-                  .where(
-                    'id',
-                    'IN',
-                    '(' + furtherLower.map(e => e.p).join(', ') + ')',
-                  )
-                  .orderBy('date', 'desc')
-                  .orderBy('id', 'asc')
-                  .limit(10, lessRelevantOffset - furtherHigher.length) // lessRelevantOffset-furtherHigher.length)
-                  .build(),
-              );
-              // reject( {less: lessRelevantOffset, highLen: furtherHigher.length, lowLen: furtherLower.length} );
-            }
+            eventualOrder.reverse().forEach((what) => {
+              primaryQuery = primaryQuery.orderBy(`"id"=${what.p}`);
+            });
+            // reject(primaryQuery.build());
+            arrayOfQueries.push(primaryQuery.run());
           }
 
           // 3
@@ -1156,7 +1071,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1) {
                 const details = '{"timestamp":"'
                   + Date.now()
                   + '","howManyRelevant":"'
-                  + moreRelevantIds.length
+                  + howManyRelevant
                   + '","highestRelevancy":"'
                   + highestRelevancy
                   + '","executionTime":"'
@@ -1194,7 +1109,6 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1) {
               );
               logger.error('line 1194');
               logger.error(JSON.stringify(e));
-              logger.error(JSON.stringify(arrayOfQueriesDEBUG));
               reject({ message: 'Sorry, we have encountered an error.' });
             });
         } else {
