@@ -132,7 +132,7 @@ exports.doYourJob = function (sh) {
             else if (hours < 2) when = '1h ago';
             if (ele.cont === false) whatText += '<strong>PROBLEM</strong> ';
             else whatText += 'ok ';
-            whatText += '(' + when + ')  ';
+            whatText += '(' + when + ') in ' + ele.sub + ' |';
           });
           toResolve.push({ text: whatText });
         });

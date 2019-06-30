@@ -1,6 +1,6 @@
 const logContinuity = require('./logContinuity');
 
-exports.processRssBody = function (sh, body, name) {
+exports.processRssBody = function (sh, body, name, subject) {
   let isContinuous = false;
 
   body.feed.entry.forEach((element) => {
@@ -88,6 +88,6 @@ exports.processRssBody = function (sh, body, name) {
   });
 
   setTimeout(() => {
-    logContinuity.logIt(sh, isContinuous, name);
+    logContinuity.logIt(sh, isContinuous, name, subject);
   }, 3000);
 };

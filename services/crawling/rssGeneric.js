@@ -22,63 +22,63 @@ exports.start = function (name, mainurl, mainsuburls = null) {
       setTimeout(() => {
         logger.info(subject);
         request(mainurl + subject, { timeout: 20000 },
-          (e, r, b) => processResponseOfRss(e, r, b, name));
+          (e, r, b) => processResponseOfRss(e, r, b, name, subject));
       }, 3000 * index); // slow requesting to avoid one-time ddos
     });
   } else {
     logger.info('main');
-    request(mainurl, { timeout: 20000 }, (e, r, b) => processResponseOfRss(e, r, b, name));
+    request(mainurl, { timeout: 20000 }, (e, r, b) => processResponseOfRss(e, r, b, name, ' '));
   }
 };
 
-function processResponseOfRss(error, response, body, name) {
+function processResponseOfRss(error, response, body, name, subject) {
   if (error) {
     logger.error(JSON.stringify(error));
   } else {
     // logger.info(body.substring(0, 100));
 
     // eslint-disable-next-line no-useless-escape
-    parseXml(body.replace(/\ \>/g, '').replace(/\<\ /g, ''), (e, r) => processAndUploadToDatabase(e, r, name));
+    parseXml(body.replace(/\ \>/g, '').replace(/\<\ /g, ''), (e, r) => processAndUploadToDatabase(e, r, name, subject));
   }
 }
 
-function processAndUploadToDatabase(err, result, name) {
+function processAndUploadToDatabase(err, result, name, subject) {
   if (err) {
     logger.error(JSON.stringify(err));
   } else {
     switch (name) {
       case 'arXiv':
-        rssArxiv.processRssBody(loader.database, result, name);
+        rssArxiv.processRssBody(loader.database, result, name, subject);
         break;
       case 'bioRxiv':
-        rssBiorxiv.processRssBody(loader.database, result, name);
+        rssBiorxiv.processRssBody(loader.database, result, name, subject);
         break;
       case 'chemRxiv':
-        rssChemrxiv.processRssBody(loader.database, result, name);
+        rssChemrxiv.processRssBody(loader.database, result, name, subject);
         break;
       case 'OSF':
-        rssOsf.processRssBody(loader.database, result, name);
+        rssOsf.processRssBody(loader.database, result, name, subject);
         break;
       case 'ESSOAr':
-        rssEssoar.processRssBody(loader.database, result, name);
+        rssEssoar.processRssBody(loader.database, result, name, subject);
         break;
       case 'Preprints.org':
-        rssPreprintsorg.processRssBody(loader.database, result, name);
+        rssPreprintsorg.processRssBody(loader.database, result, name, subject);
         break;
       case 'NEP RePEc':
-        rssNeprepec.processRssBody(loader.database, result, name);
+        rssNeprepec.processRssBody(loader.database, result, name, subject);
         break;
       case 'NBER':
-        rssNber.processRssBody(loader.database, result, name);
+        rssNber.processRssBody(loader.database, result, name, subject);
         break;
       case 'viXra':
-        rssVixra.processRssBody(loader.database, result, name);
+        rssVixra.processRssBody(loader.database, result, name, subject);
         break;
       case 'PhilSci':
-        rssPhilsci.processRssBody(loader.database, result, name);
+        rssPhilsci.processRssBody(loader.database, result, name, subject);
         break;
       case 'medRxiv':
-        rssMedrxiv.processRssBody(loader.database, result, name);
+        rssMedrxiv.processRssBody(loader.database, result, name, subject);
         break;
       default:
         logger.error(`Wrong source: ${name}`);

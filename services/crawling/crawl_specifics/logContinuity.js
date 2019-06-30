@@ -1,4 +1,4 @@
-exports.logIt = function (sh, trueOrFalse, what) {
+exports.logIt = function (sh, trueOrFalse, what, subject) {
   sh.select('log')
     .from('manager_lines')
     .where('name', '=', what)
@@ -8,7 +8,7 @@ exports.logIt = function (sh, trueOrFalse, what) {
 
       if (currentLog[0].log == null) {
         // first time log
-        const logText = `[{"timestamp":${timestamp},"cont":${trueOrFalse}}]`;
+        const logText = `[{"timestamp":${timestamp},"cont":${trueOrFalse}},"sub":${subject}]`;
         sh.update('manager_lines')
           .set('log', `'${logText}'`)
           .where('name', '=', what)
