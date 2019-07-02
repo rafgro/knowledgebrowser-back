@@ -1006,7 +1006,8 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                 // eslint-disable-next-line prefer-const
                 let tempText = text;
                 listToStrong.forEach((word) => {
-                  tempText = tempText.replace(RegExp(`(${word}) `, 'gi'), '<strong>$1</strong> ');
+                  tempText = tempText.replace(RegExp(`\\-(${word}) `, 'gi'), '-<strong>$1</strong> ');
+                  tempText = tempText.replace(RegExp(` (${word})\\-`, 'gi'), ' <strong>$1</strong>-');
                   tempText = tempText.replace(RegExp(` (${word})\\.`, 'gi'), ' <strong>$1</strong>.');
                   tempText = tempText.replace(RegExp(` (${word}) `, 'gi'), ' <strong>$1</strong> ');
                 });

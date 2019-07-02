@@ -17,7 +17,7 @@ exports.logIt = function (sh, trueOrFalse, what, subject) {
         // appending log
         let now = JSON.parse(currentLog[0].log);
         if (now.length > 50) now = now.slice(0, 49);
-        now.unshift({ timestamp, cont: trueOrFalse });
+        now.unshift({ timestamp, cont: trueOrFalse, sub: subject });
         sh.update('manager_lines')
           .set('log', `'${JSON.stringify(now)}'`)
           .where('name', '=', what)
