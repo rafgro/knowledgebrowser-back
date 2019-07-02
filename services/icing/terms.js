@@ -1,7 +1,6 @@
 /* eslint-disable max-len */
 /* eslint-disable no-console */
-exports.process = function (sh, terms) {
-  const hotnessBoundary = 1459;
+exports.process = function (sh, terms, hotnessBoundary) {
   const arrayOfScores = [];
 
   terms.forEach((term) => {

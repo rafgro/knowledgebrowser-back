@@ -405,18 +405,53 @@ exports.index = function (whichId, canStop) {
                   insertionCounter += 1;
                   checkInsertionCounter();
                 })
+                // eslint-disable-next-line no-unused-vars
                 .catch((e) => {
-                  logger.error(e.toString());
-                  logger.error(JSON.stringify(
+                  // sorry its just quickfix
+
+                  let scenario = true;
+                  let relevant = [];
+
+                  // eslint-disable-next-line eqeqeq
+                  if (returned[0].relevant != undefined) {
+                    relevant = JSON.parse(returned[0].relevant);
+                    relevant.forEach((onepub) => {
+                      // eslint-disable-next-line eqeqeq
+                      if (onepub.p == id) {
+                        scenario = false;
+                      }
+                    });
+                  }
+
+                  if (scenario === true) {
+                    relevant.push({ p: id, w: element.w });
                     loader.database
-                      .insert({
-                        term: element.t,
-                        relevant:
-                          '\'[{"p":"' + id + '","w":' + element.w + "}]'",
+                      .update('index_title')
+                      .set('relevant', "'" + JSON.stringify(relevant) + "'")
+                      .where('term', '=', element.t)
+                      .run()
+                      .then(() => {
+                        // logger.info('Inserted '+element.t);
+                        insertionCounter += 1;
+                        checkInsertionCounter();
                       })
-                      .into('index_title')
-                      .build(),
-                  ));
+                      .catch((ech) => {
+                        logger.error(ech.toString());
+                        logger.error(JSON.stringify(
+                          loader.database
+                            .update('index_title')
+                            .set('relevant', "'" + JSON.stringify(relevant) + "'")
+                            .where('term', '=', element.t)
+                            .build(),
+                        ));
+                      });
+                  } else {
+                    logger.info(element.t + ' existed');
+                    insertionCounter += 1;
+                    checkInsertionCounter();
+                  }
+
+                  // logger.error(e.toString());
                 });
             }
           })
