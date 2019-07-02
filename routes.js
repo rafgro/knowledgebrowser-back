@@ -3,6 +3,7 @@ const loader = require('./loaders');
 const managerCrawling = require('./jobmanagers/manager-crawling');
 const managerIndexing = require('./jobmanagers/manager-indexing');
 const managerCorrecting = require('./jobmanagers/manager-correcting');
+const managerIcing = require('./jobmanagers/manager-icing');
 const apiSearch = require('./api/search');
 const apiStatsPublic = require('./api/stats/public');
 const apiStatsInternal = require('./api/stats/internal');
@@ -21,6 +22,10 @@ server.get('/ops/index', (request, response) => {
 server.get('/ops/correct', (request, response) => {
   response.send('Started job');
   managerCorrecting.start();
+});
+server.get('/ops/ice', (request, response) => {
+  response.send('Started job');
+  managerIcing.start();
 });
 
 /* api */

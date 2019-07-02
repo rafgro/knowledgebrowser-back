@@ -4,7 +4,7 @@ const { shiphold } = require('ship-hold');
 function doJob() {
   if (process.env.NODE_ENV === 'development') {
     return shiphold({
-      host: '127.0.1.1',
+      host: 'localhost',
       user: 'crawler',
       password: 'blackseo666',
       database: 'preprint-crawls',

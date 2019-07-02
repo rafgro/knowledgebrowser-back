@@ -314,6 +314,8 @@ exports.index = function (whichId, canStop) {
           .replace(RegExp('\\\\', 'g'), '')
           .replace(RegExp(' +$'), '')
           .replace(RegExp(' {2}'), ' ')
+          .replace(RegExp('\\(', 'g'), ' ')
+          .replace(RegExp('\\)', 'g'), ' ')
           .toLowerCase(),
         w: element.w,
       }));
@@ -349,13 +351,17 @@ exports.index = function (whichId, canStop) {
               // false - term is already associated with this publication, therefore we don't undertake any db operation
               // true - term is associated only with other publications
               let scenario = true;
+              let relevant = [];
 
-              const relevant = JSON.parse(returned[0].relevant);
-              relevant.forEach((onepub) => {
-                if (onepub.p === id) {
-                  scenario = false;
-                }
-              });
+              // eslint-disable-next-line eqeqeq
+              if (returned[0].relevant != undefined) {
+                relevant = JSON.parse(returned[0].relevant);
+                relevant.forEach((onepub) => {
+                  if (onepub.p === id) {
+                    scenario = false;
+                  }
+                });
+              }
 
               if (scenario === true) {
                 relevant.push({ p: id, w: element.w });
@@ -370,7 +376,7 @@ exports.index = function (whichId, canStop) {
                     checkInsertionCounter();
                   })
                   .catch((e) => {
-                    logger.error(JSON.stringify(e));
+                    logger.error(e.toString());
                     logger.error(JSON.stringify(
                       loader.database
                         .update('index_title')
@@ -398,7 +404,7 @@ exports.index = function (whichId, canStop) {
                   checkInsertionCounter();
                 })
                 .catch((e) => {
-                  logger.error(JSON.stringify(e));
+                  logger.error(e.toString());
                   logger.error(JSON.stringify(
                     loader.database
                       .insert({
@@ -413,7 +419,7 @@ exports.index = function (whichId, canStop) {
             }
           })
           .catch((e) => {
-            logger.error(JSON.stringify(e));
+            logger.error(e.toString());
             logger.error(JSON.stringify(
               loader.database
                 .select('term', 'relevant')
@@ -425,7 +431,7 @@ exports.index = function (whichId, canStop) {
       });
     })
     .catch((e) => {
-      logger.error(JSON.stringify(e));
+      logger.error(e.toString());
       logger.error(JSON.stringify(
         loader.database
           .select('title', 'id')

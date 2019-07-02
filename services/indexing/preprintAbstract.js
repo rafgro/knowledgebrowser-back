@@ -372,7 +372,8 @@ exports.index = function (whichId) {
               let scenario = true;
 
               let relevant = [];
-              if (returned[0].relevant_abstract !== undefined) {
+              // eslint-disable-next-line eqeqeq
+              if (returned[0].relevant_abstract != undefined) {
                 relevant = JSON.parse(returned[0].relevant_abstract);
                 relevant.forEach((onepub) => {
                   if (onepub.p === id) {
@@ -395,7 +396,7 @@ exports.index = function (whichId) {
                     logger.info('Updated ' + element.t);
                   })
                   .catch((e) => {
-                    logger.error(JSON.stringify(e));
+                    logger.error(e.toString());
                     logger.error(JSON.stringify(
                       loader.database
                         .update('index_title')
@@ -423,7 +424,7 @@ exports.index = function (whichId) {
                   logger.info('Inserted ' + element.t);
                 })
                 .catch((e) => {
-                  logger.error(JSON.stringify(e));
+                  logger.error(e.toString());
                   logger.error(JSON.stringify(
                     loader.database
                       .insert({
@@ -438,7 +439,7 @@ exports.index = function (whichId) {
             }
           })
           .catch((e) => {
-            logger.error(JSON.stringify(e));
+            logger.error(e.toString());
             logger.error(JSON.stringify(
               loader.database
                 .select('term', 'relevant_abstract')
@@ -450,6 +451,6 @@ exports.index = function (whichId) {
       });
     })
     .catch((e) => {
-      logger.error(JSON.stringify(e));
+      logger.error(e.toString());
     });
 };
