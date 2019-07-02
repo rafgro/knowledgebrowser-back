@@ -345,7 +345,8 @@ exports.index = function (whichId, canStop) {
           .where('term', '=', element.t)
           .run()
           .then((returned) => {
-            if (Object.keys(returned).length !== 0) {
+            // eslint-disable-next-line eqeqeq
+            if (Object.keys(returned).length != 0) {
               // term is present
               // now there are two possible scenarios:
               // false - term is already associated with this publication, therefore we don't undertake any db operation
@@ -357,7 +358,8 @@ exports.index = function (whichId, canStop) {
               if (returned[0].relevant != undefined) {
                 relevant = JSON.parse(returned[0].relevant);
                 relevant.forEach((onepub) => {
-                  if (onepub.p === id) {
+                  // eslint-disable-next-line eqeqeq
+                  if (onepub.p == id) {
                     scenario = false;
                   }
                 });

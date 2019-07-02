@@ -363,7 +363,8 @@ exports.index = function (whichId) {
           .where('term', '=', "'" + element.t + "'")
           .run()
           .then((returned) => {
-            if (Object.keys(returned).length !== 0) {
+            // eslint-disable-next-line eqeqeq
+            if (Object.keys(returned).length != 0) {
               // term is present
               // now there are two possible scenarios:
               // false - term is already associated with this publication,
@@ -376,7 +377,8 @@ exports.index = function (whichId) {
               if (returned[0].relevant_abstract != undefined) {
                 relevant = JSON.parse(returned[0].relevant_abstract);
                 relevant.forEach((onepub) => {
-                  if (onepub.p === id) {
+                  // eslint-disable-next-line eqeqeq
+                  if (onepub.p == id) {
                     scenario = false;
                   }
                 });

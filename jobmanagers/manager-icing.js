@@ -14,7 +14,7 @@ exports.start = function () {
         .select('term', 'relevant', 'relevant_abstract')
         .from('index_title')
         .orderBy('term')
-        .limit(10000, result[0].value) // ten thousand takes around 4 seconds
+        .limit(50000, result[0].value) // ten thousand takes around 30 seconds
         .run()
         .then((results) => {
           icingTerms.process(loader.database, results);
