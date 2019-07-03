@@ -33,11 +33,11 @@ exports.start = function () {
             if (parseInt(result[0].value, 10) === -1) {
               const dateMinusSeven = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
               const textMinusSeven = dateMinusSeven.getUTCFullYear()
-          + (dateMinusSeven.getUTCMonth() + 1 < 10 ? '-0' : '-')
-          + (dateMinusSeven.getUTCMonth() + 1)
-          + (dateMinusSeven.getUTCDate() < 10 ? '-0' : '-')
-          + dateMinusSeven.getUTCDate()
-          + ' 00:00:00';
+                + (dateMinusSeven.getUTCMonth() + 1 < 10 ? '-0' : '-')
+                + (dateMinusSeven.getUTCMonth() + 1)
+                + (dateMinusSeven.getUTCDate() < 10 ? '-0' : '-')
+                + dateMinusSeven.getUTCDate()
+                + ' 00:00:00';
               loader.database
                 .select('id')
                 .from('content_preprints')
@@ -48,13 +48,13 @@ exports.start = function () {
                 .then((res) => {
                   let bound = parseInt(res[0].id, 10);
                   if (bound < 15000) bound = 15000;
-                  logger.database.update('icing_stats').set('boundary', bound)
+                  loader.database.update('icing_stats').set('boundary', bound)
                     .where('date', '=', today).and('type', '=', 'a')
                     .run()
-                    .then(() => logger.info('Good, bound to' + bound))
+                    .then(() => logger.info('Good, bound to ' + bound))
                     .catch(e => logger.error(e.toString()));
 
-                  logger.database.update('manager').set('value', 0)
+                  loader.database.update('manager').set('value', 0)
                     .where('option', '=', 'icing_terms_offset')
                     .run()
                     .then(() => logger.info('Good, icing offset to 0'))
@@ -66,7 +66,7 @@ exports.start = function () {
                 .select('term', 'relevant', 'relevant_abstract')
                 .from('index_title')
                 .orderBy('term')
-                .limit(50000, result[0].value) // takes 15-30 seconds
+                .limit(100000, result[0].value) // takes 15-30 seconds
                 .run()
                 .then((results) => {
                   if (results.length !== 0) {
@@ -84,10 +84,10 @@ exports.start = function () {
                         logger.error(JSON.stringify(e));
                       });
 
-                    if (results.length !== 50000) {
+                    if (results.length !== 100000) {
                       // we reached the end of terms
                       // now it's time to process it
-                      // logger.info('THE END of icing');
+                      logger.info('THE END of icing');
 
                       loader.database
                         .select('rawterms')
@@ -96,7 +96,7 @@ exports.start = function () {
                         .and('type', '=', 'a')
                         .run()
                         .then((res) => {
-                          sumUpTerms.endThis(res, today);
+                          sumUpTerms.endThis(loader.database, res, today, 'a');
                         })
                         .catch((e) => {
                           logger.error(e.toString());

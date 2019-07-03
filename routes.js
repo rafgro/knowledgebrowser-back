@@ -6,6 +6,7 @@ const managerCorrecting = require('./jobmanagers/manager-correcting');
 const managerIcing = require('./jobmanagers/manager-icing');
 const apiSearch = require('./api/search');
 const apiStatsPublic = require('./api/stats/public');
+const apiStatsTerms = require('./api/stats/public/terms');
 const apiStatsInternal = require('./api/stats/internal');
 
 const server = Router();
@@ -52,7 +53,7 @@ server.get('/api/search', (request, response) => {
       });
     })
     .catch((e) => {
-      logger.error(e);
+      logger.error(JSON.stringify(e));
       logger.error(`request: ${JSON.stringify(request.query)}`);
       response.send(e);
     });
@@ -64,7 +65,7 @@ server.get('/api/stats', (request, response) => {
       response.send(results);
     })
     .catch((e) => {
-      logger.error(e);
+      logger.error(JSON.stringify(e));
       response.send([{ text: JSON.stringify(e) }]);
     });
 });
@@ -75,7 +76,18 @@ server.get('/api/stats2', (request, response) => {
       response.send(results);
     })
     .catch((e) => {
-      logger.error(e);
+      logger.error(JSON.stringify(e));
+      response.send([{ text: JSON.stringify(e) }]);
+    });
+});
+server.get('/api/terms', (request, response) => {
+  apiStatsTerms
+    .doYourJob(loader.database, request.query.today, request.query.type)
+    .then((results) => {
+      response.send(results);
+    })
+    .catch((e) => {
+      logger.error(JSON.stringify(e));
       response.send([{ text: JSON.stringify(e) }]);
     });
 });

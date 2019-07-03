@@ -413,14 +413,17 @@ exports.index = function (whichId, canStop) {
                   let relevant = [];
 
                   // eslint-disable-next-line eqeqeq
-                  if (returned[0].relevant != undefined) {
-                    relevant = JSON.parse(returned[0].relevant);
-                    relevant.forEach((onepub) => {
-                      // eslint-disable-next-line eqeqeq
-                      if (onepub.p == id) {
-                        scenario = false;
-                      }
-                    });
+                  if (returned[0] != undefined) {
+                    // eslint-disable-next-line eqeqeq
+                    if (returned[0].relevant != undefined) {
+                      relevant = JSON.parse(returned[0].relevant);
+                      relevant.forEach((onepub) => {
+                        // eslint-disable-next-line eqeqeq
+                        if (onepub.p == id) {
+                          scenario = false;
+                        }
+                      });
+                    }
                   }
 
                   if (scenario === true) {

@@ -432,14 +432,17 @@ exports.index = function (whichId) {
                   let scenario = true;
                   let relevant = [];
                   // eslint-disable-next-line eqeqeq
-                  if (returned[0].relevant_abstract != undefined) {
-                    relevant = JSON.parse(returned[0].relevant_abstract);
-                    relevant.forEach((onepub) => {
-                      // eslint-disable-next-line eqeqeq
-                      if (onepub.p == id) {
-                        scenario = false;
-                      }
-                    });
+                  if (returned[0] != undefined) {
+                    // eslint-disable-next-line eqeqeq
+                    if (returned[0].relevant_abstract != undefined) {
+                      relevant = JSON.parse(returned[0].relevant_abstract);
+                      relevant.forEach((onepub) => {
+                        // eslint-disable-next-line eqeqeq
+                        if (onepub.p == id) {
+                          scenario = false;
+                        }
+                      });
+                    }
                   }
 
                   if (scenario === true) {
