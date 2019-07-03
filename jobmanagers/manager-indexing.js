@@ -15,7 +15,7 @@ exports.start = function () {
         .select('id')
         .from('content_preprints')
         .orderBy('id')
-        .limit(20, result[0].value)
+        .limit(50, result[0].value)
         .run()
         .then((onepubresult) => {
           let counterForPubs = 0;
@@ -73,7 +73,7 @@ exports.start = function () {
         .select('id')
         .from('content_preprints')
         .orderBy('id')
-        .limit(20, result[0].value)
+        .limit(50, result[0].value)
         .run()
         .then((onepubresult) => {
           let counterForPubs = 0;

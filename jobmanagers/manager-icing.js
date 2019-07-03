@@ -61,7 +61,7 @@ exports.start = function () {
                     .catch(e => logger.error(e.toString()));
                 })
                 .catch(e => logger.error(e.toString()));
-            } else {
+            } else if (parseInt(result[0].value, 10) % 100000 === 0) {
               loader.database
                 .select('term', 'relevant', 'relevant_abstract')
                 .from('index_title')

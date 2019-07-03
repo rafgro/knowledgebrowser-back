@@ -52,13 +52,13 @@ exports.processRssBody = function (sh, body, name, subject) {
                   logger.info('Inserted ' + id + ' / ' + myDate);
                 })
                 .catch((e) => {
-                  logger.error(JSON.stringify(e));
+                  logger.error(e.toString());
                 });
             }
           }
         })
         .catch((e) => {
-          logger.error(JSON.stringify(e));
+          logger.error(e.toString());
         });
     }
   });
