@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-const nlp = require('compromise');
+// const nlp = require('compromise');
 
 exports.endThis = function (sh, terms, today, type) {
   // initial preparation
@@ -22,7 +22,12 @@ exports.endThis = function (sh, terms, today, type) {
     else if (v.t.includes(' is')) ifTree = false;
     else if (v.t.includes('is ')) ifTree = false;
     else if (v.t === 'et al') ifTree = false;
-    else if (v.t === 'state of the art') ifTree = false;
+    else if (v.t.includes('state of the art')) ifTree = false;
+    else if (v.t.includes(' works')) ifTree = false;
+    else if (v.t === 'high levels') ifTree = false;
+    else if (v.t === 'orders of magnitude') ifTree = false;
+    else if (v.t === 'lower bounds') ifTree = false;
+    else if (v.t === 'proof of concept') ifTree = false;
     else if (v.t.charAt(0) === ' ') ifTree = false;
     else if (v.t.charAt(v.t.length - 1) === ';') ifTree = false;
     return ifTree;
@@ -74,12 +79,16 @@ exports.endThis = function (sh, terms, today, type) {
   // console.log(nlp(allTerms[0].t).terms().data());
 
   // final assembly
-  mergedTerms = mergedTerms.slice(0, 15);
+  mergedTerms = mergedTerms.slice(0, 20);
   mergedTerms.sort((a, b) => b.n - a.n);
-  const assembled = [];
-  for (let i = 0; i < 15; i += 1) {
+  let assembled = [];
+  for (let i = 0; i < 20; i += 1) {
     assembled.push({ t: mergedTerms[i].c, n: mergedTerms[i].n });
   }
+  assembled = assembled.filter(function (a) {
+    // eslint-disable-next-line no-return-assign
+    return !this[a.t] && (this[a.t] = true);
+  }, Object.create(null));
 
   // saving to db
   sh.update('icing_stats').set('processedterms', '\'' + JSON.stringify(assembled) + '\'')

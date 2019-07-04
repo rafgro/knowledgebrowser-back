@@ -26,7 +26,7 @@ server.get('/ops/correct', (request, response) => {
 });
 server.get('/ops/ice', (request, response) => {
   response.send('Started job');
-  managerIcing.start();
+  managerIcing.start(request.query.force || 0);
 });
 
 /* api */

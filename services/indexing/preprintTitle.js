@@ -12,7 +12,7 @@ exports.index = function (whichId, canStop) {
     .run()
     .then((title) => {
       // eslint-disable-next-line prefer-destructuring
-      const id = title[0];
+      const id = title[0].id; // title[0];
 
       const titleProper = unescape(title[0].title)
         .replace(RegExp(' \\(arXiv:.*\\)'), '')
