@@ -58,6 +58,7 @@ exports.processRssBody = function (sh, body, name, subject) {
               doi: id,
               title: escape(element.title),
               server: 'arXiv',
+              sub: subject,
             })
               .into('content_preprints')
               .run()
@@ -93,6 +94,7 @@ exports.processRssBody = function (sh, body, name, subject) {
                 doi: id,
                 title: escape(element.title),
                 server: 'arXiv',
+                sub: subject,
               })
               .where('doi', '=', id)
               .run()

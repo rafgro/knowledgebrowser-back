@@ -31,6 +31,7 @@ exports.processRssBody = function (sh, body, name, subject) {
             doi: element['dc:identifier'],
             title: escape(element['dc:title']),
             server: 'bioRxiv',
+            sub: subject,
           })
             .into('content_preprints')
             .run()
