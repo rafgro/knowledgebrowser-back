@@ -1,5 +1,10 @@
+const validator = require('validator');
+
 exports.doYourJob = function (db, userMail, userPass) {
   return new Promise((resolve, reject) => {
+    // 0. validation
+    if (!validator.isEmail(userMail)) reject({ errorType: 'invalid', message: 'The e-mail seems invalid.' });
+
     // 1. check if user exists
     db.select('email').from('accounts').where('email', '=', userMail)
       .run()
@@ -16,7 +21,7 @@ exports.doYourJob = function (db, userMail, userPass) {
               resolve({ message: 'You have successfully signed up!' });
             })
             .catch((e) => {
-              logger.error(e.toString());
+              logger.error(JSON.stringify(e));
               reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
             });
         } else {
@@ -25,7 +30,7 @@ exports.doYourJob = function (db, userMail, userPass) {
         }
       })
       .catch((e) => {
-        logger.error(e.toString());
+        logger.error(JSON.stringify(e));
         reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
       });
   });

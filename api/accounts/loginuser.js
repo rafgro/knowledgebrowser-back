@@ -1,5 +1,10 @@
+const validator = require('validator');
+
 exports.doYourJob = function (db, userMail, userPass) {
   return new Promise((resolve, reject) => {
+    // 0. validation
+    if (!validator.isEmail(userMail)) reject({ errorType: 'invalid', message: 'The e-mail seems invalid.' });
+
     db.select('id', 'email').from('accounts')
       .where('email', '=', userMail)
       .and('pass', '=', 'crypt(\'' + userPass + '\',pass)')

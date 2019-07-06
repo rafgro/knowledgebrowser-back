@@ -1,4 +1,5 @@
 const { Router } = require('express');
+const generalExpress = require('express');
 const loader = require('./loaders');
 const managerCrawling = require('./jobmanagers/manager-crawling');
 const managerIndexing = require('./jobmanagers/manager-indexing');
@@ -93,30 +94,42 @@ server.get('/api/terms', (request, response) => {
       response.send([{ text: JSON.stringify(e) }]);
     });
 });
-server.get('/api/accounts/createuser', (request, response) => {
-  apiAccountsCreateuser
-    .doYourJob(loader.database, 'dummy1@email.com', 'dummypass')
-    .then((results) => {
-      response.send(results);
-    })
-    .catch((e) => {
-      logger.error(JSON.stringify(e));
-      response.status(403);
-      response.send(e);
-    });
+server.use(generalExpress.urlencoded());
+server.post('/api/accounts/createuser', (request, response) => {
+  if (request.body.hey === 'ZXVUXb96JPgZVspA') {
+    apiAccountsCreateuser
+      .doYourJob(loader.database, request.body.email, request.body.pass)
+      .then((results) => {
+        response.status(200);
+        response.send(results);
+      })
+      .catch((e) => {
+        logger.error(JSON.stringify(e));
+        response.status(403);
+        response.send(e);
+      });
+  } else {
+    response.status(401);
+    response.send({ errorType: 'key', message: 'Sorry, we\'ve encountered an error' });
+  }
 });
-server.get('/api/accounts/loginuser', (request, response) => {
-  apiAccountsLoginuser
-    .doYourJob(loader.database, 'dummy1@email.com', 'dummypass')
-    .then((results) => {
-      response.send(results);
-      console.log(results);
-    })
-    .catch((e) => {
-      logger.error(JSON.stringify(e));
-      response.status(401);
-      response.send(e);
-    });
+server.post('/api/accounts/loginuser', (request, response) => {
+  if (request.body.hey === 'ZXVUXb96JPgZVspA') {
+    apiAccountsLoginuser
+      .doYourJob(loader.database, request.body.email, request.body.pass)
+      .then((results) => {
+        response.status(200);
+        response.send(results);
+      })
+      .catch((e) => {
+        logger.error(JSON.stringify(e));
+        response.status(401);
+        response.send(e);
+      });
+  } else {
+    response.status(401);
+    response.send({ errorType: 'key', message: 'Sorry, we\'ve encountered an error' });
+  }
 });
 
 // Http errors
