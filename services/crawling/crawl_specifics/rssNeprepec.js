@@ -31,7 +31,13 @@ exports.processRssBody = function (sh, body, name, subject) {
             } else myAuthors = element['dc:creator'].toString();
 
             const hour = new Date().getUTCHours();
-            let myDate = element['dc:date']; // format: 2019-06-04 08:00:00
+            const date = new Date(Date.now());
+            const today = date.getUTCFullYear()
+                + (date.getUTCMonth() + 1 < 10 ? '-0' : '-')
+                + (date.getUTCMonth() + 1)
+                + (date.getUTCDate() < 10 ? '-0' : '-')
+                + date.getUTCDate();
+            let myDate = element['dc:date'] || today; // format: 2019-06-04 08:00:00
             if (myDate.length === 7) myDate += '-01';
             if (myDate.length === 4) myDate += '-01-01';
             if (hour < 10) myDate += ' 0' + hour + ':00:00';

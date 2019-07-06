@@ -12,6 +12,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
     const hrstart = process.hrtime();
 
     // query sanitization
+    if (offset < 0) offset = 0;
     // eslint-disable-next-line eqeqeq
     if (query == undefined) {
       reject({ message: 'Please enter your query.' });
@@ -911,9 +912,17 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                     toAdd = 1;
                   }
                   if (pos1 === -1) {
-                    pos1 = lower.indexOf(word);
+                    pos1 = lower.indexOf(word + ' ');
                     toAdd = 0;
                   }
+                  if (pos1 === -1) {
+                    pos1 = lower.indexOf(' ' + word + '.');
+                    toAdd = 1;
+                  }
+                  /* if (pos1 === -1) {
+                    pos1 = lower.indexOf(word);
+                    toAdd = 0;
+                  } */
                   if (pos1 !== -1) {
                     let can = true;
                     pos1 += toAdd;
@@ -978,9 +987,17 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                     toAdd = 1;
                   }
                   if (pos1 === -1) {
-                    pos1 = lower.indexOf(word);
+                    pos1 = lower.indexOf(word + ' ');
                     toAdd = 0;
                   }
+                  if (pos1 === -1) {
+                    pos1 = lower.indexOf(' ' + word + '.');
+                    toAdd = 1;
+                  }
+                  /* if (pos1 === -1) {
+                    pos1 = lower.indexOf(word);
+                    toAdd = 0;
+                  } */
                   if (pos1 !== -1) {
                     let can = true;
                     pos1 += toAdd;

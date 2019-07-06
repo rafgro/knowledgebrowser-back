@@ -80,7 +80,7 @@ exports.processRssBody = function (sh, body, name, subject) {
           ) {
             // const hour = (new Date()).getUTCHours();
             // const date = new Date(Date.now());
-            const myDate = '2019-04-01 00:00:00';
+            // const myDate = '2019-04-01 00:00:00';
 
             sh.update('content_preprints')
               .set({
@@ -90,7 +90,7 @@ exports.processRssBody = function (sh, body, name, subject) {
                   + escape(striptags(element.description[0]._.toString()))
                   + "')",
                 authors: escape(striptags(element['dc:creator'].toString())),
-                date: myDate,
+                // date: myDate,
                 doi: id,
                 title: escape(element.title),
                 server: 'arXiv',

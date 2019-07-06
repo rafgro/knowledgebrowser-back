@@ -51,5 +51,5 @@ exports.processRssBody = function (sh, body, name, subject) {
 
   setTimeout(() => {
     logContinuity.logIt(sh, isContinuous, name, subject);
-  }, 3000);
+  }, 5000);
 };

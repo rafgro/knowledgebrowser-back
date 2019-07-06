@@ -17,6 +17,7 @@ exports.processJsonBody = function (sh, body, name) {
         } else {
           isContinuous = true;
         }
+        if (!doi.includes('v1')) nonDuplicated = false;
 
         if (nonDuplicated === true) {
           const hour = new Date().getUTCHours();

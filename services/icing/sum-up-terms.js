@@ -12,6 +12,10 @@ exports.endThis = function (sh, terms, today, type) {
   allTerms.sort((a, b) => b.s - a.s);
 
   // crude but quick lingustic sanitization
+  const listForPartialExclusion = ['et al', 'state of the art', ' works'];
+  const listForExactExclusion = ['high levels', 'orders of magnitude', 'lower bounds', 'proof of concept', 'trade off',
+    'trade offs', 'based model', 'based models', 'amount of data', 'amounts of data', 'initial data', 'nature of',
+    'this study'];
   function disqualifyWords(v) {
     let ifTree = true;
     if (!v.t.includes(' ') && v.n > 3000) ifTree = false;
@@ -21,15 +25,14 @@ exports.endThis = function (sh, terms, today, type) {
     else if (v.t.includes(' our')) ifTree = false;
     else if (v.t.includes(' is')) ifTree = false;
     else if (v.t.includes('is ')) ifTree = false;
-    else if (v.t === 'et al') ifTree = false;
-    else if (v.t.includes('state of the art')) ifTree = false;
-    else if (v.t.includes(' works')) ifTree = false;
-    else if (v.t === 'high levels') ifTree = false;
-    else if (v.t === 'orders of magnitude') ifTree = false;
-    else if (v.t === 'lower bounds') ifTree = false;
-    else if (v.t === 'proof of concept') ifTree = false;
     else if (v.t.charAt(0) === ' ') ifTree = false;
     else if (v.t.charAt(v.t.length - 1) === ';') ifTree = false;
+    listForPartialExclusion.forEach((el) => {
+      if (v.t.includes(el)) ifTree = false;
+    });
+    listForExactExclusion.forEach((el) => {
+      if (v.t === el) ifTree = false;
+    });
     return ifTree;
   }
   allTerms = allTerms.filter(disqualifyWords);
