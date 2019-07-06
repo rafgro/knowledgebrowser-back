@@ -8,6 +8,8 @@ const apiSearch = require('./api/search');
 const apiStatsPublic = require('./api/stats/public');
 const apiStatsTerms = require('./api/stats/public/terms');
 const apiStatsInternal = require('./api/stats/internal');
+const apiAccountsCreateuser = require('./api/accounts/createuser');
+const apiAccountsLoginuser = require('./api/accounts/loginuser');
 
 const server = Router();
 
@@ -89,6 +91,31 @@ server.get('/api/terms', (request, response) => {
     .catch((e) => {
       logger.error(JSON.stringify(e));
       response.send([{ text: JSON.stringify(e) }]);
+    });
+});
+server.get('/api/accounts/createuser', (request, response) => {
+  apiAccountsCreateuser
+    .doYourJob(loader.database, 'dummy1@email.com', 'dummypass')
+    .then((results) => {
+      response.send(results);
+    })
+    .catch((e) => {
+      logger.error(JSON.stringify(e));
+      response.status(403);
+      response.send(e);
+    });
+});
+server.get('/api/accounts/loginuser', (request, response) => {
+  apiAccountsLoginuser
+    .doYourJob(loader.database, 'dummy1@email.com', 'dummypass')
+    .then((results) => {
+      response.send(results);
+      console.log(results);
+    })
+    .catch((e) => {
+      logger.error(JSON.stringify(e));
+      response.status(401);
+      response.send(e);
     });
 });
 
