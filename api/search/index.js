@@ -584,7 +584,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
           // reject( { scope: scopesOfPubs.get() } )
 
 
-          const arrayOfQueries = [];
+          let arrayOfQueries = [];
           let howManyRelevant = 0;
 
           /* Sorting relevant by DATE */
@@ -707,8 +707,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                   )
                   .orderBy('date', 'desc')
                   .orderBy('id', 'asc')
-                  .limit(moreRelevantLimit, moreRelevantOffset)
-                  .run(),
+                  .limit(moreRelevantLimit, moreRelevantOffset),
               );
             }
             if (lessRelevantNeeded) {
@@ -742,11 +741,10 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                     )
                     .orderBy('date', 'desc')
                     .orderBy('id', 'asc')
-                    .limit(10, lessRelevantOffset)
-                    .run(),
+                    .limit(10, lessRelevantOffset),
                 );
               } else if (
-                lessRelevantOffset + 10 > furtherHigher.length
+                lessRelevantOffset + 10 >= furtherHigher.length
                 && lessRelevantOffset < furtherHigher.length
               ) {
                 // taking from both sides
@@ -770,8 +768,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                     )
                     .orderBy('date', 'desc')
                     .orderBy('id', 'asc')
-                    .limit(10, lessRelevantOffset)
-                    .run(),
+                    .limit(10, lessRelevantOffset),
                 );
                 arrayOfQueries.push(
                   sh
@@ -793,8 +790,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                     )
                     .orderBy('date', 'desc')
                     .orderBy('id', 'asc')
-                    .limit(10, 0)
-                    .run(),
+                    .limit(10, 0),
                 );
               } else {
                 // taking from lower boundary if we are past higher
@@ -818,8 +814,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                     )
                     .orderBy('date', 'desc')
                     .orderBy('id', 'asc')
-                    .limit(10, lessRelevantOffset - furtherHigher.length) // lessRelevantOffset-furtherHigher.length)
-                    .run(),
+                    .limit(10, lessRelevantOffset - furtherHigher.length),
                 );
                 // reject( {less: lessRelevantOffset, highLen: furtherHigher.length, lowLen: furtherLower.length} );
               }
@@ -861,8 +856,12 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
               primaryQuery = primaryQuery.orderBy(`"id"=${what.p}`);
             });
             // reject(primaryQuery.build());
-            arrayOfQueries.push(primaryQuery.run());
+            arrayOfQueries.push(primaryQuery);
           }
+
+          // const arrayOfQueries2 = arrayOfQueries.map(v => v.clone().build());
+          // logger.info(JSON.stringify(arrayOfQueries2));
+          arrayOfQueries = arrayOfQueries.map(v => v.run());
 
           // 3
           Promise.all(arrayOfQueries)
