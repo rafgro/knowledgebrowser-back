@@ -11,6 +11,12 @@ const apiStatsTerms = require('./api/stats/public/terms');
 const apiStatsInternal = require('./api/stats/internal');
 const apiAccountsCreateuser = require('./api/accounts/createuser');
 const apiAccountsLoginuser = require('./api/accounts/loginuser');
+const apiAccountsUserdataNotifications = require('./api/accounts/userdata-notifications');
+const apiAccountsNotificationAdd = require('./api/accounts/notification-add');
+const apiAccountsNotificationUpdate = require('./api/accounts/notification-update');
+const apiAccountsNotificationDelete = require('./api/accounts/notification-delete');
+const apiAccountsConfirmUser = require('./api/accounts/confirmuser');
+const apiAccountUserdataMailstatus = require('./api/accounts/userdata-mailstatus');
 
 const server = Router();
 
@@ -98,7 +104,8 @@ server.use(generalExpress.urlencoded());
 server.post('/api/accounts/createuser', (request, response) => {
   if (request.body.hey === 'ZXVUXb96JPgZVspA') {
     apiAccountsCreateuser
-      .doYourJob(loader.database, request.body.email, request.body.pass)
+      .doYourJob(loader.database, request.body.email, request.body.pass,
+        request.body.firstNotification)
       .then((results) => {
         response.status(200);
         response.send(results);
@@ -116,7 +123,119 @@ server.post('/api/accounts/createuser', (request, response) => {
 server.post('/api/accounts/loginuser', (request, response) => {
   if (request.body.hey === 'ZXVUXb96JPgZVspA') {
     apiAccountsLoginuser
-      .doYourJob(loader.database, request.body.email, request.body.pass)
+      .doYourJob(loader.database, request.body.email, request.body.pass,
+        request.body.newNotification)
+      .then((results) => {
+        response.status(200);
+        response.send(results);
+      })
+      .catch((e) => {
+        logger.error(JSON.stringify(e));
+        response.status(401);
+        response.send(e);
+      });
+  } else {
+    response.status(401);
+    response.send({ errorType: 'key', message: 'Sorry, we\'ve encountered an error' });
+  }
+});
+server.post('/api/accounts/allnotifications', (request, response) => {
+  if (request.body.hey === 'ZXVUXb96JPgZVspA') {
+    apiAccountsUserdataNotifications
+      .doYourJob(loader.database, request.body.email)
+      .then((results) => {
+        response.status(200);
+        response.send(results);
+      })
+      .catch((e) => {
+        logger.error(JSON.stringify(e));
+        response.status(401);
+        response.send(e);
+      });
+  } else {
+    response.status(401);
+    response.send({ errorType: 'key', message: 'Sorry, we\'ve encountered an error' });
+  }
+});
+server.post('/api/accounts/addonenotification', (request, response) => {
+  if (request.body.hey === 'ZXVUXb96JPgZVspA') {
+    apiAccountsNotificationAdd
+      .doYourJob(loader.database, request.body.account, request.body.keywords,
+        request.body.relevance, request.body.frequency, request.body.where)
+      .then((results) => {
+        response.status(200);
+        response.send(results);
+      })
+      .catch((e) => {
+        logger.error(JSON.stringify(e));
+        response.status(401);
+        response.send(e);
+      });
+  } else {
+    response.status(401);
+    response.send({ errorType: 'key', message: 'Sorry, we\'ve encountered an error' });
+  }
+});
+server.post('/api/accounts/updatenotification', (request, response) => {
+  if (request.body.hey === 'ZXVUXb96JPgZVspA') {
+    apiAccountsNotificationUpdate
+      .doYourJob(loader.database, request.body.account, request.body.keywords,
+        request.body.relevance, request.body.frequency, request.body.where,
+        request.body.hiddenid)
+      .then((results) => {
+        response.status(200);
+        response.send(results);
+      })
+      .catch((e) => {
+        logger.error(JSON.stringify(e));
+        response.status(401);
+        response.send(e);
+      });
+  } else {
+    response.status(401);
+    response.send({ errorType: 'key', message: 'Sorry, we\'ve encountered an error' });
+  }
+});
+server.post('/api/accounts/deletenotification', (request, response) => {
+  if (request.body.hey === 'ZXVUXb96JPgZVspA') {
+    apiAccountsNotificationDelete
+      .doYourJob(loader.database, request.body.account, request.body.hiddenid)
+      .then((results) => {
+        response.status(200);
+        response.send(results);
+      })
+      .catch((e) => {
+        logger.error(JSON.stringify(e));
+        response.status(401);
+        response.send(e);
+      });
+  } else {
+    response.status(401);
+    response.send({ errorType: 'key', message: 'Sorry, we\'ve encountered an error' });
+  }
+});
+server.post('/api/accounts/confirmuser', (request, response) => {
+  if (request.body.hey === 'ZXVUXb96JPgZVspA') {
+    apiAccountsConfirmUser
+      .doYourJob(loader.database, request.body.key)
+      .then((results) => {
+        response.status(200);
+        response.send(results);
+      })
+      .catch((e) => {
+        logger.error(JSON.stringify(e));
+        response.status(401);
+        response.send(e);
+      });
+  } else {
+    response.status(401);
+    response.send({ errorType: 'key', message: 'Sorry, we\'ve encountered an error' });
+  }
+});
+server.post('/api/accounts/usermailstatus', (request, response) => {
+  if (request.body.hey === 'ZXVUXb96JPgZVspA') {
+    apiAccountUserdataMailstatus
+      .doYourJob(loader.database, request.body.email)
       .then((results) => {
         response.status(200);
         response.send(results);

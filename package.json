@@ -12,6 +12,7 @@
     "body-parser": "^1.19.0",
     "compromise": "^11.13.2",
     "express": "^4.17.0",
+    "nodemailer": "^6.2.1",
     "read-last-lines": "^1.7.1",
     "request": "^2.88.0",
     "ship-hold": "^2.0.1",

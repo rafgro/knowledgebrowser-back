@@ -61,11 +61,11 @@ exports.start = function (ifForce) {
                   .run()
                   .then((res) => {
                     let bound = parseInt(res[0].id, 10);
-                    if (bound < 30000) {
-                      loader.database.select('boundary').from('icing_stats').orderBy('id', 'desc').limit(1)
+                    if (bound < 30000 || Number.isNaN(bound)) {
+                      loader.database.select('boundary').from('icing_stats').orderBy('id', 'desc').limit(2)
                         .run()
                         .then((res2) => {
-                          bound = parseInt(res2[0].boundary, 10) + 50;
+                          bound = parseInt(res2[1].boundary, 10) + 50;
                           loader.database.update('icing_stats').set('boundary', bound)
                             .where('date', '=', today).and('type', '=', 'a')
                             .run()
