@@ -12,7 +12,7 @@ exports.doYourJob = function (db, userMail, userPass, firstNotification) {
       .then((result) => {
         if (result.length === 0) {
           // 2. add to database
-          const keyForUser = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 15);
+          const keyForUser = Math.random().toString(36).replace(/[^a-z]+/g, '');
           db.insert({
             email: userMail,
             pass: 'crypt(\'' + userPass + '\',gen_salt(\'bf\'))',
@@ -21,7 +21,7 @@ exports.doYourJob = function (db, userMail, userPass, firstNotification) {
             .then(() => {
               // 3. add first notification if we need one
               // eslint-disable-next-line eqeqeq
-              if (firstNotification != undefined) {
+              /* if (firstNotification != undefined) {
                 db.insert({
                   account: userMail,
                   query: firstNotification,
@@ -39,10 +39,10 @@ exports.doYourJob = function (db, userMail, userPass, firstNotification) {
                     logger.error(JSON.stringify(e));
                     reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
                   });
-              } else {
+              } else { */
                 logger.info('Created account ' + userMail);
                 resolve({ message: 'You have successfully signed up!' });
-              }
+              // }
 
               // 4. send confirmation mail
               confirmationMail.doYourJob(userMail, keyForUser);

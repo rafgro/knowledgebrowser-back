@@ -7,7 +7,7 @@ const nlp = require('compromise');
 const striptags = require('striptags');
 
 // eslint-disable-next-line no-unused-vars
-exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sortMode = 0) {
+exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sortMode = 0, minRelevance = 4, span = 720, linear = false) {
   return new Promise((resolve, reject) => {
     const hrstart = process.hrtime();
 
@@ -553,7 +553,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                     }
                 } */
 
-          const limitOfRelevancy = whatsTheLimit(numberOfImportantWords);
+          const limitOfRelevancy = whatsTheLimit(numberOfImportantWords, minRelevance);
 
           // correcting weight of pubs without sufficient coverage
           const workingWords = workingQuery.split(' ');
@@ -587,9 +587,62 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
           let arrayOfQueries = [];
           let howManyRelevant = 0;
 
+          /* Providing only newest relevant for NOTIFICATIONS */
+          if (linear === true) {
+            // idea: provide all with relevancy over limit
+            const relevantIds = [];
+            originalMultipliedRelevant.forEach((pubWeight, pubId) => {
+              // final division
+              if (pubWeight > limitOfRelevancy) { relevantIds.push({ p: pubId, w: pubWeight }); }
+            });
+            if (relevantIds.length > 0) {
+              // span is in hours
+              const dateMinusSpan = new Date(Date.now() - span * 60 * 60 * 1000);
+              const thatdate = dateMinusSpan.getUTCFullYear()
+                + (dateMinusSpan.getUTCMonth() + 1 < 10 ? '-0' : '-')
+                + (dateMinusSpan.getUTCMonth() + 1)
+                + (dateMinusSpan.getUTCDate() < 10 ? '-0' : '-')
+                + dateMinusSpan.getUTCDate()
+                + (dateMinusSpan.getUTCHours() < 10 ? ' 0' : ' ')
+                + dateMinusSpan.getUTCHours() + ':00:00';
+              arrayOfQueries.push(
+                sh
+                  .select(
+                    'id',
+                    'title',
+                    'authors',
+                    'abstract',
+                    'doi',
+                    'link',
+                    'date',
+                    'server',
+                  )
+                  .from('content_preprints')
+                  .where(
+                    'id',
+                    'IN',
+                    '(' + relevantIds.map(e => e.p).join(', ') + ')',
+                  )
+                  .and(
+                    'date',
+                    '>=',
+                    thatdate,
+                  )
+                  .orderBy('date', 'desc')
+                  .orderBy('id', 'asc')
+                  .limit(100),
+              );
+            } else {
+              reject({
+                message:
+                  'Sorry, there are no sufficiently relevant results for <i>' + query + '</i>.',
+              });
+            }
+          // eslint-disable-next-line brace-style
+          }
           /* Sorting relevant by DATE */
           // eslint-disable-next-line eqeqeq
-          if (sortMode == 0) {
+          else if (sortMode == 0) {
             // idea: node is stalling during mapping results to weights when there are thousands of them,
             // so we need to pass to node only the last step of processing,
             // so we can: 1. divide pubs to two arrays - relevant and low relevancy (just one foreach!)
@@ -879,7 +932,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                 properArray = arrayOfResults[0];
               }
 
-              if (properArray.length > 10) { properArray = properArray.slice(0, 10); }
+              if (properArray.length > 10 && linear === false) { properArray = properArray.slice(0, 10); }
               if (properArray[0] === undefined) {
                 reject({
                   message:
@@ -913,6 +966,10 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                   if (pos1 === -1) {
                     pos1 = lower.indexOf(word + ' ');
                     toAdd = 0;
+                  }
+                  if (pos1 === -1) {
+                    pos1 = lower.indexOf(' ' + word);
+                    toAdd = 1;
                   }
                   if (pos1 === -1) {
                     pos1 = lower.indexOf(' ' + word + '.');
@@ -988,6 +1045,10 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                   if (pos1 === -1) {
                     pos1 = lower.indexOf(word + ' ');
                     toAdd = 0;
+                  }
+                  if (pos1 === -1) {
+                    pos1 = lower.indexOf(' ' + word);
+                    toAdd = 1;
                   }
                   if (pos1 === -1) {
                     pos1 = lower.indexOf(' ' + word + '.');
@@ -1330,17 +1391,56 @@ function calculateRelativeWeight(originalWeight, noOfWords) {
   }
 }
 
-function whatsTheLimit(noOfWords) {
+function whatsTheLimit(noOfWords, minRelevance) {
   switch (noOfWords) {
     case 1:
-      return 25;
+      if (minRelevance >= 9) return 125;
+      if (minRelevance >= 8) return 115;
+      if (minRelevance >= 7) return 90;
+      if (minRelevance >= 6) return 70;
+      if (minRelevance >= 5) return 50;
+      if (minRelevance >= 4) return 25;
+      if (minRelevance >= 3) return 12;
+      else return 7;
     case 2:
-      return 65;
+      if (minRelevance >= 10) return 190;
+      if (minRelevance >= 9) return 170;
+      if (minRelevance >= 8) return 145;
+      if (minRelevance >= 7) return 110;
+      if (minRelevance >= 6) return 105;
+      if (minRelevance >= 5) return 90;
+      if (minRelevance >= 4) return 65;
+      if (minRelevance >= 3) return 35;
+      else return 20;
     case 3:
-      return 84;
+      if (minRelevance >= 10) return 170;
+      if (minRelevance >= 9) return 120;
+      if (minRelevance >= 8) return 115;
+      if (minRelevance >= 7) return 110;
+      if (minRelevance >= 6) return 100;
+      if (minRelevance >= 5) return 90;
+      if (minRelevance >= 4) return 84;
+      if (minRelevance >= 3) return 60;
+      else return 40;
     case 4:
-      return 84;
+      if (minRelevance >= 10) return 150;
+      if (minRelevance >= 9) return 130;
+      if (minRelevance >= 8) return 120;
+      if (minRelevance >= 7) return 110;
+      if (minRelevance >= 6) return 100;
+      if (minRelevance >= 5) return 90;
+      if (minRelevance >= 4) return 84;
+      if (minRelevance >= 3) return 65;
+      else return 50;
     default:
-      return 90 + (noOfWords - 4) * 10;
+      if (minRelevance >= 10) return 160 + (noOfWords - 4) * 10;
+      if (minRelevance >= 9) return 140 + (noOfWords - 4) * 10;
+      if (minRelevance >= 8) return 130 + (noOfWords - 4) * 10;
+      if (minRelevance >= 7) return 120 + (noOfWords - 4) * 10;
+      if (minRelevance >= 6) return 110 + (noOfWords - 4) * 10;
+      if (minRelevance >= 5) return 100 + (noOfWords - 4) * 10;
+      if (minRelevance >= 4) return 90 + (noOfWords - 4) * 10;
+      if (minRelevance >= 3) return 65 + (noOfWords - 4) * 10;
+      else return 50 + (noOfWords - 4) * 10;
   }
 }

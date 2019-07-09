@@ -5,6 +5,7 @@ const managerCrawling = require('./jobmanagers/manager-crawling');
 const managerIndexing = require('./jobmanagers/manager-indexing');
 const managerCorrecting = require('./jobmanagers/manager-correcting');
 const managerIcing = require('./jobmanagers/manager-icing');
+const managerNotifying = require('./jobmanagers/manager-notifying');
 const apiSearch = require('./api/search');
 const apiStatsPublic = require('./api/stats/public');
 const apiStatsTerms = require('./api/stats/public/terms');
@@ -16,6 +17,7 @@ const apiAccountsNotificationAdd = require('./api/accounts/notification-add');
 const apiAccountsNotificationUpdate = require('./api/accounts/notification-update');
 const apiAccountsNotificationDelete = require('./api/accounts/notification-delete');
 const apiAccountsConfirmUser = require('./api/accounts/confirmuser');
+const apiAccountsChangeUser = require('./api/accounts/changeuser');
 const apiAccountUserdataMailstatus = require('./api/accounts/userdata-mailstatus');
 
 const server = Router();
@@ -36,6 +38,10 @@ server.get('/ops/correct', (request, response) => {
 server.get('/ops/ice', (request, response) => {
   response.send('Started job');
   managerIcing.start(request.query.force || 0);
+});
+server.get('/ops/notify', (request, response) => {
+  response.send('Started job');
+  managerNotifying.start();
 });
 
 /* api */
@@ -236,6 +242,44 @@ server.post('/api/accounts/usermailstatus', (request, response) => {
   if (request.body.hey === 'ZXVUXb96JPgZVspA') {
     apiAccountUserdataMailstatus
       .doYourJob(loader.database, request.body.email)
+      .then((results) => {
+        response.status(200);
+        response.send(results);
+      })
+      .catch((e) => {
+        logger.error(JSON.stringify(e));
+        response.status(401);
+        response.send(e);
+      });
+  } else {
+    response.status(401);
+    response.send({ errorType: 'key', message: 'Sorry, we\'ve encountered an error' });
+  }
+});
+server.post('/api/accounts/changeusermail', (request, response) => {
+  if (request.body.hey === 'ZXVUXb96JPgZVspA') {
+    apiAccountsChangeUser
+      .doChangeUserMail(loader.database, request.body.oldmail,
+        request.body.pass, request.body.newmail)
+      .then((results) => {
+        response.status(200);
+        response.send(results);
+      })
+      .catch((e) => {
+        logger.error(JSON.stringify(e));
+        response.status(401);
+        response.send(e);
+      });
+  } else {
+    response.status(401);
+    response.send({ errorType: 'key', message: 'Sorry, we\'ve encountered an error' });
+  }
+});
+server.post('/api/accounts/changeuserpass', (request, response) => {
+  if (request.body.hey === 'ZXVUXb96JPgZVspA') {
+    apiAccountsChangeUser
+      .doChangeUserPass(loader.database, request.body.mail,
+        request.body.oldpass, request.body.newpass)
       .then((results) => {
         response.status(200);
         response.send(results);
