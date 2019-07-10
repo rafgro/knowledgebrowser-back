@@ -25,8 +25,8 @@ exports.process = function (preprints) {
         loader.database
           .update('content_preprints')
           .set('date', '2019-04-01 00:00:00')
-          .where('id', '=', element.id)
-          .run(),
+          .where('id', '=', '$id')
+          .run({ id: element.id }),
       );
     }
   });

@@ -128,8 +128,7 @@ server.post('/api/accounts/createuser', (request, response) => {
 server.post('/api/accounts/loginuser', (request, response) => {
   if (request.body.hey === 'ZXVUXb96JPgZVspA') {
     apiAccountsLoginuser
-      .doYourJob(loader.database, request.body.email, request.body.pass,
-        request.body.newNotification)
+      .doYourJob(loader.database, request.body.email, request.body.pass)
       .then((results) => {
         response.status(200);
         response.send(results);

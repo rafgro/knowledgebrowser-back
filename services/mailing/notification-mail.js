@@ -17,30 +17,49 @@ exports.doYourJob = function (ifFirst, whereToSend, aboutWhat, minRelevance, spa
               logger.info('No new results to notify ' + whereToSend);
             } else {
               let pubs = results.results;
-              if (lastSent != 0) {
+              if (lastSent != null) {
                 let determinedPos = -1;
                 for (let i = 0; i < pubs.length; i += 1) {
-                  if (pubs[i].id === parseInt(lastSent, 10)) {
+                  if (pubs[i].id == parseInt(lastSent, 10)) {
                     determinedPos = i;
                     break;
                   }
                 }
-                if (determinedPos != -1) pubs = pubs.slice(0, determinedPos);
-                else {
-                  logger.error('Hole between notifications');
+                if (determinedPos != -1) {
+                  pubs = pubs.slice(0, determinedPos);
+                  sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastSent, pubs);
+                } else {
                   searchApi
                     .doYourJob(loader.database, aboutWhat, 10, 0, 0, 0,
                       minRelevance, (span * 2 + 24), true)
                     .then((results2) => {
+                      let pubs2 = results2.results;
+                      if (lastSent != 0) {
+                        determinedPos = -1;
+                        for (let i = 0; i < pubs2.length; i += 1) {
+                          if (pubs2[i].id == parseInt(lastSent, 10)) {
+                            determinedPos = i;
+                            break;
+                          }
+                        }
+                        if (determinedPos != -1) {
+                          logger.info('Hole between notifications cut out');
+                          pubs2 = pubs2.slice(0, determinedPos);
+                        } else {
+                          logger.error('Hole between notifications not cut out');
+                        }
+                      }
+
                       sendThatMail(ifFirst, whereToSend, aboutWhat,
-                        minRelevance, (span * 2 + 24), lastSent, results2.results);
+                        minRelevance, (span * 2 + 24), lastSent, pubs2);
                     })
                     .catch((e) => {
                       logger.error(e);
                     });
                 }
+              } else {
+                sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastSent, pubs);
               }
-              sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastSent, pubs);
             }
           })
           .catch((e) => {
@@ -52,17 +71,6 @@ exports.doYourJob = function (ifFirst, whereToSend, aboutWhat, minRelevance, spa
 };
 
 function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastSent, pubs) {
-  if (lastSent != 0) {
-    let determinedPos = -1;
-    for (let i = 0; i < pubs.length; i += 1) {
-      if (pubs[i].id === parseInt(lastSent, 10)) {
-        determinedPos = i;
-        break;
-      }
-    }
-    if (determinedPos != -1) pubs = pubs.slice(0, determinedPos);
-  }
-
   const transport = nodemailer.createTransport({
     host: 'ssd3.linuxpl.com',
     port: 587,
@@ -122,9 +130,9 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
 
   loader.database.update('accounts_notifications')
     .set('lastone', pubs[0].id)
-    .where('account', '=', whereToSend)
-    .and('query', '=', aboutWhat)
-    .run()
+    .where('account', '=', '$whereToSend')
+    .and('query', '=', '$aboutWhat')
+    .run({ whereToSend, aboutWhat })
     .then(() => logger.info('Updated last one to ' + pubs[0].id))
     .catch(e => logger.error(e));
 }

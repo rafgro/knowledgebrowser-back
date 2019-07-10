@@ -13,17 +13,19 @@ exports.doYourJob = function (db, account, keywords, relevance, frequency, where
     const schedule = notificationSchedule.generateSchedule(frequency);
 
     db.insert({
-      account,
-      query: keywords,
-      frequency,
-      minrelevance: relevance,
-      where,
+      account: '$account',
+      query: '$keywords',
+      frequency: '$frequency',
+      minrelevance: '$relevance',
+      where: '$where',
       created: 'to_timestamp(' + (Date.now() / 1000) + ')',
       hiddenid: 'crypt(\'' + account + (Date.now() / 1000) + '\',gen_salt(\'bf\'))',
-      schdays: schedule.days,
-      schhours: schedule.hours,
-      span: schedule.span,
-    }).into('accounts_notifications').run()
+      schdays: '$days',
+      schhours: '$hours',
+      span: '$span',
+    }).into('accounts_notifications')
+      .run({ account, keywords, frequency, relevance, where,
+        days: schedule.days, hours: schedule.hours, span: schedule.span })
       .then(() => {
         logger.info('Created notification ' + keywords + '  for ' + account);
         notificationMail.doYourJob('first', where, keywords, relevance, schedule.span);

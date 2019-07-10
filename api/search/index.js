@@ -24,7 +24,9 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
     if (query.length > 60) {
       workingQuery = workingQuery.substring(0, 60);
     }
-    workingQuery = workingQuery
+    workingQuery = workingQuery.replace(/\-/g, ' ');
+    workingQuery = workingQuery.replace(/[^A-Za-z0-9 ]/g, '');
+    /* workingQuery = workingQuery
       .replace(/\'/g, '')
       .replace(/\:/g, ' ')
       .replace(/\;/g, ' ')
@@ -33,8 +35,11 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
       .replace(/\\/g, ' ')
       .replace(/\-/g, ' ')
       .replace(/\(/g, '')
-      .replace(/\)/g, '');
-    if (query.length < 1 || query === ' ') {
+      .replace(/\)/g, '')
+      .replace('select', '')
+      .replace('drop', '')
+      .replace(/\* /g, ''); */
+    if (workingQuery.length < 1) {
       reject({ message: 'Please enter your query.' });
     }
 
@@ -57,48 +62,52 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
     // reject(words);
 
     function populateNounToForms(noun) {
-      const lastCase = noun.charAt(noun.length - 1);
-      let processedNoun = noun;
-      const toReturn = [];
-      if (lastCase !== 's') {
-        toReturn.push(processedNoun + 's');
+      if (noun.length > 2) {
+        const lastCase = noun.charAt(noun.length - 1);
+        let processedNoun = noun;
+        const toReturn = [];
+        if (lastCase !== 's') {
+          toReturn.push(processedNoun + 's');
+        }
+        if (
+          lastCase === 'e'
+          || lastCase === 'y'
+          || lastCase === 'i'
+          || lastCase === 'o'
+          || lastCase === 'a'
+        ) {
+          processedNoun = noun.substring(0, noun.length - 1);
+        } else if (lastCase === 's' && noun.charAt(noun.length - 2) === 'c') {
+          toReturn.push(processedNoun);
+          processedNoun = noun.substring(0, noun.length - 2);
+        } else if (
+          lastCase === 'n'
+          && noun.charAt(noun.length - 2) === 'o'
+          && noun.charAt(noun.length - 3) === 'i'
+        ) {
+          // expression, evolution -> express, evolut
+          processedNoun = noun.substring(0, noun.length - 3);
+        } else if (lastCase === 'm' && noun.charAt(noun.length - 2) === 's') {
+          // autism -> autist
+          processedNoun = noun.substring(0, noun.length - 1) + 't';
+        }
+        toReturn.push(processedNoun + 'ed');
+        toReturn.push(processedNoun + 'ely');
+        toReturn.push(processedNoun + 'ary');
+        toReturn.push(processedNoun + 'ory');
+        toReturn.push(processedNoun + 'ic');
+        toReturn.push(processedNoun + 'al');
+        toReturn.push(processedNoun + 'ial');
+        toReturn.push(processedNoun + 'ical');
+        toReturn.push(processedNoun + 'ous');
+        toReturn.push(processedNoun + 'ational');
+        toReturn.push(processedNoun + 'ation');
+        if (noun.includes('ity')) { toReturn.push(noun.substring(0, noun.length - 3)); }
+        if (noun.includes('al')) { toReturn.push(noun.substring(0, noun.length - 2)); }
+        return toReturn;
+      } else {
+        return noun + 's';
       }
-      if (
-        lastCase === 'e'
-        || lastCase === 'y'
-        || lastCase === 'i'
-        || lastCase === 'o'
-        || lastCase === 'a'
-      ) {
-        processedNoun = noun.substring(0, noun.length - 1);
-      } else if (lastCase === 's' && noun.charAt(noun.length - 2) === 'c') {
-        toReturn.push(processedNoun);
-        processedNoun = noun.substring(0, noun.length - 2);
-      } else if (
-        lastCase === 'n'
-        && noun.charAt(noun.length - 2) === 'o'
-        && noun.charAt(noun.length - 3) === 'i'
-      ) {
-        // expression, evolution -> express, evolut
-        processedNoun = noun.substring(0, noun.length - 3);
-      } else if (lastCase === 'm' && noun.charAt(noun.length - 2) === 's') {
-        // autism -> autist
-        processedNoun = noun.substring(0, noun.length - 1) + 't';
-      }
-      toReturn.push(processedNoun + 'ed');
-      toReturn.push(processedNoun + 'ely');
-      toReturn.push(processedNoun + 'ary');
-      toReturn.push(processedNoun + 'ory');
-      toReturn.push(processedNoun + 'ic');
-      toReturn.push(processedNoun + 'al');
-      toReturn.push(processedNoun + 'ial');
-      toReturn.push(processedNoun + 'ical');
-      toReturn.push(processedNoun + 'ous');
-      toReturn.push(processedNoun + 'ational');
-      toReturn.push(processedNoun + 'ation');
-      if (noun.includes('ity')) { toReturn.push(noun.substring(0, noun.length - 3)); }
-      if (noun.includes('al')) { toReturn.push(noun.substring(0, noun.length - 2)); }
-      return toReturn;
     }
 
     function populateVerbToForms(verb) {
@@ -428,7 +437,6 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
     // reject(queriesToDb);
 
     // database querying
-
     sh.select('term', 'relevant', 'relevant_abstract')
       .from('index_title')
       .where('term', 'IN', "('" + queriesToDb.map(e => e.q).join("', '") + "')")
@@ -1250,13 +1258,13 @@ function registerQueryInStats(
   lastExecTime,
 ) {
   sh.insert({
-    query,
-    lastquality: lastQuality,
+    query: '$query',
+    lastquality: '$lastQuality',
     details: "\'[" + newDetails + "]\'",
-    lastexectime: lastExecTime,
+    lastexectime: '$lastExecTime',
   })
     .into('query_stats')
-    .run()
+    .run({ query, lastQuality, lastExecTime })
     .then(() => {
       logger.info(`Logged query ${query}`);
     })
@@ -1264,61 +1272,16 @@ function registerQueryInStats(
       logger.error('line 1271');
       logger.error(
         sh.insert({
-          query,
-          lastquality: lastQuality,
+          query: '$query',
+          lastquality: '$lastQuality',
           details: "\'[" + newDetails + "]\'",
-          lastexectime: lastExecTime,
+          lastexectime: '$lastExecTime',
         })
           .into('query_stats')
-          .build(),
+          .build({ query, lastQuality, lastExecTime }),
       );
       logger.error(e);
     });
-
-  // changed to record every query in a new record
-
-  /* sh.select('details').from('query_stats')
-        .where('query','=',escape(query)).run()
-        .then(result => {
-
-            if( result.length == 0 ) {
-
-                sh.insert({
-                    query: escape(query),
-                    lastquality: lastQuality,
-                    details: '\'['+newDetails+']\'',
-                    lastexectime: lastExecTime })
-                .into('query_stats')
-                .run()
-                .then(() => {
-                    //console.log('ok');
-                })
-                .catch(e => {
-                    console.log(e);
-                });
-
-            } else {
-
-                sh.update('query_stats')
-                .set({
-                  lastquality: lastQuality,
-                  details: '\''+result[0].details.substring(0,result[0].details.length-1)+","+newDetails+']\'',
-                  lastexectime: lastExecTime })
-                .where('query','=',escape(query))
-                .run()
-                .then(() => {
-                    //console.log('ok');
-                })
-                .catch(e => {
-                    console.log(e);
-                });
-
-            }
-
-    })
-    .catch(e=>{
-        logger.info("error during query stats insertion");
-    }); */
 }
 
 function calculateRelativeWeight(originalWeight, noOfWords) {

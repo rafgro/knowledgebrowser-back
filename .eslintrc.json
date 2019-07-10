@@ -19,6 +19,8 @@
         "no-use-before-define": "off",
         "prefer-template": "off",
         "no-useless-escape": "off",
-        "prefer-promise-reject-errors": "off"
+        "prefer-promise-reject-errors": "off",
+        "object-property-newline": "off",
+        "object-curly-newline": "off"
     }
 }

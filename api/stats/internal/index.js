@@ -82,7 +82,7 @@ exports.doYourJob = function (sh) {
           let lasted = query.lastexectime;
           // eslint-disable-next-line eqeqeq
           if (lasted == undefined) lasted = lastOne.executionTime;
-          if (iteratorOfSum <= 20) sumOfLastTwentyTimes += parseInt(lasted, 10);
+          if (iteratorOfSum <= 20 && Number.isInteger(parseInt(lasted, 10))) sumOfLastTwentyTimes += parseInt(lasted, 10);
           iteratorOfSum += 1;
 
           const relevantOnes = lastOne.howManyRelevant;

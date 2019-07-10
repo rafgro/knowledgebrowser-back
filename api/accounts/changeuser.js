@@ -2,8 +2,8 @@ const confirmationMail = require('../../services/mailing/confirmation-mail');
 
 exports.doChangeUserMail = function (db, oldmail, pass, newmail) {
   return new Promise((resolve, reject) => {
-    db.select('email').from('accounts').where('email', '=', newmail)
-      .run()
+    db.select('email').from('accounts').where('email', '=', '$newmail')
+      .run({ newmail })
       .then((res) => {
         // check if the mail is not present in db
         if (res.length > 0) {
@@ -12,21 +12,21 @@ exports.doChangeUserMail = function (db, oldmail, pass, newmail) {
         } else {
           const keyForUser = [...Array(15)].map(() => Math.random().toString(36)[2]).join('');
           db.update('accounts').set({
-            email: newmail,
-            mailconfirmation: keyForUser,
-          }).where('email', '=', oldmail)
-            .and('pass', '=', 'crypt(\'' + pass + '\',pass)')
-            .run()
+            email: '$newmail',
+            mailconfirmation: '$keyForUser',
+          }).where('email', '=', '$oldmail')
+            .and('pass', '=', 'crypt(\'' + pass + '\', pass)')
+            .run({ newmail, keyForUser, oldmail })
             .then(() => {
               confirmationMail.doYourJob(newmail, keyForUser);
               logger.info('Changed mail for ' + oldmail + ' to ' + newmail);
 
               // update notifications assigned to this mail
               db.update('accounts_notifications').set({
-                account: newmail,
-                where: newmail,
-              }).where('account', '=', oldmail)
-                .run()
+                account: '$newmail',
+                where: '$newmail',
+              }).where('account', '=', '$oldmail')
+                .run({ newmail, oldmail })
                 .then(() => {
                   logger.info('Updated notification for user');
                   resolve({ message: 'You have successfully changed mail.' });
@@ -53,9 +53,9 @@ exports.doChangeUserPass = function (db, mail, oldpass, newpass) {
   return new Promise((resolve, reject) => {
     db.update('accounts').set({
       pass: 'crypt(\'' + newpass + '\',gen_salt(\'bf\'))',
-    }).where('email', '=', mail)
+    }).where('email', '=', '$mail')
       .and('pass', '=', 'crypt(\'' + oldpass + '\',pass)')
-      .run()
+      .run({ email })
       .then(() => {
         logger.info('Changed password for ' + mail);
         resolve({ message: 'You have successfully changed password.' });

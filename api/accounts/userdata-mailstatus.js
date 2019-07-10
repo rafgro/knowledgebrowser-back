@@ -2,8 +2,8 @@ exports.doYourJob = function (db, userMail) {
   return new Promise((resolve, reject) => {
     db.select('mailconfirmation')
       .from('accounts')
-      .where('email', '=', userMail)
-      .run()
+      .where('email', '=', '$userMail')
+      .run({ userMail })
       .then((result) => {
         if (result[0].mailconfirmation.length > 3) resolve('0'); // key present in column
         else resolve('1'); // column cleared

@@ -7,7 +7,7 @@ exports.start = function () {
     .select('account', 'query', 'minrelevance', 'span', 'lastone', 'schdays', 'schhours')
     .from('accounts_notifications')
     .orderBy('lastone')
-    .limit(100, result[0].value)
+    .limit(100) // , result[0].value)
     .run()
     .then((results) => {
       const today = new Date().getUTCDate();
@@ -28,7 +28,7 @@ exports.start = function () {
               oneResult.lastone,
             );
           }
-        }, 1000 * index); // slow requesting to avoid bombing own db
+        }, 200 * index); // slow requesting to avoid bombing own db
       });
     })
     .catch((e) => {
