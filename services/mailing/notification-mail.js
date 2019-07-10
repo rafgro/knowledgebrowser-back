@@ -1,5 +1,6 @@
 /* eslint-disable eqeqeq */
 /* eslint-disable no-restricted-syntax */
+/* eslint-disable no-lonely-if */
 const nodemailer = require('nodemailer');
 const loader = require('../../loaders');
 const searchApi = require('../../api/search');
@@ -16,6 +17,7 @@ exports.doYourJob = function (ifFirst, whereToSend, aboutWhat, minRelevance, spa
             if (results.results == undefined) {
               logger.info('No new results to notify ' + whereToSend);
             } else {
+              if (results.results.length == 0) logger.info('No new results to notify ' + whereToSend);
               let pubs = results.results;
               if (lastSent != null) {
                 let determinedPos = -1;
@@ -27,7 +29,11 @@ exports.doYourJob = function (ifFirst, whereToSend, aboutWhat, minRelevance, spa
                 }
                 if (determinedPos != -1) {
                   pubs = pubs.slice(0, determinedPos);
-                  sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastSent, pubs);
+                  if (pubs.length == 0) {
+                    logger.info('No new results to notify ' + whereToSend);
+                  } else {
+                    sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastSent, pubs);
+                  }
                 } else {
                   searchApi
                     .doYourJob(loader.database, aboutWhat, 10, 0, 0, 0,
@@ -50,15 +56,23 @@ exports.doYourJob = function (ifFirst, whereToSend, aboutWhat, minRelevance, spa
                         }
                       }
 
-                      sendThatMail(ifFirst, whereToSend, aboutWhat,
-                        minRelevance, (span * 2 + 24), lastSent, pubs2);
+                      if (pubs2.length == 0) {
+                        logger.info('No new results to notify ' + whereToSend);
+                      } else {
+                        sendThatMail(ifFirst, whereToSend, aboutWhat,
+                          minRelevance, (span * 2 + 24), lastSent, pubs2);
+                      }
                     })
                     .catch((e) => {
                       logger.error(e);
                     });
                 }
               } else {
-                sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastSent, pubs);
+                if (pubs.length == 0) {
+                  logger.info('No new results to notify ' + whereToSend);
+                } else {
+                  sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastSent, pubs);
+                }
               }
             }
           })

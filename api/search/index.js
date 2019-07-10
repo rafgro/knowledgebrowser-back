@@ -940,11 +940,19 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
 
               if (properArray.length > 10 && linear === false) { properArray = properArray.slice(0, 10); }
               // eslint-disable-next-line eqeqeq
-              if (properArray[0] == undefined) {
-                reject({
-                  message:
-                    'Sorry, there are no more results for <i>' + query + '</i>.',
-                });
+              if (properArray == undefined) {
+                // eslint-disable-next-line eqeqeq
+                if (stats == 1) {
+                  reject({
+                    message:
+                      'Sorry, there are no more results for <i>' + query + '</i>.',
+                  });
+                } else {
+                  resolve({
+                    message:
+                      'No new results for notification to <i>' + query + '</i>.',
+                  });
+                }
               }
 
               function strongifyTitle(text, listToStrong) {
@@ -1119,7 +1127,6 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
               }); // quickfix to avoid double stronging plurals (like signal and signals)
 
               const highestRelevancy = 0;
-              const newestResult = new Date(properArray[0].date).getTime();
               const publications = properArray.map((value) => {
                 const untitle = correctScreamingTitle(
                   unescape(value.title)
@@ -1162,6 +1169,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                 quality = publications[0].relativeWeight / 2;
                 if (publications.length >= 5) { quality += publications[4].relativeWeight / 4; }
                 if (publications.length >= 10) { quality += publications[9].relativeWeight / 4; }
+                const newestResult = new Date(properArray[0].date).getTime();
 
                 const hrend = process.hrtime(hrstart);
 
