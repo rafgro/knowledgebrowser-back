@@ -21,11 +21,25 @@ const winstonLogger = createLogger({
 // global.logger = logger;
 global.logger = {
   info(what) {
-    if (typeof what === 'object') winstonLogger.info(JSON.stringify(what));
-    else winstonLogger.info(what);
+    const variant1 = JSON.stringify(what);
+    const variant2 = what.toString();
+    if (variant1 !== '{}') {
+      winstonLogger.info(variant1);
+    } else if (variant2 !== '{}' && variant2 !== '[object Object]') {
+      winstonLogger.info(variant2);
+    } else {
+      winstonLogger.info(what);
+    }
   },
   error(what) {
-    if (typeof what === 'object') winstonLogger.error(JSON.stringify(what));
-    else winstonLogger.error(what);
+    const variant1 = JSON.stringify(what);
+    const variant2 = what.toString();
+    if (variant1 !== '{}') {
+      winstonLogger.error(variant1);
+    } else if (variant2 !== '{}' && variant2 !== '[object Object]') {
+      winstonLogger.error(variant2);
+    } else {
+      winstonLogger.error(what);
+    }
   },
 };

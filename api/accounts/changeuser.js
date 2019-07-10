@@ -10,7 +10,7 @@ exports.doChangeUserMail = function (db, oldmail, pass, newmail) {
           logger.error(oldmail + ' tried to change to existing mail ' + newmail);
           reject({ errorType: 'database', message: 'There is another account registered under this mail.' });
         } else {
-          const keyForUser = Math.random().toString(36).replace(/[^a-z]+/g, '');
+          const keyForUser = [...Array(15)].map(() => Math.random().toString(36)[2]).join('');
           db.update('accounts').set({
             email: newmail,
             mailconfirmation: keyForUser,

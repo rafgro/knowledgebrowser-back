@@ -74,12 +74,17 @@ exports.doYourJob = function (sh) {
 
         const today = Date.now();
 
+        let sumOfLastTwentyTimes = 0;
+        let iteratorOfSum = 0;
         arrayOfResults[3].forEach((query) => {
           const parsed = JSON.parse(query.details);
           const lastOne = parsed[parsed.length - 1];
           let lasted = query.lastexectime;
           // eslint-disable-next-line eqeqeq
           if (lasted == undefined) lasted = lastOne.executionTime;
+          if (iteratorOfSum <= 20) sumOfLastTwentyTimes += parseInt(lasted, 10);
+          iteratorOfSum += 1;
+
           const relevantOnes = lastOne.howManyRelevant;
           let newest = '';
           let thatDate = new Date(parseInt(lastOne.newestResult, 10)).getTime();
@@ -131,6 +136,9 @@ exports.doYourJob = function (sh) {
             });
           }
         });
+
+        toResolve.unshift({ text: '___' });
+        toResolve.unshift({ text: 'Average of exec time of the last twenty queries: ' + (sumOfLastTwentyTimes / 20) + ' ms' });
 
         toResolve.push({ text: '___' });
         toResolve.push({ text: 'Crawl monitoring:' });

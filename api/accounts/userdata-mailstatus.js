@@ -5,7 +5,7 @@ exports.doYourJob = function (db, userMail) {
       .where('email', '=', userMail)
       .run()
       .then((result) => {
-        if (result[0].mailconfirmation.length > 5) resolve('0'); // key present in column
+        if (result[0].mailconfirmation.length > 3) resolve('0'); // key present in column
         else resolve('1'); // column cleared
       })
       .catch((e) => {

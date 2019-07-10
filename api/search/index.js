@@ -931,7 +931,8 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
               }
 
               if (properArray.length > 10 && linear === false) { properArray = properArray.slice(0, 10); }
-              if (properArray[0] === undefined) {
+              // eslint-disable-next-line eqeqeq
+              if (properArray[0] == undefined) {
                 reject({
                   message:
                     'Sorry, there are no more results for <i>' + query + '</i>.',

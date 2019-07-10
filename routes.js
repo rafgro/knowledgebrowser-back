@@ -59,7 +59,7 @@ server.get('/api/search', (request, response) => {
     .then((results) => {
       const hrend = process.hrtime(hrstart);
       logger.info(
-        `Responded to ${request.query.q} with offset ${request.query.offset || 0} and sort ${request.query.sort || 0}`,
+        `Responded to ${request.query.q} with offset ${request.query.offset || 0} and sort ${request.query.sort || 0} in <strong>${hrend[1] / 1000000} ms</strong>`,
       );
       response.send({
         message: +hrend[1] / 1000000,
@@ -110,8 +110,7 @@ server.use(generalExpress.urlencoded());
 server.post('/api/accounts/createuser', (request, response) => {
   if (request.body.hey === 'ZXVUXb96JPgZVspA') {
     apiAccountsCreateuser
-      .doYourJob(loader.database, request.body.email, request.body.pass,
-        request.body.firstNotification)
+      .doYourJob(loader.database, request.body.email, request.body.pass)
       .then((results) => {
         response.status(200);
         response.send(results);
