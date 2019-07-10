@@ -6,7 +6,7 @@ const {
   transports,
 } = require('winston');
 
-const logger = createLogger({
+const winstonLogger = createLogger({
   format: format.combine(
     format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     format.simple(),
@@ -18,4 +18,14 @@ const logger = createLogger({
   ],
 });
 
-global.logger = logger;
+// global.logger = logger;
+global.logger = {
+  info(what) {
+    if (typeof what === 'object') winstonLogger.info(JSON.stringify(what));
+    else winstonLogger.info(what);
+  },
+  error(what) {
+    if (typeof what === 'object') winstonLogger.error(JSON.stringify(what));
+    else winstonLogger.error(what);
+  },
+};

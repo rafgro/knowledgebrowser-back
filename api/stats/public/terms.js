@@ -6,7 +6,7 @@ exports.doYourJob = function (sh, today, type) {
         resolve(res[0].processedterms);
       })
       .catch((e) => {
-        reject(e.toString());
+        reject(e);
       });
   });
 };

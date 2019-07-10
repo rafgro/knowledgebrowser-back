@@ -36,7 +36,7 @@ exports.doYourJob = function (db, userMail, userPass, firstNotification) {
                     resolve({ message: 'You have successfully signed up!' });
                   })
                   .catch((e) => {
-                    logger.error(JSON.stringify(e));
+                    logger.error(e);
                     reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
                   });
               } else { */
@@ -48,7 +48,7 @@ exports.doYourJob = function (db, userMail, userPass, firstNotification) {
               confirmationMail.doYourJob(userMail, keyForUser);
             })
             .catch((e) => {
-              logger.error(JSON.stringify(e));
+              logger.error(e);
               reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
             });
         } else {
@@ -57,7 +57,7 @@ exports.doYourJob = function (db, userMail, userPass, firstNotification) {
         }
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
       });
   });

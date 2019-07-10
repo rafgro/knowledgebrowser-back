@@ -68,7 +68,7 @@ server.get('/api/search', (request, response) => {
       });
     })
     .catch((e) => {
-      logger.error(JSON.stringify(e));
+      logger.error(e);
       logger.error(`request: ${JSON.stringify(request.query)}`);
       response.send(e);
     });
@@ -80,7 +80,7 @@ server.get('/api/stats', (request, response) => {
       response.send(results);
     })
     .catch((e) => {
-      logger.error(JSON.stringify(e));
+      logger.error(e);
       response.send([{ text: JSON.stringify(e) }]);
     });
 });
@@ -91,7 +91,7 @@ server.get('/api/stats2', (request, response) => {
       response.send(results);
     })
     .catch((e) => {
-      logger.error(JSON.stringify(e));
+      logger.error(e);
       response.send([{ text: JSON.stringify(e) }]);
     });
 });
@@ -102,7 +102,7 @@ server.get('/api/terms', (request, response) => {
       response.send(results);
     })
     .catch((e) => {
-      logger.error(JSON.stringify(e));
+      logger.error(e);
       response.send([{ text: JSON.stringify(e) }]);
     });
 });
@@ -117,7 +117,7 @@ server.post('/api/accounts/createuser', (request, response) => {
         response.send(results);
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         response.status(403);
         response.send(e);
       });
@@ -136,7 +136,7 @@ server.post('/api/accounts/loginuser', (request, response) => {
         response.send(results);
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         response.status(401);
         response.send(e);
       });
@@ -154,7 +154,7 @@ server.post('/api/accounts/allnotifications', (request, response) => {
         response.send(results);
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         response.status(401);
         response.send(e);
       });
@@ -173,7 +173,7 @@ server.post('/api/accounts/addonenotification', (request, response) => {
         response.send(results);
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         response.status(401);
         response.send(e);
       });
@@ -193,7 +193,7 @@ server.post('/api/accounts/updatenotification', (request, response) => {
         response.send(results);
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         response.status(401);
         response.send(e);
       });
@@ -211,7 +211,7 @@ server.post('/api/accounts/deletenotification', (request, response) => {
         response.send(results);
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         response.status(401);
         response.send(e);
       });
@@ -229,7 +229,7 @@ server.post('/api/accounts/confirmuser', (request, response) => {
         response.send(results);
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         response.status(401);
         response.send(e);
       });
@@ -247,7 +247,7 @@ server.post('/api/accounts/usermailstatus', (request, response) => {
         response.send(results);
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         response.status(401);
         response.send(e);
       });
@@ -266,7 +266,7 @@ server.post('/api/accounts/changeusermail', (request, response) => {
         response.send(results);
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         response.status(401);
         response.send(e);
       });
@@ -285,7 +285,7 @@ server.post('/api/accounts/changeuserpass', (request, response) => {
         response.send(results);
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         response.status(401);
         response.send(e);
       });

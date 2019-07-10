@@ -29,7 +29,7 @@ exports.doYourJob = function (db, account, keywords, relevance, frequency, where
         resolve({ message: 'You have successfully set up new notification.' });
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
       });
   });

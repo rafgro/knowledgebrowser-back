@@ -98,5 +98,5 @@ exports.endThis = function (sh, terms, today, type) {
     .where('date', '=', today).and('type', '=', type)
     .run()
     .then(() => logger.info('Good, terms processed'))
-    .catch(e => logger.error(e.toString()));
+    .catch(e => logger.error(e));
 };

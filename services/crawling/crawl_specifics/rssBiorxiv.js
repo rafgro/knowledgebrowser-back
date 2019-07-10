@@ -36,17 +36,15 @@ exports.processRssBody = function (sh, body, name, subject) {
             .into('content_preprints')
             .run()
             .then(() => {
-              logger.info(
-                'Inserted ' + element['dc:identifier'] + ' / ' + myDate,
-              );
+              // logger.info('Inserted ' + element['dc:identifier'] + ' / ' + myDate);
             })
             .catch((e) => {
-              logger.error(JSON.stringify(e));
+              logger.error(e);
             });
         }
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
       });
   });
 

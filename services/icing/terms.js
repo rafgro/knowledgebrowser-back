@@ -70,15 +70,15 @@ exports.process = function (sh, terms, hotnessBoundary) {
         }
         sh.update('icing_stats').set('rawterms', '\'' + allToInsert + '\'').where('date', '=', today).run()
           .then(() => logger.info('Good'))
-          .catch(e => logger.info(e.toString()));
+          .catch(e => logger.info(e));
         logger.info('End of icing work');
       } else {
         // first entry of the day
         sh.insert({ type: 'a', date: today, rawterms: '\'' + JSON.stringify(sorted) + '\'' }).into('icing_stats').run()
           .then(() => logger.info('Good'))
-          .catch(e => logger.info(e.toString()));
+          .catch(e => logger.info(e));
         logger.info('End of icing work');
       }
     })
-    .catch(e => logger.info(e.toString()));
+    .catch(e => logger.info(e));
 };

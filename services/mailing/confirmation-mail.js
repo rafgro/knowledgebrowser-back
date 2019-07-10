@@ -20,9 +20,9 @@ exports.doYourJob = function (whereToSend, generatedKey) {
 
   transport.sendMail(mailOptions, (error, info) => {
     if (error) {
-      return logger.error(JSON.stringify(error));
+      return logger.error(error);
     }
-    logger.info(JSON.stringify(info));
+    logger.info(info);
     logger.info('Confirmation mail sent to ' + whereToSend);
   });
 };

@@ -32,6 +32,6 @@ exports.start = function () {
       });
     })
     .catch((e) => {
-      logger.error(JSON.stringify(e));
+      logger.error(e);
     });
 };

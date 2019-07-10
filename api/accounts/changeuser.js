@@ -32,18 +32,18 @@ exports.doChangeUserMail = function (db, oldmail, pass, newmail) {
                   resolve({ message: 'You have successfully changed mail.' });
                 })
                 .catch((e) => {
-                  logger.error(JSON.stringify(e));
+                  logger.error(e);
                   reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
                 });
             })
             .catch((e) => {
-              logger.error(JSON.stringify(e));
+              logger.error(e);
               reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
             });
         }
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
       });
   });
@@ -61,7 +61,7 @@ exports.doChangeUserPass = function (db, mail, oldpass, newpass) {
         resolve({ message: 'You have successfully changed password.' });
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
       });
   });

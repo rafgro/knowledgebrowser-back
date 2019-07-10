@@ -81,9 +81,9 @@ exports.doYourJob = function (ifFirst, whereToSend, aboutWhat, minRelevance, spa
               transport.sendMail(mailOptions, (error, info) => {
                 if (error) {
                   logger.error(error);
-                  return logger.error(JSON.stringify(error));
+                  return logger.error(error);
                 }
-                logger.info(JSON.stringify(info));
+                logger.info(info);
                 logger.info('Notification mail sent to ' + whereToSend);
               });
 
@@ -93,14 +93,14 @@ exports.doYourJob = function (ifFirst, whereToSend, aboutWhat, minRelevance, spa
                 .and('query', '=', aboutWhat)
                 .run()
                 .then(() => logger.info('Updated last one to ' + pubs[0].id))
-                .catch(e => logger.error(JSON.stringify(e)));
+                .catch(e => logger.error(e));
             }
           })
           .catch((e) => {
             logger.error(e);
-            logger.error(JSON.stringify(e));
+            logger.error(e);
           });
       }
     })
-    .catch(e => logger.error(JSON.stringify(e)));
+    .catch(e => logger.error(e));
 };

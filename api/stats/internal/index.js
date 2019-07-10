@@ -28,6 +28,14 @@ exports.doYourJob = function (sh) {
       .where('log', 'IS NOT', null)
       .orderBy('name', 'asc')
       .run();
+    const askForAccCount = sh
+      .select('COUNT(*)')
+      .from('accounts')
+      .run();
+    const askForNotCount = sh
+      .select('COUNT(*)')
+      .from('accounts_notifications')
+      .run();
 
     const arrayOfQueries = [
       askForPubCount,
@@ -35,11 +43,19 @@ exports.doYourJob = function (sh) {
       askForIndexingOffsetAbstract,
       askForLastFiftyQueries,
       askForLogsOfCrawling,
+      askForAccCount,
+      askForNotCount,
     ];
 
     Promise.all(arrayOfQueries)
       .then((arrayOfResults) => {
         const toResolve = [
+          {
+            text:
+              (parseInt(arrayOfResults[5][0].count, 10) + ' accounts with '
+                + parseInt(arrayOfResults[6][0].count, 10) + ' notifications'),
+          },
+          { text: '___' },
           {
             text:
               'Initial indexing queue: '
@@ -165,11 +181,11 @@ exports.doYourJob = function (sh) {
             resolve(toResolve);
           })
           .catch((e) => {
-            reject(e.toString());
+            reject(e);
           });
       })
       .catch((e) => {
-        reject(e.toString());
+        reject(e);
       });
   });
 };

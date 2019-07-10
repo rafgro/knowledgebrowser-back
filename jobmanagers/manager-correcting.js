@@ -30,16 +30,16 @@ exports.start = function () {
                 logger.info('Correction offset set to ' + value);
               })
               .catch((e) => {
-                logger.error(JSON.stringify(e));
+                logger.error(e);
               });
           }
         })
         .catch((e) => {
-          logger.error(JSON.stringify(e));
+          logger.error(e);
         });
     })
     .catch((e) => {
-      logger.error(JSON.stringify(e));
+      logger.error(e);
     });
 
   /* sh.select('value').from('manager').where('option','=', 'correcting_terms_offset')
@@ -61,17 +61,17 @@ exports.start = function () {
                     logger.info('Correction offset set to '+value);
                 })
                 .catch(e => {
-                    logger.error(e.toString());
+                    logger.error(e);
                 });
             }
 
         })
         .catch( e => {
-            logger.error(e.toString());
+            logger.error(e);
         });
 
     })
     .catch(e => {
-        logger.error(e.toString());
+        logger.error(e);
     }); */
 };

@@ -29,7 +29,7 @@ exports.doYourJob = function (db, userMail, userPass, newNotification) {
                 resolve({ message: 'Welcome, ' + userMail + '!' });
               })
               .catch((e) => {
-                logger.error(e.toString());
+                logger.error(e);
                 reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
               });
           } else {
@@ -39,7 +39,7 @@ exports.doYourJob = function (db, userMail, userPass, newNotification) {
         }
       })
       .catch((e) => {
-        logger.error(e.toString());
+        logger.error(e);
         reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
       });
   });

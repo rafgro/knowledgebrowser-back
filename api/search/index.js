@@ -912,8 +912,6 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
             arrayOfQueries.push(primaryQuery);
           }
 
-          // const arrayOfQueries2 = arrayOfQueries.map(v => v.clone().build());
-          // logger.info(JSON.stringify(arrayOfQueries2));
           arrayOfQueries = arrayOfQueries.map(v => v.run());
 
           // 3
@@ -1198,7 +1196,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                   + '"}',
               );
               logger.error('line 1194');
-              logger.error(JSON.stringify(e));
+              logger.error(e);
               reject({ message: 'Sorry, we have encountered an error.' });
             });
         } else {
@@ -1230,14 +1228,14 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
             + '"}',
         );
         logger.error('line 1238');
-        logger.error(JSON.stringify(
+        logger.error(
           sh
             .select('term', 'relevant', 'relevant_abstract')
             .from('index_title')
             .where('term', 'IN', "('" + queriesToDb.map(es => es.q).join("', '") + "')")
             .build(),
-        ));
-        logger.error(JSON.stringify(e));
+        );
+        logger.error(e);
         reject({ message: 'Sorry, we have encountered an error.' });
       });
   });
@@ -1263,7 +1261,7 @@ function registerQueryInStats(
     })
     .catch((e) => {
       logger.error('line 1271');
-      logger.error(JSON.stringify(
+      logger.error(
         sh.insert({
           query,
           lastquality: lastQuality,
@@ -1272,8 +1270,8 @@ function registerQueryInStats(
         })
           .into('query_stats')
           .build(),
-      ));
-      logger.error(JSON.stringify(e));
+      );
+      logger.error(e);
     });
 
   // changed to record every query in a new record

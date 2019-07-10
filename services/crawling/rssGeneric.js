@@ -33,7 +33,7 @@ exports.start = function (name, mainurl, mainsuburls = null) {
 
 function processResponseOfRss(error, response, body, name, subject) {
   if (error) {
-    logger.error(JSON.stringify(error));
+    logger.error(error);
   } else {
     // logger.info(body.substring(0, 100));
 
@@ -44,7 +44,7 @@ function processResponseOfRss(error, response, body, name, subject) {
 
 function processAndUploadToDatabase(err, result, name, subject) {
   if (err) {
-    logger.error(JSON.stringify(err));
+    logger.error(err);
   } else {
     switch (name) {
       case 'arXiv':

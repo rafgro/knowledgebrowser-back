@@ -63,10 +63,10 @@ exports.processRssBody = function (sh, body, name, subject) {
               .into('content_preprints')
               .run()
               .then(() => {
-                logger.info('Inserted ' + id + ' / ' + myDate);
+                // logger.info('Inserted ' + id + ' / ' + myDate);
               })
               .catch((e) => {
-                logger.error(JSON.stringify(e));
+                logger.error(e);
               });
           }
         } else {
@@ -99,16 +99,16 @@ exports.processRssBody = function (sh, body, name, subject) {
               .where('doi', '=', id)
               .run()
               .then(() => {
-                logger.info('Updated ' + id + ' / ' + myDate);
+                // logger.info('Updated ' + id + ' / ' + myDate);
               })
               .catch((e) => {
-                logger.error(JSON.stringify(e));
+                logger.error(e);
               });
           }
         }
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
       });
   });
 

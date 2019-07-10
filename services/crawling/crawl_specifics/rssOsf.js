@@ -74,16 +74,16 @@ exports.processRssBody = function (sh, body, name, subject) {
               .into('content_preprints')
               .run()
               .then(() => {
-                logger.info('Inserted ' + id + ' / ' + element.published);
+                // logger.info('Inserted ' + id + ' / ' + element.published);
               })
               .catch((e) => {
-                logger.error(JSON.stringify(e));
+                logger.error(e);
               });
           }
         }
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
       });
   });
 

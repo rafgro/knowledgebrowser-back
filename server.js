@@ -9,7 +9,7 @@ async function startServer() {
 
   server.listen(config.conf.port, (err) => {
     if (err) {
-      logger.error(err.toString());
+      logger.error(err);
     }
     logger.info(`Server is ready at port ${config.conf.port}`);
   });

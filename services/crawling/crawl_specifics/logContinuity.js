@@ -1,4 +1,5 @@
 exports.logIt = function (sh, trueOrFalse, what, subject) {
+  if (subject.length > 15) subject = subject.substring(0, 15);
   sh.select('log')
     .from('manager_lines')
     .where('name', '=', what)
@@ -16,7 +17,7 @@ exports.logIt = function (sh, trueOrFalse, what, subject) {
       } else {
         // appending log
         let now = JSON.parse(currentLog[0].log);
-        if (now.length > 50) now = now.slice(0, 49);
+        if (now.length > 25) now = now.slice(0, 24);
         now.unshift({ timestamp, cont: trueOrFalse, sub: subject });
         sh.update('manager_lines')
           .set('log', `'${JSON.stringify(now)}'`)
@@ -25,6 +26,6 @@ exports.logIt = function (sh, trueOrFalse, what, subject) {
       }
     })
     .catch((e) => {
-      logger.error(JSON.stringify(e));
+      logger.error(e);
     });
 };

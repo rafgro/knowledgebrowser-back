@@ -25,7 +25,7 @@ exports.start = function (ifForce) {
         sumUpTerms.endThis(loader.database, res, today, 'a');
       })
       .catch((e) => {
-        logger.error(e.toString());
+        logger.error(e);
       });
   } else {
     loader.database
@@ -70,30 +70,30 @@ exports.start = function (ifForce) {
                             .where('date', '=', today).and('type', '=', 'a')
                             .run()
                             .then(() => logger.info('Good, bound to ' + bound))
-                            .catch(e => logger.error(e.toString()));
+                            .catch(e => logger.error(e));
 
                           loader.database.update('manager').set('value', 0)
                             .where('option', '=', 'icing_terms_offset')
                             .run()
                             .then(() => logger.info('Good, icing offset to 0'))
-                            .catch(e => logger.error(e.toString()));
+                            .catch(e => logger.error(e));
                         })
-                        .catch(e => logger.error(e.toString()));
+                        .catch(e => logger.error(e));
                     } else {
                       loader.database.update('icing_stats').set('boundary', bound)
                         .where('date', '=', today).and('type', '=', 'a')
                         .run()
                         .then(() => logger.info('Good, bound to ' + bound))
-                        .catch(e => logger.error(e.toString()));
+                        .catch(e => logger.error(e));
 
                       loader.database.update('manager').set('value', 0)
                         .where('option', '=', 'icing_terms_offset')
                         .run()
                         .then(() => logger.info('Good, icing offset to 0'))
-                        .catch(e => logger.error(e.toString()));
+                        .catch(e => logger.error(e));
                     }
                   })
-                  .catch(e => logger.error(e.toString()));
+                  .catch(e => logger.error(e));
               } else if (parseInt(result[0].value, 10) % 100000 === 0) {
                 loader.database
                   .select('term', 'relevant', 'relevant_abstract')
@@ -107,14 +107,14 @@ exports.start = function (ifForce) {
                       const value = parseInt(result[0].value, 10) + results.length;
                       loader.database
                         .update('manager')
-                        .set('value', value.toString())
+                        .set('value', value)
                         .where('option', '=', 'icing_terms_offset')
                         .run()
                         .then(() => {
                           logger.info('Icing offset set to ' + value);
                         })
                         .catch((e) => {
-                          logger.error(JSON.stringify(e));
+                          logger.error(e);
                         });
 
                       if (results.length !== 100000) {
@@ -132,29 +132,29 @@ exports.start = function (ifForce) {
                             sumUpTerms.endThis(loader.database, res, today, 'a');
                           })
                           .catch((e) => {
-                            logger.error(e.toString());
+                            logger.error(e);
                           });
                       }
                     }
                   })
                   .catch((e) => {
-                    logger.error(JSON.stringify(e));
+                    logger.error(e);
                   });
               }
             })
             .catch((e) => {
-              logger.error(JSON.stringify(e));
+              logger.error(e);
             });
         } else {
         // first try this day
           loader.database.insert({ type: 'a', date: today }).into('icing_stats').run()
             .then(() => logger.info('Good, created first icing stats row for this day'))
-            .catch(e => logger.error(e.toString()));
+            .catch(e => logger.error(e));
           loader.database.update('manager').set('value', -1).where('option', '=', 'icing_terms_offset').run()
             .then(() => logger.info('Good, set icing offset to -1'))
-            .catch(e => logger.error(e.toString()));
+            .catch(e => logger.error(e));
         }
       })
-      .catch(e => logger.error(e.toString()));
+      .catch(e => logger.error(e));
   }
 };

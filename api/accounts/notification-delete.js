@@ -15,7 +15,7 @@ exports.doYourJob = function (db, account, hiddenid) {
         resolve({ message: 'You have successfully deleted notification.' });
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
       });
   });

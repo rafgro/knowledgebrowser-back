@@ -395,11 +395,11 @@ exports.index = function (whichId) {
                   .where('term', '=', "'" + element.t + "'")
                   .run()
                   .then(() => {
-                    logger.info('Updated ' + element.t);
+                    // logger.info('Updated ' + element.t);
                   })
                   .catch((e) => {
-                    logger.error(e.toString());
-                    logger.error(JSON.stringify(
+                    logger.error(e);
+                    logger.error(
                       loader.database
                         .update('index_title')
                         .set(
@@ -408,10 +408,10 @@ exports.index = function (whichId) {
                         )
                         .where('term', '=', element.t)
                         .build(),
-                    ));
+                    );
                   });
               } else {
-                logger.info(element.t + ' existed');
+                // logger.info(element.t + ' existed');
               }
             } else {
               loader.database
@@ -423,7 +423,7 @@ exports.index = function (whichId) {
                 .into('index_title')
                 .run()
                 .then(() => {
-                  logger.info('Inserted ' + element.t);
+                  // logger.info('Inserted ' + element.t);
                 })
                 // eslint-disable-next-line no-unused-vars
                 .catch((e) => {
@@ -456,11 +456,11 @@ exports.index = function (whichId) {
                       .where('term', '=', "'" + element.t + "'")
                       .run()
                       .then(() => {
-                        logger.info('Updated ' + element.t);
+                        // logger.info('Updated ' + element.t);
                       })
                       .catch((ech) => {
-                        logger.error(ech.toString());
-                        logger.error(JSON.stringify(
+                        logger.error(ech);
+                        logger.error(
                           loader.database
                             .update('index_title')
                             .set(
@@ -469,29 +469,29 @@ exports.index = function (whichId) {
                             )
                             .where('term', '=', element.t)
                             .build(),
-                        ));
+                        );
                       });
                   } else {
-                    logger.info(element.t + ' existed');
+                    // logger.info(element.t + ' existed');
                   }
 
-                  // logger.error(e.toString());
+                  // logger.error(e);
                 });
             }
           })
           .catch((e) => {
-            logger.error(e.toString());
-            logger.error(JSON.stringify(
+            logger.error(e);
+            logger.error(
               loader.database
                 .select('term', 'relevant_abstract')
                 .from('index_title')
                 .where('term', '=', element.t)
                 .build(),
-            ));
+            );
           });
       });
     })
     .catch((e) => {
-      logger.error(e.toString());
+      logger.error(e);
     });
 };

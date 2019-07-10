@@ -41,19 +41,19 @@ exports.processJsonBody = function (sh, body, name) {
             .into('content_preprints')
             .run()
             .then(() => {
-              logger.info(`Inserted doi: ${element.doi} / ${myDate}`);
+              // logger.info(`Inserted doi: ${element.doi} / ${myDate}`);
             })
             .catch((e) => {
-              logger.error(JSON.stringify(e));
+              logger.error(e);
             });
         }
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
       });
   });
 
   setTimeout(() => {
-    logContinuity.logIt(sh, isContinuous, name);
+    logContinuity.logIt(sh, isContinuous, name, ' ');
   }, 3000);
 };

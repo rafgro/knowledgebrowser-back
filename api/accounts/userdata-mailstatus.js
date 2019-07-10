@@ -9,7 +9,7 @@ exports.doYourJob = function (db, userMail) {
         else resolve('1'); // column cleared
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
       });
   });

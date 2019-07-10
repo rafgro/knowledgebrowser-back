@@ -9,7 +9,7 @@ exports.doYourJob = function (db, key) {
         resolve({ message: 'You have successfully verified account.' });
       })
       .catch((e) => {
-        logger.error(JSON.stringify(e));
+        logger.error(e);
         reject({ errorType: 'database', message: 'Sorry, we have encountered an error.' });
       });
   });

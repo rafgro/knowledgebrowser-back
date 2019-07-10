@@ -19,7 +19,7 @@ exports.index = function (whichId, canStop) {
         .replace(RegExp('\\$', 'g'), '')
         .replace(/\//g, ' ')
         .replace(/\\/g, ' ');
-      logger.info(titleProper);
+      // logger.info(titleProper);
 
       /*
 
@@ -378,17 +378,17 @@ exports.index = function (whichId, canStop) {
                     checkInsertionCounter();
                   })
                   .catch((e) => {
-                    logger.error(e.toString());
-                    logger.error(JSON.stringify(
+                    logger.error(e);
+                    logger.error(
                       loader.database
                         .update('index_title')
                         .set('relevant', "'" + JSON.stringify(relevant) + "'")
                         .where('term', '=', element.t)
                         .build(),
-                    ));
+                    );
                   });
               } else {
-                logger.info(element.t + ' existed');
+                // logger.info(element.t + ' existed');
                 insertionCounter += 1;
                 checkInsertionCounter();
               }
@@ -439,45 +439,45 @@ exports.index = function (whichId, canStop) {
                         checkInsertionCounter();
                       })
                       .catch((ech) => {
-                        logger.error(ech.toString());
-                        logger.error(JSON.stringify(
+                        logger.error(ech);
+                        logger.error(
                           loader.database
                             .update('index_title')
                             .set('relevant', "'" + JSON.stringify(relevant) + "'")
                             .where('term', '=', element.t)
                             .build(),
-                        ));
+                        );
                       });
                   } else {
-                    logger.info(element.t + ' existed');
+                    // logger.info(element.t + ' existed');
                     insertionCounter += 1;
                     checkInsertionCounter();
                   }
 
-                  // logger.error(e.toString());
+                  // logger.error(e);
                 });
             }
           })
           .catch((e) => {
-            logger.error(e.toString());
-            logger.error(JSON.stringify(
+            logger.error(e);
+            logger.error(
               loader.database
                 .select('term', 'relevant')
                 .from('index_title')
                 .where('term', '=', element.t)
                 .build(),
-            ));
+            );
           });
       });
     })
     .catch((e) => {
-      logger.error(e.toString());
-      logger.error(JSON.stringify(
+      logger.error(e);
+      logger.error(
         loader.database
           .select('title', 'id')
           .from('content_preprints')
           .where('id', '=', whichId)
           .build(),
-      ));
+      );
     });
 };
