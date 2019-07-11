@@ -106,7 +106,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
         if (noun.includes('al')) { toReturn.push(noun.substring(0, noun.length - 2)); }
         return toReturn;
       } else {
-        return noun + 's';
+        return [noun + 's'];
       }
     }
 

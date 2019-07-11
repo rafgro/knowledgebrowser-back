@@ -19,6 +19,8 @@ const apiAccountsNotificationDelete = require('./api/accounts/notification-delet
 const apiAccountsConfirmUser = require('./api/accounts/confirmuser');
 const apiAccountsChangeUser = require('./api/accounts/changeuser');
 const apiAccountUserdataMailstatus = require('./api/accounts/userdata-mailstatus');
+const apiAccountsForgottenPass1 = require('./api/accounts/forgottenpass1');
+const apiAccountsForgottenPass2 = require('./api/accounts/forgottenpass2');
 
 const server = Router();
 
@@ -278,6 +280,42 @@ server.post('/api/accounts/changeuserpass', (request, response) => {
     apiAccountsChangeUser
       .doChangeUserPass(loader.database, request.body.mail,
         request.body.oldpass, request.body.newpass)
+      .then((results) => {
+        response.status(200);
+        response.send(results);
+      })
+      .catch((e) => {
+        logger.error(e);
+        response.status(401);
+        response.send(e);
+      });
+  } else {
+    response.status(401);
+    response.send({ errorType: 'key', message: 'Sorry, we\'ve encountered an error' });
+  }
+});
+server.post('/api/accounts/forgottenpass1', (request, response) => {
+  if (request.body.hey === 'ZXVUXb96JPgZVspA') {
+    apiAccountsForgottenPass1
+      .doYourJob(loader.database, request.body.mail)
+      .then((results) => {
+        response.status(200);
+        response.send(results);
+      })
+      .catch((e) => {
+        logger.error(e);
+        response.status(401);
+        response.send(e);
+      });
+  } else {
+    response.status(401);
+    response.send({ errorType: 'key', message: 'Sorry, we\'ve encountered an error' });
+  }
+});
+server.post('/api/accounts/forgottenpass2', (request, response) => {
+  if (request.body.hey === 'ZXVUXb96JPgZVspA') {
+    apiAccountsForgottenPass2
+      .doYourJob(loader.database, request.body.key, request.body.pass)
       .then((results) => {
         response.status(200);
         response.send(results);

@@ -139,7 +139,6 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
       return logger.error(error);
     }
     logger.info(info);
-    logger.info('Notification mail sent to ' + whereToSend);
   });
 
   loader.database.update('accounts_notifications')

@@ -13,11 +13,12 @@ exports.doYourJob = function (whereToSend, generatedKey) {
   const mailOptions = {
     from: '"kb:preprints" <hello@knowledgebrowser.org>',
     to: whereToSend,
-    subject: 'Confirm mail address for kb:preprints',
-    text: 'Hello, Please confirm signing up by clicking here: https://knowledgebrowser.org/account/confirm?mail=' + generatedKey,
-    html: 'Hello,<br/><br/>Please confirm signing up by clicking here: <a href="https://knowledgebrowser.org/account/confirm?mail=' + generatedKey + '">https://knowledgebrowser.org/account/confirm?mail=' + generatedKey + '</a>.<br/><br/>Kind regards,<br/>kb:preprints team',
+    subject: 'Setting new password for account in kb:preprints',
+    text: 'Hello, If you want to set new password, please click here: https://knowledgebrowser.org/forgotten-password?key=' + generatedKey,
+    html: 'Hello,<br/><br/>If you want to set new password, please click here: <a href="https://knowledgebrowser.org/forgotten-password?key=' + generatedKey + '">https://knowledgebrowser.org/forgotten?key=' + generatedKey + '</a>.<br/><br/>Kind regards,<br/>kb:preprints team',
   };
 
+  // eslint-disable-next-line consistent-return
   transport.sendMail(mailOptions, (error, info) => {
     if (error) {
       return logger.error(error);
