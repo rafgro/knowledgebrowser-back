@@ -20,13 +20,13 @@ exports.start = function (name, mainurl, mainsuburls = null) {
   if (mainsuburls !== null) {
     mainsuburls.forEach((subject, index) => {
       setTimeout(() => {
-        logger.info(subject);
+        // logger.info(subject);
         request(mainurl + subject, { timeout: 20000 },
           (e, r, b) => processResponseOfRss(e, r, b, name, subject.toString()));
       }, 3000 * index); // slow requesting to avoid one-time ddos
     });
   } else {
-    logger.info('main');
+    // logger.info('main');
     request(mainurl, { timeout: 20000 }, (e, r, b) => processResponseOfRss(e, r, b, name, ' '));
   }
 };

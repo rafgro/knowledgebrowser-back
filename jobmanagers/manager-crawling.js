@@ -5,7 +5,7 @@ const crawlJsonGeneric = require('../services/crawling/jsonGeneric');
 
 exports.start = function () {
   const currentHour = new Date().getUTCHours().toString();
-  logger.info(`------------------CRAWLING START at ${currentHour}------------------`);
+  // logger.info(`------------------CRAWLING START at ${currentHour}------------------`);
 
   loader.database
     .select('*')

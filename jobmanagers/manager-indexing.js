@@ -4,7 +4,7 @@ const indexPreprintTitle = require('../services/indexing/preprintTitle');
 const indexPreprintAbstract = require('../services/indexing/preprintAbstract');
 
 exports.start = function () {
-  logger.info('------------------INDEXING START------------------');
+  // logger.info('------------------INDEXING START------------------');
   loader.database
     .select('value')
     .from('manager')
@@ -23,7 +23,7 @@ exports.start = function () {
             setTimeout(() => {
               // console.log(element.id);
               counterForPubs += 1;
-              logger.info('Working with pub number ' + counterForPubs);
+              // logger.info('Working with pub number ' + counterForPubs);
               let doStop = false;
               if (counterForPubs === array.length) {
                 doStop = true;
@@ -81,7 +81,7 @@ exports.start = function () {
             setTimeout(() => {
               // console.log(element.id);
               counterForPubs += 1;
-              logger.info('Working with pub number ' + counterForPubs);
+              // logger.info('Working with pub number ' + counterForPubs);
               let doStop = false;
               if (counterForPubs === array.length) {
                 doStop = true;

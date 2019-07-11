@@ -524,6 +524,21 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
             }
           }
 
+          const offsetAsNumber = parseInt(offset, 10);
+          if (offsetAsNumber >= originalMultipliedRelevant.size) {
+            reject({
+              message:
+                'Sorry, there are no more results for <i>' + query + '</i>.',
+            });
+          } else if (originalMultipliedRelevant.size === 0) {
+            reject({
+              message:
+                'There are no new preprints about <i>'
+                + query
+                + '</i>. Would you like to rephrase your query?',
+            });
+          }
+
           /* let multipliedRelevant = new Array();
                 for( let i = 0; i < result.length; i++ ) {
                     let queryWeight = queriesToDb.find( function(e) {
@@ -675,7 +690,6 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
             let lessRelevantOffset = 0;
             // let lessRelevantLimit = 0;
 
-            const offsetAsNumber = parseInt(offset, 10);
             if (moreRelevantIds.length > 0 && lessRelevantIds.length > 0) {
               if (offsetAsNumber === 0) {
                 moreRelevantNeeded = true;
@@ -782,101 +796,108 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
 
               // taking all from higher boundary first
               if (lessRelevantOffset + 10 < furtherHigher.length) {
-                arrayOfQueries.push(
-                  sh
-                    .select(
-                      'id',
-                      'title',
-                      'authors',
-                      'abstract',
-                      'doi',
-                      'link',
-                      'date',
-                      'server',
-                    )
-                    .from('content_preprints')
-                    .where(
-                      'id',
-                      'IN',
-                      '(' + furtherHigher.map(e => e.p).join(', ') + ')',
-                    )
-                    .orderBy('date', 'desc')
-                    .orderBy('id', 'asc')
-                    .limit(10, lessRelevantOffset),
-                );
+                if (furtherHigher.length > 0) {
+                  arrayOfQueries.push(
+                    sh
+                      .select(
+                        'id',
+                        'title',
+                        'authors',
+                        'abstract',
+                        'doi',
+                        'link',
+                        'date',
+                        'server',
+                      )
+                      .from('content_preprints')
+                      .where(
+                        'id',
+                        'IN',
+                        '(' + furtherHigher.map(e => e.p).join(', ') + ')',
+                      )
+                      .orderBy('date', 'desc')
+                      .orderBy('id', 'asc')
+                      .limit(10, lessRelevantOffset),
+                  );
+                }
               } else if (
                 lessRelevantOffset + 10 >= furtherHigher.length
                 && lessRelevantOffset < furtherHigher.length
               ) {
                 // taking from both sides
-                arrayOfQueries.push(
-                  sh
-                    .select(
-                      'id',
-                      'title',
-                      'authors',
-                      'abstract',
-                      'doi',
-                      'link',
-                      'date',
-                      'server',
-                    )
-                    .from('content_preprints')
-                    .where(
-                      'id',
-                      'IN',
-                      '(' + furtherHigher.map(e => e.p).join(', ') + ')',
-                    )
-                    .orderBy('date', 'desc')
-                    .orderBy('id', 'asc')
-                    .limit(10, lessRelevantOffset),
-                );
-                arrayOfQueries.push(
-                  sh
-                    .select(
-                      'id',
-                      'title',
-                      'authors',
-                      'abstract',
-                      'doi',
-                      'link',
-                      'date',
-                      'server',
-                    )
-                    .from('content_preprints')
-                    .where(
-                      'id',
-                      'IN',
-                      '(' + furtherLower.map(e => e.p).join(', ') + ')',
-                    )
-                    .orderBy('date', 'desc')
-                    .orderBy('id', 'asc')
-                    .limit(10, 0),
-                );
+                if (furtherHigher.length > 0 && furtherLower.length > 0) {
+                  arrayOfQueries.push(
+                    sh
+                      .select(
+                        'id',
+                        'title',
+                        'authors',
+                        'abstract',
+                        'doi',
+                        'link',
+                        'date',
+                        'server',
+                      )
+                      .from('content_preprints')
+                      .where(
+                        'id',
+                        'IN',
+                        '(' + furtherHigher.map(e => e.p).join(', ') + ')',
+                      )
+                      .orderBy('date', 'desc')
+                      .orderBy('id', 'asc')
+                      .limit(10, lessRelevantOffset),
+                  );
+                  arrayOfQueries.push(
+                    sh
+                      .select(
+                        'id',
+                        'title',
+                        'authors',
+                        'abstract',
+                        'doi',
+                        'link',
+                        'date',
+                        'server',
+                      )
+                      .from('content_preprints')
+                      .where(
+                        'id',
+                        'IN',
+                        '(' + furtherLower.map(e => e.p).join(', ') + ')',
+                      )
+                      .orderBy('date', 'desc')
+                      .orderBy('id', 'asc')
+                      .limit(10, 0),
+                  );
+                }
               } else {
                 // taking from lower boundary if we are past higher
-                arrayOfQueries.push(
-                  sh
-                    .select(
-                      'id',
-                      'title',
-                      'authors',
-                      'abstract',
-                      'doi',
-                      'link',
-                      'date',
-                      'server',
-                    )
-                    .from('content_preprints')
-                    .where(
-                      'id',
-                      'IN',
-                      '(' + furtherLower.map(e => e.p).join(', ') + ')',
-                    )
-                    .orderBy('date', 'desc')
-                    .orderBy('id', 'asc')
-                    .limit(10, lessRelevantOffset - furtherHigher.length),
-                );
+                // eslint-disable-next-line
+                if (furtherLower.length > 0) {
+                  arrayOfQueries.push(
+                    sh
+                      .select(
+                        'id',
+                        'title',
+                        'authors',
+                        'abstract',
+                        'doi',
+                        'link',
+                        'date',
+                        'server',
+                      )
+                      .from('content_preprints')
+                      .where(
+                        'id',
+                        'IN',
+                        '(' + furtherLower.map(e => e.p).join(', ') + ')',
+                      )
+                      .orderBy('date', 'desc')
+                      .orderBy('id', 'asc')
+                      .limit(10, lessRelevantOffset - furtherHigher.length),
+                  );
+                }
                 // reject( {less: lessRelevantOffset, highLen: furtherHigher.length, lowLen: furtherLower.length} );
               }
             }
@@ -892,7 +913,6 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
             });
 
             sortedByWeight.sort((a, b) => b.w - a.w);
-            const offsetAsNumber = parseInt(offset, 10);
 
             const eventualOrder = sortedByWeight.slice(offsetAsNumber, offsetAsNumber + 10);
 
@@ -920,12 +940,20 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
             arrayOfQueries.push(primaryQuery);
           }
 
+          const arrayOfQueriesDEBUG = arrayOfQueries.map(v => v.build());
           arrayOfQueries = arrayOfQueries.map(v => v.run());
 
           // 3
           Promise.all(arrayOfQueries)
             .then((arrayOfResults) => {
               let properArray = [];
+              // eslint-disable-next-line eqeqeq
+              if (arrayOfQueries == undefined) {
+                reject({
+                  message:
+                    'Sorry, there are no more results for <i>' + query + '</i>.',
+                });
+              }
               if (arrayOfQueries.length === 3) {
                 properArray = arrayOfResults[0].concat(
                   arrayOfResults[1],
@@ -1214,6 +1242,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
               );
               logger.error('line 1194');
               logger.error(e);
+              logger.error(arrayOfQueriesDEBUG);
               reject({ message: 'Sorry, we have encountered an error.' });
             });
         } else {
@@ -1227,7 +1256,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
           logger.error('no results for ' + query);
           reject({
             message:
-              'Sorry, there are no results for <i>'
+              'There are no new preprints about <i>'
               + query
               + '</i>. Would you like to rephrase your query?',
           });

@@ -18,7 +18,7 @@ exports.start = function () {
           if ((oneResult.schdays.includes(' ' + today + ' ') || oneResult.schdays.includes(' 0 '))
             && (oneResult.schhours.includes(' ' + hour + ' ') || oneResult.schhours.includes(' 0 '))
             && oneResult.account !== 'deleted@deleted.deleted') {
-            logger.info('Notification scheduled for ' + oneResult.account);
+            // logger.info('Notification scheduled for ' + oneResult.account);
             mailNotifier.doYourJob(
               'notfirst',
               oneResult.account,
