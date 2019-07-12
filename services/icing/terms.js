@@ -17,13 +17,14 @@ exports.process = function (sh, terms, hotnessBoundary) {
 
     // 2
     let score = 0;
-    let noOfPubs = 0;
+    const originalPubs = new Map();
     allPubs.forEach((pub) => {
       if (parseInt(pub.p, 10) >= hotnessBoundary) {
         score += parseFloat(pub.w, 10);
-        noOfPubs += 1;
+        originalPubs.set('' + pub.p, parseFloat(pub.w, 10));
       }
     });
+    const noOfPubs = originalPubs.size;
     // console.log(score);
 
     // quickfix to break dominance of single words

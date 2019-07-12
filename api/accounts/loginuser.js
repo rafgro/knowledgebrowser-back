@@ -12,7 +12,7 @@ exports.doYourJob = function (db, userMail, userPass) {
       .then((result) => {
         if (result.length === 0) {
           logger.error('Wrong try to login for ' + userMail);
-          reject({ errorType: 'auth', message: 'Sorry, the mail and password do not match.' });
+          reject({ errorType: 'auth', message: 'Sorry, the mail and password do not match. If you forgot the password, <a href="https://knowledgebrowser.org/forgotten-password">click here</a>.' });
         } else {
           logger.info('Successful login for ' + userMail);
           resolve({ message: 'Welcome, ' + userMail + '!' });

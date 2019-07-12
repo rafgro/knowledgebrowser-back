@@ -462,6 +462,9 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
             const queryScope = queriesMap.get(result[i].term).s;
             const queryAbstractable = queriesMap.get(result[i].term).a;
             originalTerms.push(result[i].term);
+            let exactMatchBonus = 0;
+            // eslint-disable-next-line eqeqeq
+            if (result[i].term == workingQuery && !oneword) exactMatchBonus = 30;
             if (result[i].relevant != null) {
               // there are terms with null relevant (title) because they have only abstract relevant (abstract)
               JSON.parse(result[i].relevant).forEach((e) => {
@@ -471,7 +474,8 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                     originalMultipliedRelevant.set(
                       tempid,
                       parseFloat(e.w) * queryWeight
-                        + originalMultipliedRelevant.get(tempid),
+                        + originalMultipliedRelevant.get(tempid)
+                        + exactMatchBonus,
                     );
                     scopesOfPubs.set(
                       tempid,
@@ -480,7 +484,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                   } else {
                     originalMultipliedRelevant.set(
                       tempid,
-                      parseFloat(e.w) * queryWeight,
+                      parseFloat(e.w) * queryWeight + exactMatchBonus,
                     );
                     scopesOfPubs.set(tempid, queryScope);
                   }
@@ -506,7 +510,8 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                     originalMultipliedRelevant.set(
                       tempid,
                       parseFloat(e.w) * queryWeight
-                        + originalMultipliedRelevant.get(tempid),
+                        + originalMultipliedRelevant.get(tempid)
+                        + exactMatchBonus,
                     );
                     scopesOfPubs.set(
                       tempid,
@@ -515,7 +520,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                   } else {
                     originalMultipliedRelevant.set(
                       tempid,
-                      parseFloat(e.w) * queryWeight,
+                      parseFloat(e.w) * queryWeight + exactMatchBonus,
                     );
                     scopesOfPubs.set(tempid, queryScope);
                   }

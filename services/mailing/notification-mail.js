@@ -17,72 +17,43 @@ exports.doYourJob = function (ifFirst, whereToSend, aboutWhat, minRelevance, spa
           .doYourJob(loader.database, aboutWhat, 10, 0, 0, 0, minRelevance, span, true)
           .then((results) => {
             if (results.results == undefined) {
-              logger.info('No new results to notify ' + whereToSend);
+              logger.info('No new results to notify ' + whereToSend + ' about ' + aboutWhat);
             } else if (results.results.length == 0) {
-              logger.info('No new results to notify ' + whereToSend);
+              logger.info('No new results to notify ' + whereToSend + ' about ' + aboutWhat);
             } else {
               // cutting out duplicated preprints
               // TODO: change to exclusion/inclusion list with 'senthistory' column
-              let pubs = results.results;
-              if (lastSent != null) {
-                let determinedPos = -1;
-                for (let i = 0; i < pubs.length; i += 1) {
-                  if (pubs[i].id == parseInt(lastSent, 10)) {
-                    determinedPos = i;
-                    break;
-                  }
-                }
-                if (determinedPos != -1) {
-                  pubs = pubs.slice(0, determinedPos);
-                  if (pubs.length == 0) {
-                    logger.info('No new results to notify ' + whereToSend);
+              loader.database.select('senthistory')
+                .from('accounts_notifications')
+                .where('account', '=', '$whereToSend')
+                .and('query', '=', '$aboutWhat')
+                .run({ whereToSend, aboutWhat })
+                .then((res) => {
+                  if (res[0].senthistory != null) {
+                    // logger.info(res[0].senthistory);
+                    const allHistory = JSON.parse(res[0].senthistory);
+                    const sentIds = allHistory.arr.map(v => v.ids).join(',') + ',';
+                    const pubs = results.results.filter((v) => {
+                      if (sentIds.includes('' + v.id + ',')) return false;
+                      return true;
+                    });
+                    logger.info('pubs2 ^');
+                    logger.info(pubs);
+                    if (pubs.length == 0) {
+                      logger.info('No new results to notify ' + whereToSend + ' about ' + aboutWhat);
+                    } else {
+                      sendThatMail(ifFirst, whereToSend, aboutWhat,
+                        minRelevance, span, lastSent, pubs);
+                    }
                   } else {
+                    const pubs = results.results;
                     sendThatMail(ifFirst, whereToSend, aboutWhat,
                       minRelevance, span, lastSent, pubs);
                   }
-                } else {
-                  // search with longer timespan
-                  // when there is no overlap with previous notification
-                  searchApi
-                    .doYourJob(loader.database, aboutWhat, 10, 0, 0, 0,
-                      minRelevance, (span * 2 + 24), true)
-                    .then((results2) => {
-                      let pubs2 = results2.results;
-                      if (lastSent != 0) {
-                        determinedPos = -1;
-                        for (let i = 0; i < pubs2.length; i += 1) {
-                          if (pubs2[i].id == parseInt(lastSent, 10)) {
-                            determinedPos = i;
-                            break;
-                          }
-                        }
-                        if (determinedPos != -1 && pubs2.length != 0) {
-                          logger.info('Hole between notifications cut out');
-                          pubs2 = pubs2.slice(0, determinedPos);
-                        } else if (pubs2.length != 0) {
-                          logger.error('Hole between notifications not cut out');
-                        }
-                      }
-
-                      if (pubs2.length == 0) {
-                        logger.info('No new results to notify ' + whereToSend);
-                      } else {
-                        sendThatMail(ifFirst, whereToSend, aboutWhat,
-                          minRelevance, (span * 2 + 24), lastSent, pubs2);
-                      }
-                    })
-                    .catch((e) => {
-                      logger.error(e);
-                    });
-                }
-              } else {
-                // first virgin notification with no results to have overlap
-                if (pubs.length == 0) {
-                  logger.info('No new results to notify ' + whereToSend);
-                } else {
-                  sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastSent, pubs);
-                }
-              }
+                })
+                .catch((e) => {
+                  logger.error(e);
+                });
             }
           })
           .catch((e) => {
@@ -113,7 +84,7 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
 
   const today = Date.now();
 
-  const myHistory = { day: today.getUTCDate(), ids: [] };
+  const myHistory = { day: new Date().getUTCDate(), ids: [] };
   pubs.forEach((pub) => {
     const thatDate = (new Date(pub.date)).getTime();
     const days = (today - thatDate) / 86400000;
@@ -128,7 +99,7 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
 
     textToSend += '- (' + pub.relativeWeight + '/10 relevant, ' + dateAgo + ' in ' + pub.server + ') "' + pub.title + '" Abstract: ' + pub.abstract + ' (more at ' + pub.link + ') ';
 
-    myHistory.ids.push(id);
+    myHistory.ids.push(pub.id);
   });
 
   textToSend += ' If you want to change settings of notifications, please log in to your account at knowledgebrowser.org/login. See you again! kb:preprints';
@@ -144,14 +115,16 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
     html: htmlToSend,
   };
 
+  logger.info(whereToSend + ' notified about ' + pubs.length + ' new preprints on ' + aboutWhat);
+
   // eslint-disable-next-line consistent-return
-  transport.sendMail(mailOptions, (error, info) => {
+  /* transport.sendMail(mailOptions, (error, info) => {
     if (error) {
       logger.error(error);
       return logger.error(error);
     }
     logger.info(info);
-  });
+  }); */
 
   loader.database.select('senthistory')
     .from('accounts_notifications')
@@ -159,10 +132,10 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
     .and('query', '=', '$aboutWhat')
     .run({ whereToSend, aboutWhat })
     .then((res) => {
-      if (res.length === 0) {
+      if (res[0].senthistory == null) {
         loader.database.update('accounts_notifications')
           .set('lastone', pubs[0].id)
-          .set('senthistory', '\'{arr:[' + JSON.stringify(myHistory) + ']}\'')
+          .set('senthistory', '\'{"arr":[' + JSON.stringify(myHistory) + ']}\'')
           .where('account', '=', '$whereToSend')
           .and('query', '=', '$aboutWhat')
           .run({ whereToSend, aboutWhat })
@@ -171,7 +144,7 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
       } else {
         const allHistory = JSON.parse(res[0].senthistory);
         allHistory.arr.push(myHistory);
-        // TODO: dumping old ones (use span)
+        // TODO: dumping old ones (use span*4)
         loader.database.update('accounts_notifications')
           .set('lastone', pubs[0].id)
           .set('senthistory', '\'' + JSON.stringify(allHistory) + '\'')
