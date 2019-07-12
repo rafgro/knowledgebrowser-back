@@ -12,33 +12,32 @@ exports.doYourJob = function (ifFirst, whereToSend, aboutWhat, minRelevance, spa
     .then((ifMail) => {
       if (ifMail == '0') logger.info('Notification not sent to ' + whereToSend + ' because mail not confirmed');
       else {
-        // querying search api with params tailored for notifications
-        searchApi
-          .doYourJob(loader.database, aboutWhat, 10, 0, 0, 0, minRelevance, span, true)
-          .then((results) => {
-            if (results.results == undefined) {
-              logger.info('No new results to notify ' + whereToSend + ' about ' + aboutWhat);
-            } else if (results.results.length == 0) {
-              logger.info('No new results to notify ' + whereToSend + ' about ' + aboutWhat);
-            } else {
-              // cutting out duplicated preprints
-              // TODO: change to exclusion/inclusion list with 'senthistory' column
-              loader.database.select('senthistory')
-                .from('accounts_notifications')
-                .where('account', '=', '$whereToSend')
-                .and('query', '=', '$aboutWhat')
-                .run({ whereToSend, aboutWhat })
-                .then((res) => {
+        // checking history of previous notifications
+        loader.database.select('senthistory')
+          .from('accounts_notifications')
+          .where('account', '=', '$whereToSend')
+          .and('query', '=', '$aboutWhat')
+          .run({ whereToSend, aboutWhat })
+          .then((res) => {
+            let modifiedSpan = 12 + span;
+            if (res[0].senthistory != null && ifFirst != 'first') modifiedSpan = 12 + span * 2; // for overlap
+            // querying search api with params tailored for notifications
+            searchApi
+              .doYourJob(loader.database, aboutWhat, 10, 0, 0, 0, minRelevance, modifiedSpan, true)
+              .then((results) => {
+                if (results.results == undefined) {
+                  logger.info('No new results to notify ' + whereToSend + ' about ' + aboutWhat);
+                } else if (results.results.length == 0) {
+                  logger.info('No new results to notify ' + whereToSend + ' about ' + aboutWhat);
+                } else {
+                  // cutting out duplicated preprints
                   if (res[0].senthistory != null) {
-                    // logger.info(res[0].senthistory);
                     const allHistory = JSON.parse(res[0].senthistory);
                     const sentIds = allHistory.arr.map(v => v.ids).join(',') + ',';
                     const pubs = results.results.filter((v) => {
                       if (sentIds.includes('' + v.id + ',')) return false;
                       return true;
                     });
-                    logger.info('pubs2 ^');
-                    logger.info(pubs);
                     if (pubs.length == 0) {
                       logger.info('No new results to notify ' + whereToSend + ' about ' + aboutWhat);
                     } else {
@@ -50,11 +49,11 @@ exports.doYourJob = function (ifFirst, whereToSend, aboutWhat, minRelevance, spa
                     sendThatMail(ifFirst, whereToSend, aboutWhat,
                       minRelevance, span, lastSent, pubs);
                   }
-                })
-                .catch((e) => {
-                  logger.error(e);
-                });
-            }
+                }
+              })
+              .catch((e) => {
+                logger.error(e);
+              });
           })
           .catch((e) => {
             logger.error(e);
@@ -84,7 +83,7 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
 
   const today = Date.now();
 
-  const myHistory = { day: new Date().getUTCDate(), ids: [] };
+  const myHistory = { day: Date.now(), ids: [] };
   pubs.forEach((pub) => {
     const thatDate = (new Date(pub.date)).getTime();
     const days = (today - thatDate) / 86400000;
@@ -101,6 +100,7 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
 
     myHistory.ids.push(pub.id);
   });
+  logger.info('Sending: ' + JSON.stringify(myHistory));
 
   textToSend += ' If you want to change settings of notifications, please log in to your account at knowledgebrowser.org/login. See you again! kb:preprints';
   htmlToSend += ' If you want to change settings of notifications, please log in to your account at <a href="https://knowledgebrowser.org/login">knowledgebrowser.org/login</a>.<br/><br/>See you again!<br/>kb:preprints';
@@ -118,13 +118,13 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
   logger.info(whereToSend + ' notified about ' + pubs.length + ' new preprints on ' + aboutWhat);
 
   // eslint-disable-next-line consistent-return
-  /* transport.sendMail(mailOptions, (error, info) => {
+  transport.sendMail(mailOptions, (error, info) => {
     if (error) {
       logger.error(error);
       return logger.error(error);
     }
     logger.info(info);
-  }); */
+  });
 
   loader.database.select('senthistory')
     .from('accounts_notifications')
@@ -139,19 +139,24 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
           .where('account', '=', '$whereToSend')
           .and('query', '=', '$aboutWhat')
           .run({ whereToSend, aboutWhat })
-          .then(() => logger.info('Updated last one to ' + pubs[0].id))
+          .then(() => logger.info('Ok'))
           .catch(e => logger.error(e));
       } else {
         const allHistory = JSON.parse(res[0].senthistory);
+        // dumping old ones
+        const now = Date.now();
+        allHistory.arr = allHistory.arr.filter((v) => {
+          if (now - v.day > ((24 + span * 3) * 60 * 60 * 1000)) return false;
+          return true;
+        });
         allHistory.arr.push(myHistory);
-        // TODO: dumping old ones (use span*4)
         loader.database.update('accounts_notifications')
           .set('lastone', pubs[0].id)
           .set('senthistory', '\'' + JSON.stringify(allHistory) + '\'')
           .where('account', '=', '$whereToSend')
           .and('query', '=', '$aboutWhat')
           .run({ whereToSend, aboutWhat })
-          .then(() => logger.info('Updated last one to ' + pubs[0].id))
+          .then(() => logger.info('Ok'))
           .catch(e => logger.error(e));
       }
     })
