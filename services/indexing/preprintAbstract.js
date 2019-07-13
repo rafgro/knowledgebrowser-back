@@ -23,6 +23,9 @@ exports.index = function (whichId) {
         unescape(abstract[0].abstract)
           .replace(/\r?\n|\r/g, ' ')
           .replace(RegExp('\\$', 'g'), '')
+          .replace(/\\"/g, '')
+          .replace(/\{/g, '')
+          .replace(/\}/g, '')
           .replace(/\//g, ' ')
           .replace(/\\/g, ' ')
           .toString(),

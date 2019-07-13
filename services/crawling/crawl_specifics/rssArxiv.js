@@ -47,16 +47,26 @@ exports.processRssBody = function (sh, body, name, subject) {
                 + ':00:00';
             }
 
+            const title = element.title.toString()
+              .replace(/\\"/g, '')
+              .replace(/\{/g, '')
+              .replace(/\}/g, '');
+
+            const abstract = striptags(element.description[0]._.toString()).toString()
+              .replace(/\\"/g, '')
+              .replace(/\{/g, '')
+              .replace(/\}/g, '');
+
             sh.insert({
               link: element.link,
               abstract:
                 "(\'"
-                + escape(striptags(element.description[0]._.toString()))
+                + escape(abstract)
                 + "\')",
               authors: escape(striptags(element['dc:creator'].toString())),
               date: myDate,
               doi: id,
-              title: escape(element.title),
+              title: escape(title),
               server: 'arXiv',
               sub: subject,
             })
@@ -82,17 +92,27 @@ exports.processRssBody = function (sh, body, name, subject) {
             // const date = new Date(Date.now());
             // const myDate = '2019-04-01 00:00:00';
 
+            const title = element.title.toString()
+              .replace(/\\"/g, '')
+              .replace(/\{/g, '')
+              .replace(/\}/g, '');
+
+            const abstract = striptags(element.description[0]._.toString()).toString()
+              .replace(/\\"/g, '')
+              .replace(/\{/g, '')
+              .replace(/\}/g, '');
+
             sh.update('content_preprints')
               .set({
                 link: element.link,
                 abstract:
                   "('"
-                  + escape(striptags(element.description[0]._.toString()))
+                  + escape(abstract)
                   + "')",
                 authors: escape(striptags(element['dc:creator'].toString())),
                 // date: myDate,
                 doi: id,
-                title: escape(element.title),
+                title: escape(title),
                 server: 'arXiv',
                 sub: subject,
               })

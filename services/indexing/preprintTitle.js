@@ -17,6 +17,9 @@ exports.index = function (whichId, canStop) {
       const titleProper = unescape(title[0].title)
         .replace(RegExp(' \\(arXiv:.*\\)'), '')
         .replace(RegExp('\\$', 'g'), '')
+        .replace(/\\"/g, '')
+        .replace(/\{/g, '')
+        .replace(/\}/g, '')
         .replace(/\//g, ' ')
         .replace(/\\/g, ' ');
       // logger.info(titleProper);
