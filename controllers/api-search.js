@@ -1,3 +1,4 @@
+const loader = require('../loaders');
 const apiSearch = require('../api/search');
 
 exports.respond = function (request, response) {

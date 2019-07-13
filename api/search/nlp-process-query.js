@@ -11,7 +11,7 @@ const checkIfAcronym = word => word === 'Acronym';
 const checkIfValue = word => word === 'Value';
 const checkIfVerb = word => word === 'Verb';
 
-exports.returnVariants = function (query) {
+exports.returnVariants = function (workingQuery) {
   // table of objects which is returned
   let queriesToDb = [];
   /* each object has properties:
@@ -20,7 +20,7 @@ exports.returnVariants = function (query) {
     -s: scope of coverage of original query,
     -a: true if looking in abstract */
 
-  const queryNlp = nlp(query); // query is sanitized, consists only of words and spaces
+  const queryNlp = nlp(workingQuery); // query is sanitized, consists only of words and spaces
   const words = queryNlp.terms().data(); // main purpose: determining parts of speech
 
   let oneword = true; // quicker processing in case of one word

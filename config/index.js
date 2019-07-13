@@ -12,9 +12,6 @@ const conf = {
 
   databaseURL: 'aa1f3ajh2rexsb4c.ca68v3nuzco0.us-east-2.rds.amazonaws.com',
 
-  api: {
-    prefix: '/api',
-  },
 };
 
 exports.conf = conf;

@@ -3,6 +3,7 @@ const { shiphold } = require('ship-hold');
 
 function doJob() {
   if (process.env.NODE_ENV === 'development') {
+    logger.info('Local');
     return shiphold({
       host: 'localhost',
       user: 'crawler',

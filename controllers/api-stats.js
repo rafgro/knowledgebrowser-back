@@ -1,3 +1,4 @@
+const loader = require('../loaders');
 const apiStatsPublic = require('../api/stats/public');
 const apiStatsTerms = require('../api/stats/public/terms');
 const apiStatsInternal = require('../api/stats/internal');

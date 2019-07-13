@@ -7,24 +7,24 @@ const ctrlAccounts = require('./api-accounts');
 
 const server = Router();
 
-server.get('/search', ctrlSearch.respond(request, response));
+server.get('/search', ctrlSearch.respond);
 
-server.get('/stats', ctrlStats.respondToPublic(request, response));
-server.get('/stats2', ctrlStats.respondToInternal(request, response));
-server.get('/terms', ctrlStats.respondToTerms(request, response));
+server.get('/stats', ctrlStats.respondToPublic);
+server.get('/stats2', ctrlStats.respondToInternal);
+server.get('/terms', ctrlStats.respondToTerms);
 
 server.use(generalExpress.urlencoded());
-server.post('/accounts/createuser', ctrlAccounts.createUser(request, response));
-server.post('/accounts/loginuser', ctrlAccounts.loginUser(request, response));
-server.post('/accounts/allnotifications', ctrlAccounts.provideNotifications(request, response));
-server.post('/accounts/addonenotification', ctrlAccounts.addNotification(request, response));
-server.post('/accounts/updatenotification', ctrlAccounts.updateNotification(request, response));
-server.post('/accounts/deletenotification', ctrlAccounts.deleteNotification(request, response));
-server.post('/accounts/confirmuser', ctrlAccounts.confirmUser(request, response));
-server.post('/accounts/usermailstatus', ctrlAccounts.provideMailStatus(request, response));
-server.post('/accounts/changeusermail', ctrlAccounts.changeUserMail(request, response));
-server.post('/accounts/changeuserpass', ctrlAccounts.changeUserPass(request, response));
-server.post('/accounts/forgottenpass1', ctrlAccounts.sendForgottenLink(request, response));
-server.post('/accounts/forgottenpass2', ctrlAccounts.changeForgottenPass(request, response));
+server.post('/accounts/createuser', ctrlAccounts.createUser);
+server.post('/accounts/loginuser', ctrlAccounts.loginUser);
+server.post('/accounts/allnotifications', ctrlAccounts.provideNotifications);
+server.post('/accounts/addonenotification', ctrlAccounts.addNotification);
+server.post('/accounts/updatenotification', ctrlAccounts.updateNotification);
+server.post('/accounts/deletenotification', ctrlAccounts.deleteNotification);
+server.post('/accounts/confirmuser', ctrlAccounts.confirmUser);
+server.post('/accounts/usermailstatus', ctrlAccounts.provideMailStatus);
+server.post('/accounts/changeusermail', ctrlAccounts.changeUserMail);
+server.post('/accounts/changeuserpass', ctrlAccounts.changeUserPass);
+server.post('/accounts/forgottenpass1', ctrlAccounts.sendForgottenLink);
+server.post('/accounts/forgottenpass2', ctrlAccounts.changeForgottenPass);
 
-exports.router = server;
+exports.routes = server;

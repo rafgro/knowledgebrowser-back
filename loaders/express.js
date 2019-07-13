@@ -9,9 +9,9 @@ async function doJob(app) {
   app.set('port', config.conf.port);
 
   // Load routes
-  app.use('/', routes.routesServer);
   app.use('/ops', ctrlOps.routes);
   app.use('/api', ctrlApi.routes);
+  app.use('/', routes.routesServer);
 
   // Internal errors
   process.on('unhandledRejection', r => logger.error(r));

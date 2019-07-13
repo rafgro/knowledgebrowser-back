@@ -7,6 +7,7 @@
 const querySanitization = require('./query-sanitization');
 const nlpProcessQuery = require('./nlp-process-query');
 const assembleResults = require('./assemble-results');
+const relativeWeightModule = require('./relative-weights');
 const strategyNotifications = require('./strategy-notifications');
 const strategyDefaultbydate = require('./strategy-defaultbydate');
 const strategyOptionalbyrel = require('./strategy-optionalbyrel');
@@ -30,7 +31,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
     if (workingQuery.length < 1) reject({ message: 'Please enter your query.' });
 
     // query processing
-    const queriesToDb = nlpProcessQuery(workingQuery);
+    const queriesToDb = nlpProcessQuery.returnVariants(workingQuery);
     const queriesMap = new Map();
     queriesToDb.forEach(e => queriesMap.set(e.q, { w: e.w, s: e.s, a: e.a }));
 
@@ -43,7 +44,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
         // assembling and returning the results
         if (Object.keys(result).length !== 0) {
           // a lot of calculating, assembling and cleaning of results
-          const initialResults = assembleResults.assemble(result, queriesMap);
+          const initialResults = assembleResults.assemble(result, queriesMap, workingQuery, minRelevance);
 
           // failsafes for offsets and no results
           const offsetAsNumber = parseInt(offset, 10);
@@ -57,6 +58,8 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
           }
 
           let arrayOfQueries = [];
+          const numberOfImportantWords = workingQuery.split(' ').length - 1;
+          const limitOfRelevancy = relativeWeightModule.theLimit(numberOfImportantWords, minRelevance);
 
           if (linear === true) {
             /* Providing only newest relevant for NOTIFICATIONS */
@@ -136,7 +139,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                 const hrend = process.hrtime(hrstart);
 
                 const details = '{"timestamp":"' + Date.now() + '","howManyRelevant":"'
-                  + 0 + '","highestRelevancy":"' + highestRelevancy + '","executionTime":"'
+                  + 0 + '","highestRelevancy":"0","executionTime":"'
                   + (hrend[1] / 1000000 + hrend[0] * 1000).toFixed(0) + '","newestResult":"'
                   + newestResult.toFixed(0) + '"}';
                 queryStats.register(sh, workingQuery, quality.toFixed(0), details,

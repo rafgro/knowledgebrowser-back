@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 const {
   // eslint-disable-next-line no-unused-vars
   winston,
@@ -21,25 +23,34 @@ const winstonLogger = createLogger({
 // global.logger = logger;
 global.logger = {
   info(what) {
-    const variant1 = JSON.stringify(what);
-    const variant2 = what.toString();
-    if (variant1 !== '{}') {
-      winstonLogger.info(variant1);
-    } else if (variant2 !== '{}' && variant2 !== '[object Object]') {
-      winstonLogger.info(variant2);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(what);
     } else {
-      winstonLogger.info(what);
+      const variant1 = JSON.stringify(what);
+      const variant2 = what.toString();
+      if (variant1 !== '{}') {
+        winstonLogger.info(variant1);
+      } else if (variant2 !== '{}' && variant2 !== '[object Object]') {
+        winstonLogger.info(variant2);
+      } else {
+        winstonLogger.info(what);
+      }
     }
   },
+
   error(what) {
-    const variant1 = JSON.stringify(what);
-    const variant2 = what.toString();
-    if (variant1 !== '{}') {
-      winstonLogger.error(variant1);
-    } else if (variant2 !== '{}' && variant2 !== '[object Object]') {
-      winstonLogger.error(variant2);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(what);
     } else {
-      winstonLogger.error(what);
+      const variant1 = JSON.stringify(what);
+      const variant2 = what.toString();
+      if (variant1 !== '{}') {
+        winstonLogger.error(variant1);
+      } else if (variant2 !== '{}' && variant2 !== '[object Object]') {
+        winstonLogger.error(variant2);
+      } else {
+        winstonLogger.error(what);
+      }
     }
   },
 };

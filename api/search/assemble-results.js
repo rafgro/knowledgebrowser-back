@@ -2,7 +2,7 @@
 
 const relativeWeightModule = require('./relative-weights');
 
-exports.assemble = function (result, queriesMap) {
+exports.assemble = function (result, queriesMap, workingQuery, minRelevance) {
   // four consts returned in object
   const originalMultipliedRelevant = new Map(); // final list of pubs and weights
   const scopesOfPubsTitle = new Map(); // coverage of pub vs query in title
@@ -17,7 +17,7 @@ exports.assemble = function (result, queriesMap) {
     originalTerms.push(result[i].term);
     let exactMatchBonus = 0;
     // eslint-disable-next-line eqeqeq
-    if (result[i].term == workingQuery && !oneword) exactMatchBonus = 30;
+    if (result[i].term == workingQuery && workingQuery.includes(' ')) exactMatchBonus = 30;
 
     // checking title
     if (result[i].relevant != null) {

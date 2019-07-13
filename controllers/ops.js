@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 const { Router } = require('express');
 const generalExpress = require('express');
 
@@ -30,4 +31,4 @@ server.get('/notify', (request, response) => {
   managerNotifying.start();
 });
 
-exports.router = server;
+exports.routes = server;
