@@ -94,7 +94,7 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
     if (hours <= 1.1) dateAgo = 'less than hour ago';
     if (pub.relativeWeight >= 8) htmlToSend += '<small><strong>' + pub.relativeWeight + '/10 relevant</strong></small><br/>';
     else htmlToSend += '<small>' + pub.relativeWeight + '/10 relevant</small><br/>';
-    htmlToSend += '<small>' + dateAgo + ' in ' + pub.server + '</small><br/><a href="' + pub.link + '">' + pub.title + '</a><br/>' + pub.abstract + '<br/><br/>';
+    htmlToSend += '<small>' + pub.date.toString().replace('T', ' ').substring(0, 18) + '(' + dateAgo + ') in ' + pub.server + '</small><br/><a href="' + pub.link + '">' + pub.title + '</a><br/>' + pub.abstract + '<br/><br/>';
 
     textToSend += '- (' + pub.relativeWeight + '/10 relevant, ' + dateAgo + ' in ' + pub.server + ') "' + pub.title + '" Abstract: ' + pub.abstract + ' (more at ' + pub.link + ') ';
 
