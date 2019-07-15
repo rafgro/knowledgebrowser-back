@@ -67,7 +67,8 @@ exports.theLimit = function (noOfWords, minRelevance) {
       if (minRelevance >= 5) return 50;
       if (minRelevance >= 4) return 25;
       if (minRelevance >= 3) return 12;
-      return 7;
+      if (minRelevance >= 2) return 7;
+      return 1;
     case 2:
       if (minRelevance >= 10) return 190;
       if (minRelevance >= 9) return 170;
@@ -77,7 +78,8 @@ exports.theLimit = function (noOfWords, minRelevance) {
       if (minRelevance >= 5) return 90;
       if (minRelevance >= 4) return 65;
       if (minRelevance >= 3) return 35;
-      return 20;
+      if (minRelevance >= 2) return 20;
+      return 1;
     case 3:
       if (minRelevance >= 10) return 170;
       if (minRelevance >= 9) return 120;
@@ -87,7 +89,8 @@ exports.theLimit = function (noOfWords, minRelevance) {
       if (minRelevance >= 5) return 90;
       if (minRelevance >= 4) return 84;
       if (minRelevance >= 3) return 60;
-      return 40;
+      if (minRelevance >= 2) return 40;
+      return 1;
     case 4:
       if (minRelevance >= 10) return 150;
       if (minRelevance >= 9) return 130;
@@ -97,7 +100,8 @@ exports.theLimit = function (noOfWords, minRelevance) {
       if (minRelevance >= 5) return 90;
       if (minRelevance >= 4) return 84;
       if (minRelevance >= 3) return 65;
-      return 50;
+      if (minRelevance >= 2) return 50;
+      return 1;
     default:
       if (minRelevance >= 10) return 160 + (noOfWords - 4) * 10;
       if (minRelevance >= 9) return 140 + (noOfWords - 4) * 10;
@@ -107,6 +111,20 @@ exports.theLimit = function (noOfWords, minRelevance) {
       if (minRelevance >= 5) return 100 + (noOfWords - 4) * 10;
       if (minRelevance >= 4) return 90 + (noOfWords - 4) * 10;
       if (minRelevance >= 3) return 65 + (noOfWords - 4) * 10;
-      return 50 + (noOfWords - 4) * 10;
+      if (minRelevance >= 2) return 50 + (noOfWords - 4) * 10;
+      return 1;
   }
+};
+
+exports.theNumberOfWords = function (query) {
+  let wNumber = query.split(' ').length;
+  if (query.includes(' of ')) wNumber -= 1;
+  if (query.includes(' in ')) wNumber -= 1;
+  if (query.includes(' and ')) wNumber -= 1;
+  if (query.includes(' its ')) wNumber -= 1;
+  if (query.includes(' the ')) wNumber -= 1;
+  if (query.includes(' a ')) wNumber -= 1;
+  if (query.includes(' is ')) wNumber -= 1;
+  if (wNumber < 1) wNumber = 1;
+  return wNumber;
 };

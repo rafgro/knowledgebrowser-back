@@ -15,7 +15,7 @@ exports.provideQueries = function (sh, listOfResults, limitOfRelevancy, offsetAs
   const lessRelevantIds = [];
   listOfResults.forEach((pubWeight, pubId) => {
     // final division
-    if (pubWeight > limitOfRelevancy) { moreRelevantIds.push({ p: pubId, w: pubWeight }); }
+    if (pubWeight > limitOfRelevancy) moreRelevantIds.push({ p: pubId, w: pubWeight });
     else lessRelevantIds.push({ p: pubId, w: pubWeight });
   });
   howManyRelevant = moreRelevantIds.length;
@@ -130,7 +130,7 @@ exports.provideQueries = function (sh, listOfResults, limitOfRelevancy, offsetAs
     const furtherLower = [];
     const boundary = limitOfRelevancy * 0.8;
     lessRelevantIds.forEach((element) => {
-      if (element.w > boundary) { furtherHigher.push({ p: element.p, w: element.w }); }
+      if (element.w > boundary) furtherHigher.push({ p: element.p, w: element.w });
       else furtherLower.push({ p: element.p, w: element.w });
     });
 

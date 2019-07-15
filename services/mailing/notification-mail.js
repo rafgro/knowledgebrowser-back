@@ -92,9 +92,18 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
     if (days <= 1.99) dateAgo = hours.toFixed(0) + ' hours ago';
     else if (days < 2) dateAgo = '1 day ago';
     if (hours <= 1.1) dateAgo = 'less than hour ago';
+    const rawDate = thatDate.getUTCFullYear()
+      + (thatDate.getUTCMonth() + 1 < 10 ? '-0' : '-')
+      + (thatDate.getUTCMonth() + 1)
+      + (thatDate.getUTCDate() < 10 ? '-0' : '-')
+      + thatDate.getUTCDate()
+      + (thatDate.getUTCHours() < 10 ? ' 0' : ' ')
+      + thatDate.getUTCHours()
+      + (thatDate.getUTCMinutes() < 10 ? ':0' : ':')
+      + thatDate.getUTCMinutes() + ' UTC';
     if (pub.relativeWeight >= 8) htmlToSend += '<small><strong>' + pub.relativeWeight + '/10 relevant</strong></small><br/>';
     else htmlToSend += '<small>' + pub.relativeWeight + '/10 relevant</small><br/>';
-    htmlToSend += '<small>' + pub.date.toString().replace('T', ' ').substring(0, 18) + '(' + dateAgo + ') in ' + pub.server + '</small><br/><a href="' + pub.link + '">' + pub.title + '</a><br/>' + pub.abstract + '<br/><br/>';
+    htmlToSend += '<small>' + dateAgo + ' (' + rawDate + ') in ' + pub.server + '</small><br/><a href="' + pub.link + '">' + pub.title + '</a><br/>' + pub.abstract + '<br/><br/>';
 
     textToSend += '- (' + pub.relativeWeight + '/10 relevant, ' + dateAgo + ' in ' + pub.server + ') "' + pub.title + '" Abstract: ' + pub.abstract + ' (more at ' + pub.link + ') ';
 

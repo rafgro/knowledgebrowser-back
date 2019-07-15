@@ -18,6 +18,7 @@ const queryStats = require('./query-stats');
 exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sortMode = 0, minRelevance = 4, span = 720, linear = false) {
   return new Promise((resolve, reject) => {
     const hrstart = process.hrtime();
+    if (process.env.NODE_ENV === 'development') stats = 0;
 
     // param sanitization
     if (offset < 0) offset = 0;
@@ -48,17 +49,17 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
 
           // failsafes for offsets and no results
           const offsetAsNumber = parseInt(offset, 10);
-          if (offsetAsNumber >= initialResults.finalList.size) {
-            reject({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
-          } else if (initialResults.finalList.size === 0) {
+          if (initialResults.finalList.size === 0) {
             reject({
               message: 'There are no new preprints about <i>' + query
                 + '</i>. Would you like to rephrase your query?',
             });
+          } else if (offsetAsNumber >= initialResults.finalList.size) {
+            reject({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
           }
 
           let arrayOfQueries = [];
-          const numberOfImportantWords = workingQuery.split(' ').length - 1;
+          const numberOfImportantWords = relativeWeightModule.theNumberOfWords(workingQuery);
           const limitOfRelevancy = relativeWeightModule.theLimit(numberOfImportantWords, minRelevance);
 
           if (linear === true) {
@@ -71,7 +72,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                     'Sorry, there are no sufficiently relevant results for <i>' + query + '</i>.',
               });
             }
-          } else if (sortMode === 0) {
+          } else if (sortMode == 0) { // leave == as sometimes comes undefined
             /* Default sorting relevant by DATE */
             arrayOfQueries = strategyDefaultbydate.provideQueries(sh, initialResults.finalList,
               limitOfRelevancy, offsetAsNumber);
@@ -89,7 +90,12 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
             .then((arrayOfResults) => {
               let properArray = []; // will be just 10 results
               // eslint-disable-next-line eqeqeq
-              if (arrayOfQueries == undefined) reject({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
+              if (arrayOfQueries == undefined) {
+                resolve({
+                  message: 'There are no new preprints about <i>' + query
+                    + '</i>. Would you like to rephrase your query?',
+                });
+              }
 
               // we can have few arrays from few queries
               if (arrayOfQueries.length === 3) {
@@ -99,20 +105,25 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                 );
               } else if (arrayOfQueries.length === 2) {
                 properArray = arrayOfResults[0].concat(arrayOfResults[1]);
-              } else {
+              } else if (arrayOfQueries.length === 1) {
                 // eslint-disable-next-line prefer-destructuring
                 properArray = arrayOfResults[0];
+              } else if (arrayOfQueries.length === 0) {
+                resolve({
+                  message: 'There are no new preprints about <i>' + query
+                    + '</i>. Would you like to rephrase your query?',
+                });
               }
 
-              // normal user wants just 10, but in case of notifications we want all
-              if (properArray.length > 10 && linear === false) { properArray = properArray.slice(0, 10); }
               // eslint-disable-next-line eqeqeq
               if (properArray == undefined) {
                 // eslint-disable-next-line eqeqeq
-                if (stats == 1) reject({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
+                if (stats == 1) resolve({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
                 else resolve({ message: 'No new results for notification to <i>' + query + '</i>.' });
                 // ^ this is to not pollute error monitoring with simple lack of new results
               }
+              // normal user wants just 10, but in case of notifications we want all
+              if (properArray.length > 10 && linear === false) { properArray = properArray.slice(0, 10); }
 
               const listOfWords = initialResults.originalTerms
                 .join(' ')

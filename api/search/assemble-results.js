@@ -61,7 +61,7 @@ exports.assemble = function (result, queriesMap, workingQuery, minRelevance) {
   }
 
   // lowering weight of results without sufficient coverage
-  const numberOfImportantWords = workingQuery.split(' ').length - 1;
+  const numberOfImportantWords = relativeWeightModule.theNumberOfWords(workingQuery);
   const limitOfRelevancy = relativeWeightModule.theLimit(numberOfImportantWords, minRelevance);
   const workingWords = workingQuery.split(' ');
   scopesOfPubs.forEach((scope, pub) => {
@@ -84,6 +84,14 @@ exports.assemble = function (result, queriesMap, workingQuery, minRelevance) {
     });
     if (tempCov >= workingWords.length) {
       originalMultipliedRelevant.set(pub, originalMultipliedRelevant.get(pub) + 25);
+    }
+  });
+
+  // deleting results with relevancy lower than 2/10
+  const deleteLimit = relativeWeightModule.theLimit(numberOfImportantWords, 2);
+  originalMultipliedRelevant.forEach((weight, pub) => {
+    if (weight <= deleteLimit) {
+      originalMultipliedRelevant.delete(pub);
     }
   });
 
