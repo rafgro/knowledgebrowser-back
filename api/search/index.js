@@ -40,6 +40,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
     queries.forEach((q) => {
       // query sanitization
       const workingQuery = querySanitization.sanitize(q);
+      console.log('sanitized: '+workingQuery);
       workingQueries.push(workingQuery);
 
       // sanitization can reduce query to 0
