@@ -18,7 +18,7 @@ exports.respond = function (request, response) {
         `Responded to ${request.query.q} with offset ${request.query.offset || 0} and sort ${request.query.sort || 0} in <strong>${hrend[1] / 1000000} ms</strong>`,
       );
       response.send({
-        message: +hrend[1] / 1000000,
+        message: hrend[1] / 1000000,
         numberofall: results.numberofall,
         results: results.results,
       });

@@ -40,7 +40,6 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
     queries.forEach((q) => {
       // query sanitization
       const workingQuery = querySanitization.sanitize(q);
-      console.log('sanitized: '+workingQuery);
       workingQueries.push(workingQuery);
 
       // sanitization can reduce query to 0
@@ -109,7 +108,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
               let properArray = []; // will be just 10 results
               // eslint-disable-next-line eqeqeq
               if (arrayOfQueries == undefined) {
-                resolve({
+                reject({
                   message: 'There are no new preprints about <i>' + query
                     + '</i>. Would you like to rephrase your query?',
                 });
@@ -127,7 +126,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                 // eslint-disable-next-line prefer-destructuring
                 properArray = arrayOfResults[0];
               } else if (arrayOfQueries.length === 0) {
-                resolve({
+                reject({
                   message: 'There are no new preprints about <i>' + query
                     + '</i>. Would you like to rephrase your query?',
                 });
@@ -136,9 +135,13 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
               // eslint-disable-next-line eqeqeq
               if (properArray == undefined) {
                 // eslint-disable-next-line eqeqeq
-                if (stats == 1) resolve({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
+                if (stats == 1) reject({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
                 else resolve({ message: 'No new results for notification to <i>' + query + '</i>.' });
-                // ^ this is to not pollute error monitoring with simple lack of new results
+              } else if (properArray.length === 0) {
+                reject({
+                  message: 'There are no new preprints about <i>' + query
+                    + '</i>. Would you like to rephrase your query?',
+                });
               }
               // normal user wants just 10, but in case of notifications we want all
               if (properArray.length > 10 && linear === false) { properArray = properArray.slice(0, 10); }
