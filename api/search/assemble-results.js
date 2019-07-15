@@ -2,7 +2,7 @@
 
 const relativeWeightModule = require('./relative-weights');
 
-exports.assemble = function (result, queriesMap, workingQuery, minRelevance) {
+exports.assemble = function (result, queriesMap, workingQueries, minRelevance) {
   // four consts returned in object
   const originalMultipliedRelevant = new Map(); // final list of pubs and weights
   const scopesOfPubsTitle = new Map(); // coverage of pub vs query in title
@@ -16,8 +16,10 @@ exports.assemble = function (result, queriesMap, workingQuery, minRelevance) {
     const queryAbstractable = queriesMap.get(result[i].term).a;
     originalTerms.push(result[i].term);
     let exactMatchBonus = 0;
-    // eslint-disable-next-line eqeqeq
-    if (result[i].term == workingQuery && workingQuery.includes(' ')) exactMatchBonus = 30;
+    workingQueries.forEach((q) => {
+      // eslint-disable-next-line eqeqeq
+      if (result[i].term == q && q.includes(' ')) exactMatchBonus = 30;
+    });
 
     // checking title
     if (result[i].relevant != null) {
@@ -60,29 +62,40 @@ exports.assemble = function (result, queriesMap, workingQuery, minRelevance) {
     }
   }
 
-  // lowering weight of results without sufficient coverage
-  const numberOfImportantWords = relativeWeightModule.theNumberOfWords(workingQuery);
+  // lowering weight of results without sufficient coverage IN ABSTRACT
+  const numberOfImportantWords = relativeWeightModule.theNumberOfWords(workingQueries);
   const limitOfRelevancy = relativeWeightModule.theLimit(numberOfImportantWords, minRelevance);
-  const workingWords = workingQuery.split(' ');
+  // const workingWords = workingQueries.join(' ').split(' ');
+  const workingWords = [];
+  workingQueries.forEach(q => workingWords.push(q.split(' ')));
+
   scopesOfPubs.forEach((scope, pub) => {
-    let tempCov = 0;
-    workingWords.forEach((el) => {
-      if (scope.includes(el)) tempCov += 1;
+    let atLeastOneCovered = false;
+    workingWords.forEach((one) => {
+      let tempCov = 0;
+      one.forEach((el) => {
+        if (scope.includes(el)) tempCov += 1;
+      });
+      if (tempCov >= one.length) atLeastOneCovered = true;
     });
-    if (tempCov < workingWords.length) {
+    if (!atLeastOneCovered) {
       let newOne = originalMultipliedRelevant.get(pub) * (1 / numberOfImportantWords);
       if (newOne > limitOfRelevancy) newOne = limitOfRelevancy - 2;
       originalMultipliedRelevant.set(pub, newOne);
     }
   });
 
-  // giving more weight for results with 100% coverage in title
+  // giving more weight for results with 100% coverage IN TITLE
   scopesOfPubsTitle.forEach((scope, pub) => {
-    let tempCov = 0;
-    workingWords.forEach((el) => {
-      if (scope.includes(el)) tempCov += 1;
+    let atLeastOneCovered = false;
+    workingWords.forEach((one) => {
+      let tempCov = 0;
+      one.forEach((el) => {
+        if (scope.includes(el)) tempCov += 1;
+      });
+      if (tempCov >= one.length) atLeastOneCovered = true;
     });
-    if (tempCov >= workingWords.length) {
+    if (atLeastOneCovered) {
       originalMultipliedRelevant.set(pub, originalMultipliedRelevant.get(pub) + 25);
     }
   });

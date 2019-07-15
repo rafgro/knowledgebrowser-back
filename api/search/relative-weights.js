@@ -116,15 +116,20 @@ exports.theLimit = function (noOfWords, minRelevance) {
   }
 };
 
-exports.theNumberOfWords = function (query) {
-  let wNumber = query.split(' ').length;
-  if (query.includes(' of ')) wNumber -= 1;
-  if (query.includes(' in ')) wNumber -= 1;
-  if (query.includes(' and ')) wNumber -= 1;
-  if (query.includes(' its ')) wNumber -= 1;
-  if (query.includes(' the ')) wNumber -= 1;
-  if (query.includes(' a ')) wNumber -= 1;
-  if (query.includes(' is ')) wNumber -= 1;
+exports.theNumberOfWords = function (queries) {
+  const joined = queries.join(' ');
+  let wNumber = joined.split(' ').length;
+
+  if (joined.includes(' of ')) wNumber -= 1;
+  if (joined.includes(' in ')) wNumber -= 1;
+  if (joined.includes(' and ')) wNumber -= 1;
+  if (joined.includes(' its ')) wNumber -= 1;
+  if (joined.includes(' the ')) wNumber -= 1;
+  if (joined.includes(' a ')) wNumber -= 1;
+  if (joined.includes(' is ')) wNumber -= 1;
+
+  if (queries.length > 1) wNumber /= queries.length;
+
   if (wNumber < 1) wNumber = 1;
   return wNumber;
 };

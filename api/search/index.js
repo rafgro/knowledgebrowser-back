@@ -25,14 +25,31 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
     if (query == undefined) reject({ message: 'Please enter your query.' });
     if (query.length < 1 || query === ' ') reject({ message: 'Please enter your query.' });
 
-    // query sanitization
-    const workingQuery = querySanitization.sanitize(query);
+    // many queries in one as COMMA (,) works like OR
+    let queries = [];
+    if (query.includes(',')) {
+      query.split(',').forEach(v => queries.push(v));
+      if (queries.length > 10) queries = queries.slice(0, 10);
+    } else {
+      queries.push(query);
+    }
 
-    // sanitization can reduce query to 0
-    if (workingQuery.length < 1) reject({ message: 'Please enter your query.' });
+    // cycle for each query
+    const queriesToDb = [];
+    const workingQueries = [];
+    queries.forEach((q) => {
+      // query sanitization
+      const workingQuery = querySanitization.sanitize(q);
+      workingQueries.push(workingQuery);
+
+      // sanitization can reduce query to 0
+      if (queries.length === 1 && workingQuery.length < 1) reject({ message: 'Please enter your query.' });
+
+      // query processing
+      queriesToDb.push(...nlpProcessQuery.returnVariants(workingQuery));
+    });
 
     // query processing
-    const queriesToDb = nlpProcessQuery.returnVariants(workingQuery);
     const queriesMap = new Map();
     queriesToDb.forEach(e => queriesMap.set(e.q, { w: e.w, s: e.s, a: e.a }));
 
@@ -45,7 +62,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
         // assembling and returning the results
         if (Object.keys(result).length !== 0) {
           // a lot of calculating, assembling and cleaning of results
-          const initialResults = assembleResults.assemble(result, queriesMap, workingQuery, minRelevance);
+          const initialResults = assembleResults.assemble(result, queriesMap, workingQueries, minRelevance);
 
           // failsafes for offsets and no results
           const offsetAsNumber = parseInt(offset, 10);
@@ -59,7 +76,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
           }
 
           let arrayOfQueries = [];
-          const numberOfImportantWords = relativeWeightModule.theNumberOfWords(workingQuery);
+          const numberOfImportantWords = relativeWeightModule.theNumberOfWords(workingQueries);
           const limitOfRelevancy = relativeWeightModule.theLimit(numberOfImportantWords, minRelevance);
 
           if (linear === true) {
@@ -137,7 +154,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
 
               // modifying titles, calculating relative weights etc
               const publications = assembleResponse.provideResults(properArray,
-                initialResults.finalList, listOfWords, workingQuery.split(' ').length - 1);
+                initialResults.finalList, listOfWords, relativeWeightModule.theNumberOfWords(workingQueries));
 
               // eslint-disable-next-line eqeqeq
               if (parseInt(offset, 10) == 0 && stats == 1) {
@@ -153,7 +170,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                   + 0 + '","highestRelevancy":"0","executionTime":"'
                   + (hrend[1] / 1000000 + hrend[0] * 1000).toFixed(0) + '","newestResult":"'
                   + newestResult.toFixed(0) + '"}';
-                queryStats.register(sh, workingQuery, quality.toFixed(0), details,
+                queryStats.register(sh, workingQueries.join(', '), quality.toFixed(0), details,
                   parseInt((hrend[1] / 1000000 + hrend[0] * 1000).toFixed(0), 10));
               }
 
@@ -164,7 +181,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
               });
             })
             .catch((e) => {
-              queryStats.register(sh, workingQuery, '0', '{"timestamp":"' + Date.now()
+              queryStats.register(sh, workingQueries.join(', '), '0', '{"timestamp":"' + Date.now()
                   + '","error":"' + escape(e.toString()) + '"}');
               logger.error('line 153');
               logger.error(e);
@@ -172,7 +189,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
               reject({ message: 'Sorry, we have encountered an error.' });
             });
         } else {
-          queryStats.register(sh, workingQuery, '0',
+          queryStats.register(sh, workingQueries.join(', '), '0',
             '{"timestamp":"' + Date.now() + '","error":"no results"}');
           logger.error('no results for ' + query);
           reject({
@@ -184,7 +201,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
         }
       })
       .catch((e) => {
-        queryStats.register(sh, workingQuery, '0',
+        queryStats.register(sh, workingQueries.join(', '), '0',
           '{"timestamp":"' + Date.now() + '","error":"' + escape(e.toString()) + '"}');
         logger.error('line 173');
         logger.error(e);

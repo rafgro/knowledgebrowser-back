@@ -319,6 +319,14 @@ function populateNounToForms(noun) {
       // autism -> autist
       processedNoun = noun.substring(0, noun.length - 1) + 't';
     }
+    if (lastCase === 'a' && noun.charAt(noun.length - 2) === 'v') {
+      // supernova -> supernovae
+      toReturn.push(noun + 'e');
+    } else if (lastCase === 'e' && noun.charAt(noun.length - 2) === 'a') {
+      // supernovae -> supernov processed
+      processedNoun = noun.substring(0, noun.length - 2);
+      toReturn.push(processedNoun + 'a');
+    }
     toReturn.push(processedNoun + 'ed');
     toReturn.push(processedNoun + 'ely');
     toReturn.push(processedNoun + 'ary');
