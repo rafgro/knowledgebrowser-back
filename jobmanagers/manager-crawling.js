@@ -38,6 +38,17 @@ exports.start = function () {
                     + todayString
                     + '%7C%7C%2Fd%22%7D%7D%7D%5D%7D%7D',
                 );
+              } else if (element.name === 'arXiv') {
+                const ago = new Date(Date.now() - 1000 * 60 * 60 * 24 * 2);
+                const agoString = ago.getUTCFullYear()
+                  + (ago.getUTCMonth() + 1 < 10 ? '-0' : '-')
+                  + (ago.getUTCMonth() + 1)
+                  + (ago.getUTCDate() < 10 ? '-0' : '-')
+                  + ago.getUTCDate();
+                crawlRssGeneric.start(
+                  element.name,
+                  element.mainurl + agoString,
+                );
               } else {
                 crawlRssGeneric.start(
                   element.name,

@@ -214,7 +214,7 @@ exports.provideQueries = function (sh, listOfResults, limitOfRelevancy, offsetAs
     } else {
       // taking from lower boundary if we are past higher
       // eslint-disable-next-line
-                if (furtherLower.length > 0) {
+      if (furtherLower.length > 0) {
         arrayOfQueries.push(
           sh
             .select(

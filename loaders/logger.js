@@ -42,6 +42,7 @@ global.logger = {
     if (process.env.NODE_ENV === 'development') {
       console.log(what);
     } else {
+      console.log(what);
       const variant1 = JSON.stringify(what);
       const variant2 = what.toString();
       if (variant1 !== '{}') {

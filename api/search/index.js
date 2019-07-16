@@ -46,7 +46,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
       if (queries.length === 1 && workingQuery.length < 1) reject({ message: 'Please enter your query.' });
 
       // query processing
-      queriesToDb.push(...nlpProcessQuery.returnVariants(workingQuery));
+      nlpProcessQuery.returnVariants(workingQuery).forEach(e => queriesToDb.push(e));
     });
 
     // query processing
@@ -185,16 +185,20 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
               });
             })
             .catch((e) => {
-              queryStats.register(sh, workingQueries.join(', '), '0', '{"timestamp":"' + Date.now()
+              if (stats) {
+                queryStats.register(sh, workingQueries.join(', '), '0', '{"timestamp":"' + Date.now()
                   + '","error":"' + escape(e.toString()) + '"}');
+              }
               logger.error('line 153');
               logger.error(e);
               logger.error(arrayOfQueriesDEBUG);
               reject({ message: 'Sorry, we have encountered an error.' });
             });
         } else {
-          queryStats.register(sh, workingQueries.join(', '), '0',
-            '{"timestamp":"' + Date.now() + '","error":"no results"}');
+          if (stats) {
+            queryStats.register(sh, workingQueries.join(', '), '0',
+              '{"timestamp":"' + Date.now() + '","error":"no results"}');
+          }
           logger.error('no results for ' + query);
           reject({
             message:
@@ -205,8 +209,10 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
         }
       })
       .catch((e) => {
-        queryStats.register(sh, workingQueries.join(', '), '0',
-          '{"timestamp":"' + Date.now() + '","error":"' + escape(e.toString()) + '"}');
+        if (stats) {
+          queryStats.register(sh, workingQueries.join(', '), '0',
+            '{"timestamp":"' + Date.now() + '","error":"' + escape(e.toString()) + '"}');
+        }
         logger.error('line 173');
         logger.error(e);
         reject({ message: 'Sorry, we have encountered an error.' });

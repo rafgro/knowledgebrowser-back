@@ -1,7 +1,10 @@
+/* eslint-disable no-param-reassign */
+
 const logContinuity = require('./logContinuity');
 
 exports.processRssBody = function (sh, body, name, subject) {
-  let isContinuous = false;
+  /* let isContinuous = false;
+  let anyErrors = false;
 
   body.rss.channel[0].item.forEach((element) => {
     const chemrxivDoi = 'chemRxiv:'
@@ -38,15 +41,17 @@ exports.processRssBody = function (sh, body, name, subject) {
             })
             .catch((e) => {
               logger.error(e);
+              anyErrors = true;
             });
         }
       })
       .catch((e) => {
         logger.error(e);
+        anyErrors = true;
       });
   });
 
   setTimeout(() => {
-    logContinuity.logIt(sh, isContinuous, name, subject);
-  }, 3000);
+    logContinuity.logIt(sh, isContinuous, name, subject, anyErrors);
+  }, 3000); */
 };

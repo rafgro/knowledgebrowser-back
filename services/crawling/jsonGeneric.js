@@ -2,6 +2,7 @@ const request = require('request');
 const loader = require('../../loaders');
 
 const jsonPeerj = require('./crawl_specifics/jsonPeerj');
+const jsonChemrxiv = require('./crawl_specifics/jsonChemrxiv');
 
 exports.start = function (name, mainurl, mainsuburls = null) {
   logger.info(`hey ${name}`);
@@ -39,6 +40,9 @@ function processAndUploadToDatabase(name, what) {
   switch (name) {
     case 'PeerJ Preprints':
       jsonPeerj.processJsonBody(loader.database, what, name);
+      break;
+    case 'chemRxiv':
+      jsonChemrxiv.processJsonBody(loader.database, what, name);
       break;
     default:
       logger.error(`Wrong source: ${name}`);

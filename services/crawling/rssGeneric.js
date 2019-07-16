@@ -21,13 +21,13 @@ exports.start = function (name, mainurl, mainsuburls = null) {
     mainsuburls.forEach((subject, index) => {
       setTimeout(() => {
         // logger.info(subject);
-        request(mainurl + subject, { timeout: 20000 },
+        request(mainurl + subject, { timeout: 60000 },
           (e, r, b) => processResponseOfRss(e, r, b, name, subject.toString()));
       }, 3000 * index); // slow requesting to avoid one-time ddos
     });
   } else {
     // logger.info('main');
-    request(mainurl, { timeout: 20000 }, (e, r, b) => processResponseOfRss(e, r, b, name, ' '));
+    request(mainurl, { timeout: 60000 }, (e, r, b) => processResponseOfRss(e, r, b, name, ' '));
   }
 };
 
@@ -38,7 +38,13 @@ function processResponseOfRss(error, response, body, name, subject) {
     // logger.info(body.substring(0, 100));
 
     // eslint-disable-next-line no-useless-escape
-    parseXml(body.replace(/\ \>/g, '').replace(/\<\ /g, ''), (e, r) => processAndUploadToDatabase(e, r, name, subject));
+    parseXml(
+      body
+        .replace(/\ \>/g, '')
+        .replace(/\<\ /g, '')
+        .replace(/\&/g, 'and'),
+      (e, r) => processAndUploadToDatabase(e, r, name, subject),
+    );
   }
 }
 
