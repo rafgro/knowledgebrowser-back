@@ -45,9 +45,11 @@ exports.start = function () {
                   + (ago.getUTCMonth() + 1)
                   + (ago.getUTCDate() < 10 ? '-0' : '-')
                   + ago.getUTCDate();
+                logger.info(element.mainurl + agoString);
                 crawlRssGeneric.start(
                   element.name,
-                  element.mainurl + agoString,
+                  element.mainurl + agoString + '&set=',
+                  element.mainsuburls,
                 );
               } else {
                 crawlRssGeneric.start(

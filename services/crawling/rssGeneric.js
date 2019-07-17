@@ -18,12 +18,14 @@ exports.start = function (name, mainurl, mainsuburls = null) {
   logger.info(`hey ${name}`);
 
   if (mainsuburls !== null) {
+    let breakTime = 3000;
+    if (name === 'arXiv') breakTime = 30000;
     mainsuburls.forEach((subject, index) => {
       setTimeout(() => {
         // logger.info(subject);
         request(mainurl + subject, { timeout: 60000 },
           (e, r, b) => processResponseOfRss(e, r, b, name, subject.toString()));
-      }, 3000 * index); // slow requesting to avoid one-time ddos
+      }, breakTime * index); // slow requesting to avoid one-time ddos
     });
   } else {
     // logger.info('main');

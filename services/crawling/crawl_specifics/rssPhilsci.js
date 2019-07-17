@@ -1,66 +1,85 @@
 const logContinuity = require('./logContinuity');
 
 exports.processRssBody = function (sh, body, name, subject) {
-  let isContinuous = false;
+  let fatalError = null;
+  let intercepted = 0;
+  let inserted = 0;
+  let existed = 0;
+  let errored = 0;
 
-  body.rss.channel[0].item.forEach((element) => {
-    let nonDuplicated = false;
+  if (Object.keys(body).length === 0) {
+    fatalError = 'empty body';
+  } else if (!Array.isArray(body.rss.channel[0].item)) {
+    fatalError = 'no array in body';
+  } else if (body.rss.channel[0].item[0].link === undefined) {
+    fatalError = 'unknown structure of entry';
+  } else {
+    intercepted = body.rss.channel[0].item.length;
 
-    if (element.description.toString().includes('Preprint')) {
-      const myDoi = 'philsci:'
-        + element.link
-          .toString()
-          .substring(32, element.link.toString().length - 1);
+    body.rss.channel[0].item.forEach((element) => {
+      let nonDuplicated = false;
 
-      sh.select('doi')
-        .from('content_preprints')
-        .where('doi', '=', myDoi)
-        .run()
-        .then((doi) => {
-          if (doi.length === 0) {
-            nonDuplicated = true;
-          } else {
-            isContinuous = true;
-          }
+      if (element.description.toString().includes('Preprint')) {
+        const myDoi = 'philsci:'
+          + element.link
+            .toString()
+            .substring(32, element.link.toString().length - 1);
 
-          if (nonDuplicated === true) {
-            const myAuthors = element.description
-              .toString()
-              .substring(0, element.description.toString().indexOf('(') - 1);
-            const myTitle = element.description
-              .toString()
-              .substring(
-                element.description.toString().indexOf(')') + 2,
-                element.description.toString().lastIndexOf('[Pr'),
-              );
-            const myDate = new Date(element.pubDate);
+        sh.select('doi')
+          .from('content_preprints')
+          .where('doi', '=', myDoi)
+          .run()
+          .then((doi) => {
+            if (doi.length === 0) {
+              nonDuplicated = true;
+            } else {
+              existed += 1;
+            }
 
-            sh.insert({
-              link: element.link,
-              abstract: ' ',
-              authors: myAuthors,
-              date: myDate,
-              doi: myDoi,
-              title: escape(myTitle),
-              server: 'PhilSci',
-            })
-              .into('content_preprints')
-              .run()
-              .then(() => {
-                // logger.info('Inserted ' + myDoi + ' / ' + myDate);
+            if (nonDuplicated === true) {
+              const myAuthors = element.description
+                .toString()
+                .substring(0, element.description.toString().indexOf('(') - 1);
+              const myTitle = element.description
+                .toString()
+                .substring(
+                  element.description.toString().indexOf(')') + 2,
+                  element.description.toString().lastIndexOf('[Pr'),
+                );
+              const myDate = new Date(element.pubDate);
+
+              sh.insert({
+                link: element.link,
+                abstract: ' ',
+                authors: myAuthors,
+                date: myDate,
+                doi: myDoi,
+                title: escape(myTitle),
+                server: 'PhilSci',
               })
-              .catch((e) => {
-                logger.error(e);
-              });
-          }
-        })
-        .catch((e) => {
-          logger.error(e);
-        });
-    }
-  });
+                .into('content_preprints')
+                .run()
+                .then(() => {
+                  // logger.info('Inserted ' + myDoi + ' / ' + myDate);
+                  inserted += 1;
+                })
+                .catch((e) => {
+                  logger.error(e);
+                  errored += 1;
+                });
+            }
+          })
+          .catch((e) => {
+            logger.error(e);
+            errored += 1;
+          });
+      }
+    });
+  }
 
   setTimeout(() => {
-    logContinuity.logIt(sh, isContinuous, name, subject);
-  }, 3000);
+    if (existed === 0 && fatalError === null) fatalError = '0 existed';
+    logContinuity.logCrawlerEvent(sh, name, subject,
+      { fatalError, intercepted, inserted, existed, errored });
+  }, 5000);
 };

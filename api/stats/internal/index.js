@@ -156,9 +156,10 @@ exports.doYourJob = function (sh) {
             else if (days < 2) when = '1d ago';
             if (hours <= 1.1) when = 'under 1h ago';
             else if (hours < 2) when = '1h ago';
-            if (ele.cont === false) whatText += '<strong>PROBLEM</strong> ';
-            else whatText += 'ok ';
-            whatText += '(' + when + ') in ' + ele.sub + ' |';
+            // if (ele.cont === false) whatText += '<strong>PROBLEM</strong> ';
+            // else whatText += 'ok ';
+            whatText += ele.cont;
+            whatText += ' (' + when + ') in ' + ele.sub + ' -|- ';
           });
           toResolve.push({ text: whatText });
         });
