@@ -47,7 +47,8 @@ exports.processJsonBody = function (sh, body, name) {
                     // eslint-disable-next-line no-useless-escape
                     abstract: `(\'${escape(received.description)}\')`,
                     authors: escape(authors),
-                    date: element.timeline.firstOnline,
+                    // date: element.timeline.firstOnline,
+                    date: element.timeline.onlinePublication,
                     doi: `chemRxiv:${element.id}`,
                     title: escape(element.title),
                     server: 'chemRxiv',

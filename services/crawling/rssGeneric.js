@@ -39,12 +39,14 @@ function processResponseOfRss(error, response, body, name, subject) {
   } else {
     // logger.info(body.substring(0, 100));
 
+    let body2 = body
+      .replace(/\ \>/g, '')
+      .replace(/\<\ /g, '')
+      .replace(/\&/g, 'and');
+    if (name === 'chemRxiv') body2 = body2.replace(/\&/g, 'and');
     // eslint-disable-next-line no-useless-escape
     parseXml(
-      body
-        .replace(/\ \>/g, '')
-        .replace(/\<\ /g, '')
-        .replace(/\&/g, 'and'),
+      body2,
       (e, r) => processAndUploadToDatabase(e, r, name, subject),
     );
   }
