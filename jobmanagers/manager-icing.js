@@ -6,6 +6,8 @@ const sumUpTerms = require('../services/icing/sum-up-terms');
 
 exports.start = function (ifForce) {
   logger.info('Start of icing work');
+  const hrstart = new Date();
+  const howManyTermsInOneTake = 100000;
 
   const date = new Date(Date.now());
   const today = date.getUTCFullYear()
@@ -14,16 +16,33 @@ exports.start = function (ifForce) {
     + (date.getUTCDate() < 10 ? '-0' : '-')
     + date.getUTCDate();
 
+  // const dateMinusSeven = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const dateMinusSeven = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+  const textMinusSeven = dateMinusSeven.getUTCFullYear()
+    + (dateMinusSeven.getUTCMonth() + 1 < 10 ? '-0' : '-')
+    + (dateMinusSeven.getUTCMonth() + 1)
+    + (dateMinusSeven.getUTCDate() < 10 ? '-0' : '-')
+    + dateMinusSeven.getUTCDate();
+
+  const specObjects = [
+    { type: 'spec-bio', dateFrom: textMinusSeven,
+      servers: ['bioRxiv', 'Preprints.org', 'PeerJ Preprints', 'AgriXiv', 'EcoEvoRxiv', 'MarXiv', 'PaleorXiv', 'Preprints.org'],
+      subs: ['q-bio'] },
+    { type: 'spec-chem', dateFrom: textMinusSeven, servers: ['chemRxiv', 'ECSarXiv'], subs: null },
+    { type: 'spec-phys', dateFrom: textMinusSeven, servers: null, subs: ['physics'] },
+    { type: 'spec-econ', dateFrom: textMinusSeven, servers: ['NBER', 'NEP RePEc'], subs: ['econ', 'q-fin'] },
+  ];
+
   // eslint-disable-next-line eqeqeq
   if (ifForce == 1) {
     loader.database
-      .select('rawterms')
+      .select('rawterms', 'type')
       .from('icing_stats')
       .where('date', '=', today)
-      .and('type', '=', 'a')
+      // .and('type', '=', 'a')
       .run()
       .then((res) => {
-        sumUpTerms.endThis(loader.database, res, today, 'a');
+        sumUpTerms.endThis(loader.database, res, today);
       })
       .catch((e) => {
         logger.error(e);
@@ -46,12 +65,6 @@ exports.start = function (ifForce) {
             .run()
             .then((result) => {
               if (parseInt(result[0].value, 10) === -1) {
-                const dateMinusSeven = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-                const textMinusSeven = dateMinusSeven.getUTCFullYear()
-                + (dateMinusSeven.getUTCMonth() + 1 < 10 ? '-0' : '-')
-                + (dateMinusSeven.getUTCMonth() + 1)
-                + (dateMinusSeven.getUTCDate() < 10 ? '-0' : '-')
-                + dateMinusSeven.getUTCDate();
                 loader.database
                   .select('id')
                   .from('content_preprints')
@@ -95,16 +108,16 @@ exports.start = function (ifForce) {
                     }
                   })
                   .catch(e => logger.error(e));
-              } else if (parseInt(result[0].value, 10) % 100000 === 0) {
+              } else if (parseInt(result[0].value, 10) % howManyTermsInOneTake === 0) {
                 loader.database
                   .select('term', 'relevant', 'relevant_abstract')
                   .from('index_title')
                   .orderBy('term')
-                  .limit(100000, result[0].value) // takes 15-30 seconds
+                  .limit(howManyTermsInOneTake, result[0].value) // the longest query, 60-200 seconds
                   .run()
                   .then((results) => {
                     if (results.length !== 0) {
-                      icingTerms.process(loader.database, results, parseInt(boundaryRes[0].boundary, 10));
+                      icingTerms.process(hrstart, loader.database, results, parseInt(boundaryRes[0].boundary, 10), specObjects);
                       const value = parseInt(result[0].value, 10) + results.length;
                       loader.database
                         .update('manager')
@@ -118,19 +131,19 @@ exports.start = function (ifForce) {
                           logger.error(e);
                         });
 
-                      if (results.length !== 100000) {
+                      if (results.length !== howManyTermsInOneTake) {
                       // we reached the end of terms
                       // now it's time to process it
                         logger.info('THE END of icing');
 
                         loader.database
-                          .select('rawterms')
+                          .select('rawterms','type')
                           .from('icing_stats')
                           .where('date', '=', today)
-                          .and('type', '=', 'a')
+                          // .and('type', '=', 'a')
                           .run()
                           .then((res) => {
-                            sumUpTerms.endThis(loader.database, res, today, 'a');
+                            sumUpTerms.endThis(loader.database, res, today);
                           })
                           .catch((e) => {
                             logger.error(e);

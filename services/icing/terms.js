@@ -1,7 +1,24 @@
 /* eslint-disable max-len */
 /* eslint-disable no-console */
-exports.process = function (sh, terms, hotnessBoundary) {
-  const arrayOfScores = [];
+exports.process = async function (hrstart, sh, terms, hotnessBoundary, specializedObj) {
+  const processingEntities = [];
+
+  // first - all preprints in the last week
+  processingEntities.push({ arrayOfScores: [], type: 'a' });
+
+  // then - special categories for preprints
+  for (let i = 0; i < specializedObj.length; i += 1) {
+    // used for instead of promise.all to have sequential addition
+    // eslint-disable-next-line no-await-in-loop
+    const ids = await provideIds(sh, specializedObj[i].dateFrom, specializedObj[i].servers, specializedObj[i].subs);
+    if (ids.length > 0) {
+      processingEntities.push({
+        arrayOfScores: [],
+        type: specializedObj[i].type,
+        ids,
+      });
+    }
+  }
 
   terms.forEach((term) => {
     // stategy:
@@ -16,72 +33,140 @@ exports.process = function (sh, terms, hotnessBoundary) {
     if (term.relevant_abstract !== null) allPubs = allPubs.concat(JSON.parse(term.relevant_abstract));
 
     // 2
-    let score = 0;
-    const originalPubs = new Map();
+    const distinctScores = [];
+    const mapsOfOriginalPubs = [];
+    // eslint-disable-next-line no-unused-vars
+    processingEntities.forEach((_v) => {
+      distinctScores.push(0);
+      mapsOfOriginalPubs.push(new Map());
+    });
     allPubs.forEach((pub) => {
       if (parseInt(pub.p, 10) >= hotnessBoundary) {
-        score += parseFloat(pub.w, 10);
-        originalPubs.set('' + pub.p, parseFloat(pub.w, 10));
+        distinctScores[0] += parseFloat(pub.w, 10);
+        mapsOfOriginalPubs[0].set('' + pub.p, parseFloat(pub.w, 10));
+      }
+      for (let i = 1; i < mapsOfOriginalPubs.length; i += 1) {
+        if (processingEntities[i].ids.includes(parseInt(pub.p, 10))) {
+          distinctScores[i] += parseFloat(pub.w, 10);
+          mapsOfOriginalPubs[i].set('' + pub.p, parseFloat(pub.w, 10));
+        }
       }
     });
-    const noOfPubs = originalPubs.size;
-    // console.log(score);
 
-    // quickfix to break dominance of single words
-    let noOfSpaces = term.term.split(' ').length - 1;
-    if (noOfSpaces >= 2) noOfSpaces = 3;
-    else if (noOfSpaces < 1) noOfSpaces = 0.15;
-    let maxing = noOfPubs;
-    if (maxing > 500) maxing = 0; // excluding common parts of speech
-    if (maxing > 14) maxing = 14; // reasonable upper limit of 14 pubs per week
-    if (maxing < 4) maxing = 0.5; // reasonable bottom limit of minimum 4 pubs per week
-    noOfSpaces *= maxing;
-    score *= noOfSpaces;
+    // manipulations on scores
+    for (let i = 0; i < distinctScores.length; i += 1) {
+      const noOfPubs = mapsOfOriginalPubs[i].size;
 
-    // 3
-    if (score > 0) arrayOfScores.push({ t: term.term, s: score, n: noOfPubs });
-  });
-
-  // we upload to the db only 50 most popular in that batch
-  let sorted = arrayOfScores.sort((a, b) => b.s - a.s).slice(0, 30);
-  sorted = sorted.map((value) => {
-    // eslint-disable-next-line no-param-reassign
-    value.s = value.s.toFixed(0);
-    return value;
-  });
-
-  console.log(sorted);
-
-  const date = new Date(Date.now());
-  const today = date.getUTCFullYear()
-    + (date.getUTCMonth() + 1 < 10 ? '-0' : '-')
-    + (date.getUTCMonth() + 1)
-    + (date.getUTCDate() < 10 ? '-0' : '-')
-    + date.getUTCDate();
-  sh.select('type', 'date', 'rawterms').from('icing_stats').where('date', '=', today).and('type', '=', 'a')
-    .run()
-    .then((returned) => {
-      if (Object.keys(returned).length !== 0) {
-        // entry is present
-        let allToInsert = '';
-        if (returned[0].rawterms != null) {
-          allToInsert = returned[0].rawterms.substring(0, returned[0].rawterms.length - 1)
-            + ','
-            + JSON.stringify(sorted).substring(1);
-        } else {
-          allToInsert = JSON.stringify(sorted);
-        }
-        sh.update('icing_stats').set('rawterms', '\'' + allToInsert + '\'').where('date', '=', today).run()
-          .then(() => logger.info('Good'))
-          .catch(e => logger.info(e));
-        logger.info('End of icing work');
+      // general has different procedure
+      if (i === 0) {
+        // quickfix to break dominance of single words
+        let noOfSpaces = term.term.split(' ').length - 1;
+        if (noOfSpaces >= 2) noOfSpaces = 3;
+        else if (noOfSpaces < 1) noOfSpaces = 0.15;
+        let maxing = noOfPubs;
+        if (maxing > 500) maxing = 0; // excluding common parts of speech
+        if (maxing > 14) maxing = 14; // reasonable upper limit of 14 pubs per week
+        if (maxing < 4) maxing = 0.5; // reasonable bottom limit of minimum 4 pubs per week
+        noOfSpaces *= maxing;
+        distinctScores[i] *= noOfSpaces;
       } else {
-        // first entry of the day
-        sh.insert({ type: 'a', date: today, rawterms: '\'' + JSON.stringify(sorted) + '\'' }).into('icing_stats').run()
-          .then(() => logger.info('Good'))
-          .catch(e => logger.info(e));
-        logger.info('End of icing work');
+        // quickfix to break dominance of single words
+        let noOfSpaces = term.term.split(' ').length - 1;
+        if (noOfSpaces >= 2) noOfSpaces = 3;
+        else if (noOfSpaces < 1) noOfSpaces = 0.025;
+        let maxing = noOfPubs;
+        if (maxing > 50 && noOfSpaces < 1) maxing = 0; // excluding common parts of speech
+        if (maxing > 7) maxing = 7; // reasonable upper limit of 7 pubs per week
+        if (maxing < 2) maxing = 0; // minimum 2 publications in the last week
+        noOfSpaces *= maxing;
+        distinctScores[i] *= noOfSpaces;
       }
-    })
-    .catch(e => logger.info(e));
+
+      // 3
+      if (distinctScores[i] > 1) {
+        processingEntities[i].arrayOfScores.push({ t: term.term, s: distinctScores[i], n: noOfPubs });
+      }
+    }
+  });
+
+  processingEntities.forEach((one) => {
+    // we upload to the db only 30 most popular in that batch
+    let sorted = one.arrayOfScores.sort((a, b) => b.s - a.s).slice(0, 30);
+    sorted = sorted.map((value) => {
+      // eslint-disable-next-line no-param-reassign
+      value.s = value.s.toFixed(0);
+      return value;
+    });
+
+    if (sorted.length > 0 && sorted[0].s !== '0') {
+      const date = new Date(Date.now());
+      const today = date.getUTCFullYear()
+        + (date.getUTCMonth() + 1 < 10 ? '-0' : '-')
+        + (date.getUTCMonth() + 1)
+        + (date.getUTCDate() < 10 ? '-0' : '-')
+        + date.getUTCDate();
+      sh.select('type', 'date', 'rawterms').from('icing_stats').where('date', '=', today).and('type', '=', one.type)
+        .run()
+        .then((returned) => {
+          if (Object.keys(returned).length !== 0) {
+            // entry is present
+            let allToInsert = '';
+            if (returned[0].rawterms != null) {
+              allToInsert = returned[0].rawterms.substring(0, returned[0].rawterms.length - 1)
+                + ','
+                + JSON.stringify(sorted).substring(1);
+            } else {
+              allToInsert = JSON.stringify(sorted);
+            }
+            sh.update('icing_stats')
+              .set('rawterms', '\'' + allToInsert + '\'')
+              .where('date', '=', today).and('type', '=', one.type)
+              .run()
+              .then(() => logger.info('Good'))
+              .catch(e => logger.error(e));
+            logger.info('End of icing work for ' + one.type + ' with ' + sorted.length);
+            const hrend = new Date() - hrstart;
+            logger.info('Lasted ' + hrend / 1000 + ' s');
+          } else {
+            // first entry of the day
+            sh.insert({ type: one.type, date: today, rawterms: '\'' + JSON.stringify(sorted) + '\'' }).into('icing_stats').run()
+              .then(() => logger.info('Good'))
+              .catch(e => logger.error(e));
+            logger.info('End of icing work for ' + one.type + ' with ' + sorted.length);
+            const hrend = new Date() - hrstart;
+            logger.info('Lasted ' + hrend / 1000 + ' s');
+          }
+        })
+        .catch(e => logger.error(e));
+    }
+  });
 };
+
+function provideIds(sh, dateFrom, servers, subs) {
+  return new Promise((resolve, reject) => {
+    let queryForIds = sh.select('id').from('content_preprints').where('date', '>=', dateFrom);
+    if (servers != null && subs == null) {
+      // only servers
+      if (servers.length === 1) queryForIds = queryForIds.and('server', '=', servers[0]);
+      else queryForIds = queryForIds.and('server', 'IN', "('" + servers.join("', '") + "')");
+    } else if (servers != null && subs != null) {
+      // both servers and subs
+      queryForIds = queryForIds.and(
+        sh.if('server', 'IN', "('" + servers.join("', '") + "')")
+          .or('sub', 'IN', "('" + subs.join("', '") + "')"),
+      );
+    } else if (servers == null && subs != null) {
+      // only subs
+      if (subs.length === 1) queryForIds = queryForIds.and('sub', '=', subs[0]);
+      else queryForIds = queryForIds.and('sub', 'IN', "('" + subs.join("', '") + "')");
+    }
+    queryForIds.run()
+      .then((res) => {
+        resolve(res.map(v => v.id));
+      })
+      .catch((e) => {
+        logger.error(e);
+        reject(e);
+      });
+  });
+}
