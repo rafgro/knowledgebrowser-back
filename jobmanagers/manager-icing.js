@@ -6,6 +6,7 @@ const sumUpTerms = require('../services/icing/sum-up-terms');
 
 exports.start = function (ifForce) {
   logger.info('Start of icing work');
+
   const date = new Date(Date.now());
   const today = date.getUTCFullYear()
     + (date.getUTCMonth() + 1 < 10 ? '-0' : '-')

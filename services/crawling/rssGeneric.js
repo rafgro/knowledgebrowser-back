@@ -41,8 +41,7 @@ function processResponseOfRss(error, response, body, name, subject) {
 
     let body2 = body
       .replace(/\ \>/g, '')
-      .replace(/\<\ /g, '')
-      .replace(/\&/g, 'and');
+      .replace(/\<\ /g, '');
     if (name === 'chemRxiv') body2 = body2.replace(/\&/g, 'and');
     // eslint-disable-next-line no-useless-escape
     parseXml(

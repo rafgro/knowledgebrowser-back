@@ -29,12 +29,12 @@ exports.process = function (sh, terms, hotnessBoundary) {
 
     // quickfix to break dominance of single words
     let noOfSpaces = term.term.split(' ').length - 1;
-    if (noOfSpaces > 2) noOfSpaces = 2;
-    else if (noOfSpaces < 1) noOfSpaces = 0.1;
+    if (noOfSpaces >= 2) noOfSpaces = 3;
+    else if (noOfSpaces < 1) noOfSpaces = 0.15;
     let maxing = noOfPubs;
-    if (maxing > 30) maxing = 0.5; // downweight for common parts of speech
-    if (maxing > 10) maxing = 3.5; // downweight for common terms
-    if (maxing > 7) maxing = 7; // reasonable limit of 7 pubs per week
+    if (maxing > 500) maxing = 0; // excluding common parts of speech
+    if (maxing > 14) maxing = 14; // reasonable upper limit of 14 pubs per week
+    if (maxing < 4) maxing = 0.5; // reasonable bottom limit of minimum 4 pubs per week
     noOfSpaces *= maxing;
     score *= noOfSpaces;
 
@@ -43,12 +43,14 @@ exports.process = function (sh, terms, hotnessBoundary) {
   });
 
   // we upload to the db only 50 most popular in that batch
-  let sorted = arrayOfScores.sort((a, b) => b.s - a.s).slice(0, 50);
+  let sorted = arrayOfScores.sort((a, b) => b.s - a.s).slice(0, 30);
   sorted = sorted.map((value) => {
     // eslint-disable-next-line no-param-reassign
     value.s = value.s.toFixed(0);
     return value;
   });
+
+  console.log(sorted);
 
   const date = new Date(Date.now());
   const today = date.getUTCFullYear()

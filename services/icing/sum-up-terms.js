@@ -12,7 +12,7 @@ exports.endThis = function (sh, terms, today, type) {
   allTerms.sort((a, b) => b.s - a.s);
 
   // crude but quick lingustic sanitization
-  const listForPartialExclusion = ['et al', 'state of the art', ' works'];
+  const listForPartialExclusion = ['et al', ' works', ' methods'];
   const listForExactExclusion = ['high levels', 'orders of magnitude', 'lower bounds', 'proof of concept', 'trade off',
     'trade offs', 'based model', 'based models', 'amount of data', 'amounts of data', 'initial data', 'nature of',
     'this study'];
@@ -36,7 +36,7 @@ exports.endThis = function (sh, terms, today, type) {
     return ifTree;
   }
   allTerms = allTerms.filter(disqualifyWords);
-  allTerms = allTerms.slice(0, 1000);
+  allTerms = allTerms.slice(0, 500);
 
   // merge similar terms
   function isSimilar(el, el2) {
@@ -82,10 +82,10 @@ exports.endThis = function (sh, terms, today, type) {
   // console.log(nlp(allTerms[0].t).terms().data());
 
   // final assembly
-  mergedTerms = mergedTerms.slice(0, 20);
+  mergedTerms = mergedTerms.slice(0, 25);
   mergedTerms.sort((a, b) => b.n - a.n);
   let assembled = [];
-  for (let i = 0; i < 20; i += 1) {
+  for (let i = 0; i < 25; i += 1) {
     assembled.push({ t: mergedTerms[i].c, n: mergedTerms[i].n });
   }
   assembled = assembled.filter(function (a) {
@@ -93,6 +93,8 @@ exports.endThis = function (sh, terms, today, type) {
     return !this[a.t] && (this[a.t] = true);
   }, Object.create(null));
 
+
+  console.log(assembled);
   // saving to db
   sh.update('icing_stats').set('processedterms', '\'' + JSON.stringify(assembled) + '\'')
     .where('date', '=', today).and('type', '=', type)
