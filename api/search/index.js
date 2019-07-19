@@ -67,10 +67,17 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
           // failsafes for offsets and no results
           const offsetAsNumber = parseInt(offset, 10);
           if (initialResults.finalList.size === 0) {
-            reject({
-              message: 'There are no new preprints about <i>' + query
-                + '</i>. Would you like to rephrase your query?',
-            });
+            if (stats) {
+              reject({
+                message: 'There are no new preprints about <i>' + query
+                  + '</i>. Would you like to rephrase your query?',
+              });
+            } else {
+              resolve({
+                message: 'There are no new preprints about <i>' + query
+                  + '</i>. Would you like to rephrase your query?',
+              });
+            }
           } else if (offsetAsNumber >= initialResults.finalList.size) {
             reject({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
           }
@@ -82,7 +89,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
           if (linear === true) {
             /* Providing only newest relevant for NOTIFICATIONS */
             arrayOfQueries = strategyNotifications.provideQueries(sh, initialResults.finalList,
-              limitOfRelevancy, span);
+              limitOfRelevancy, parseInt(span, 10));
             if (arrayOfQueries.length == 0) {
               reject({
                 message:
@@ -96,7 +103,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
           } else {
             /* Sorting relevant by RELEVANCY */
             arrayOfQueries = strategyOptionalbyrel.provideQueries(sh, initialResults.finalList,
-              offsetAsNumber);
+              offsetAsNumber, parseInt(span, 10));
           }
 
           const arrayOfQueriesDEBUG = arrayOfQueries.map(v => v.build());
@@ -108,10 +115,17 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
               let properArray = []; // will be just 10 results
               // eslint-disable-next-line eqeqeq
               if (arrayOfQueries == undefined) {
-                reject({
-                  message: 'There are no new preprints about <i>' + query
-                    + '</i>. Would you like to rephrase your query?',
-                });
+                if (stats) {
+                  reject({
+                    message: 'There are no new preprints about <i>' + query
+                      + '</i>. Would you like to rephrase your query?',
+                  });
+                } else {
+                  resolve({
+                    message: 'There are no new preprints about <i>' + query
+                      + '</i>. Would you like to rephrase your query?',
+                  });
+                }
               }
 
               // we can have few arrays from few queries
@@ -126,10 +140,17 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                 // eslint-disable-next-line prefer-destructuring
                 properArray = arrayOfResults[0];
               } else if (arrayOfQueries.length === 0) {
-                reject({
-                  message: 'There are no new preprints about <i>' + query
-                    + '</i>. Would you like to rephrase your query?',
-                });
+                if (stats) {
+                  reject({
+                    message: 'There are no new preprints about <i>' + query
+                      + '</i>. Would you like to rephrase your query?',
+                  });
+                } else {
+                  resolve({
+                    message: 'There are no new preprints about <i>' + query
+                      + '</i>. Would you like to rephrase your query?',
+                  });
+                }
               }
 
               // eslint-disable-next-line eqeqeq
@@ -138,10 +159,17 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                 if (stats == 1) reject({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
                 else resolve({ message: 'No new results for notification to <i>' + query + '</i>.' });
               } else if (properArray.length === 0) {
-                reject({
-                  message: 'There are no new preprints about <i>' + query
-                    + '</i>. Would you like to rephrase your query?',
-                });
+                if (stats) {
+                  reject({
+                    message: 'There are no new preprints about <i>' + query
+                      + '</i>. Would you like to rephrase your query?',
+                  });
+                } else {
+                  resolve({
+                    message: 'There are no new preprints about <i>' + query
+                      + '</i>. Would you like to rephrase your query?',
+                  });
+                }
               }
               // normal user wants just 10, but in case of notifications we want all
               if (properArray.length > 10 && linear === false) { properArray = properArray.slice(0, 10); }
@@ -195,17 +223,20 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
               reject({ message: 'Sorry, we have encountered an error.' });
             });
         } else {
+          // eslint-disable-next-line no-lonely-if
           if (stats) {
             queryStats.register(sh, workingQueries.join(', '), '0',
               '{"timestamp":"' + Date.now() + '","error":"no results"}');
+            reject({
+              message: 'There are no new preprints about <i>' + query
+                + '</i>. Would you like to rephrase your query?',
+            });
+          } else {
+            resolve({
+              message: 'There are no new preprints about <i>' + query
+                + '</i>. Would you like to rephrase your query?',
+            });
           }
-          logger.error('no results for ' + query);
-          reject({
-            message:
-              'There are no new preprints about <i>'
-              + query
-              + '</i>. Would you like to rephrase your query?',
-          });
         }
       })
       .catch((e) => {

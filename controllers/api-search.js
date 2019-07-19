@@ -11,6 +11,9 @@ exports.respond = function (request, response) {
       request.query.offset || 0,
       request.query.stats || 1,
       request.query.sort || 0,
+      request.query.minrel || 4,
+      request.query.span || 720,
+      request.query.linear || false,
     )
     .then((results) => {
       const hrend = process.hrtime(hrstart);
