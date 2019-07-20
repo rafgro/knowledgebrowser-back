@@ -42,6 +42,7 @@ exports.processRssBody = function (sh, body, name, subject) {
                 doi: id,
                 title: escape(element.title),
                 server: 'Preprints.org',
+                sub: element.category[0].toString().toLowerCase(),
               })
                 .into('content_preprints')
                 .run()

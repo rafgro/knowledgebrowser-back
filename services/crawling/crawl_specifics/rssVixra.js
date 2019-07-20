@@ -56,6 +56,8 @@ exports.processRssBody = function (sh, body, name, subject) {
             if (
               element.title.toString().charAt(0) !== '&'
               && myAbstract.includes('Title, authors and abstract should also')
+              && !myAuthors.includes('Rajna')
+              && !myAuthors.includes('Colin James')
                 === false
             ) {
               sh.insert({
@@ -66,6 +68,7 @@ exports.processRssBody = function (sh, body, name, subject) {
                 doi: myDoi,
                 title: escape(element.title),
                 server: 'viXra',
+                sub: element.category,
               })
                 .into('content_preprints')
                 .run()

@@ -25,11 +25,12 @@ exports.start = function (ifForce) {
 
   const specObjects = [
     { type: 'spec-bio', dateFrom: textMinusSeven,
-      servers: ['bioRxiv', 'Preprints.org', 'PeerJ Preprints', 'AgriXiv', 'EcoEvoRxiv', 'MarXiv', 'PaleorXiv', 'Preprints.org'],
-      subs: ['q-bio'] },
-    { type: 'spec-chem', dateFrom: textMinusSeven, servers: ['chemRxiv', 'ECSarXiv'], subs: null },
-    { type: 'spec-phys', dateFrom: textMinusSeven, servers: null, subs: ['physics'] },
+      servers: ['bioRxiv', 'Preprints.org', 'PeerJ Preprints', 'AgriXiv', 'EcoEvoRxiv', 'MarXiv', 'PaleorXiv', 'Preprints.org', 'medRxiv'],
+      subs: ['q-bio', 'life sciences'] },
+    { type: 'spec-chem', dateFrom: textMinusSeven, servers: ['chemRxiv', 'ECSarXiv'], subs: ['chemistry'] },
+    { type: 'spec-phys', dateFrom: textMinusSeven, servers: null, subs: ['physics', 'physical sciences'] },
     { type: 'spec-econ', dateFrom: textMinusSeven, servers: ['NBER', 'NEP RePEc'], subs: ['econ', 'q-fin'] },
+    { type: 'spec-cs', dateFrom: textMinusSeven, servers: null, subs: ['cs', 'computer science'] },
   ];
 
   // eslint-disable-next-line eqeqeq

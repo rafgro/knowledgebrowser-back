@@ -3,6 +3,7 @@
 /* eslint-disable no-loop-func */
 /* eslint-disable max-len */
 /* eslint-disable eqeqeq */
+/* eslint-disable consistent-return */
 
 const querySanitization = require('./query-sanitization');
 const nlpProcessQuery = require('./nlp-process-query');
