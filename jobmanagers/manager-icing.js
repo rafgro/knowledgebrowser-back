@@ -16,8 +16,7 @@ exports.start = function (ifForce) {
     + (date.getUTCDate() < 10 ? '-0' : '-')
     + date.getUTCDate();
 
-  // const dateMinusSeven = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const dateMinusSeven = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+  const dateMinusSeven = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const textMinusSeven = dateMinusSeven.getUTCFullYear()
     + (dateMinusSeven.getUTCMonth() + 1 < 10 ? '-0' : '-')
     + (dateMinusSeven.getUTCMonth() + 1)
@@ -137,7 +136,7 @@ exports.start = function (ifForce) {
                         logger.info('THE END of icing');
 
                         loader.database
-                          .select('rawterms','type')
+                          .select('rawterms', 'type')
                           .from('icing_stats')
                           .where('date', '=', today)
                           // .and('type', '=', 'a')

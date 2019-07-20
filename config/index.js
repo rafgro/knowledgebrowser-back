@@ -1,6 +1,6 @@
 /* eslint-disable linebreak-style */
-process.env.NODE_ENV = 'development';
-// process.env.NODE_ENV = process.env.NODE_ENV || 'production';
+// process.env.NODE_ENV = 'development';
+process.env.NODE_ENV = process.env.NODE_ENV || 'production';
 
 // to handle more db connections
 // eslint-disable-next-line no-underscore-dangle

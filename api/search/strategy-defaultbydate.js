@@ -124,6 +124,7 @@ exports.provideQueries = function (sh, listOfResults, limitOfRelevancy, offsetAs
         .limit(moreRelevantLimit, moreRelevantOffset),
     );
   }
+
   if (lessRelevantNeeded) {
     // dividing to more and less relevant one step further
     const furtherHigher = [];
@@ -209,6 +210,32 @@ exports.provideQueries = function (sh, listOfResults, limitOfRelevancy, offsetAs
             .orderBy('date', 'desc')
             .orderBy('id', 'asc')
             .limit(10, 0),
+        );
+      // eslint-disable-next-line brace-style
+      }
+      // taking only from higher
+      else if (furtherHigher.length > 0 && furtherLower.length === 0) {
+        arrayOfQueries.push(
+          sh
+            .select(
+              'id',
+              'title',
+              'authors',
+              'abstract',
+              'doi',
+              'link',
+              'date',
+              'server',
+            )
+            .from('content_preprints')
+            .where(
+              'id',
+              'IN',
+              '(' + furtherHigher.map(e => e.p).join(', ') + ')',
+            )
+            .orderBy('date', 'desc')
+            .orderBy('id', 'asc')
+            .limit(10, lessRelevantOffset),
         );
       }
     } else {

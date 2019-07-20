@@ -16,12 +16,14 @@ exports.endThis = function (sh, terms, today) {
     if (highestN < 5) highestN = 5;
 
     // crude but quick lingustic sanitization
-    const listForPartialExclusion = ['et al', ' works', ' methods', ' are', 'it ', 'results'];
+    const listForPartialExclusion = ['et al', ' works', ' methods', ' are', 'it ', 'results', 'div>', 'p>'];
     const listForExactExclusion = ['high levels', 'orders of magnitude', 'lower bounds', 'proof of concept', 'trade off',
       'trade offs', 'based model', 'based models', 'amount of data', 'amounts of data', 'initial data', 'nature of',
       'this study', 'also', 'and', 'be', 'for', 'has', 'have', 'here', 'no', 'are', 'is', 'model', 'data', 'time',
       'over time', 'their', 'one', 'herein', 'different', 'method', 'long term', 'short run', 'order', 'methods',
-      'can', 'been', 'high', 'process', 'model', 'models'];
+      'can', 'been', 'high', 'process', 'model', 'models', 'end to end', 'one dimensional', 'non linear', 'time series',
+      'proposed method', 'real world', 'two dimensional', 'type specific', 'large scale', 'real time', 'so called',
+      'long range', 'time varying', 'long run', 'high dimensional', 'data driven', 'order of magnitude'];
     function disqualifyWords(v) {
       let ifTree = true;
       if (!v.t.includes(' ') && v.n > highestN) ifTree = false;
@@ -82,7 +84,7 @@ exports.endThis = function (sh, terms, today) {
     }
     mergedTerms = mergedTerms.map((value) => {
       // eslint-disable-next-line no-param-reassign
-      value.c = chooseLongest(value.t.split(', '));
+      value.c = chooseLongest(value.t.split(', ')).replace('< sub>', '');
       return value;
     });
 

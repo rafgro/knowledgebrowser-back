@@ -18,12 +18,12 @@ const queryStats = require('./query-stats');
 exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sortMode = 0, minRelevance = 4, span = 720, linear = false) {
   return new Promise((resolve, reject) => {
     const hrstart = process.hrtime();
-    if (process.env.NODE_ENV === 'development') stats = 0;
+    // if (process.env.NODE_ENV === 'development') stats = 0;
 
     // param sanitization
     if (offset < 0) offset = 0;
-    if (query == undefined) reject({ message: 'Please enter your query.' });
-    if (query.length < 1 || query === ' ') reject({ message: 'Please enter your query.' });
+    if (query == undefined) return reject({ message: 'Please enter your query.' });
+    if (query.length < 1 || query === ' ') return reject({ message: 'Please enter your query.' });
 
     // many queries in one as COMMA (,) works like OR
     let queries = [];
@@ -43,7 +43,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
       workingQueries.push(workingQuery);
 
       // sanitization can reduce query to 0
-      if (queries.length === 1 && workingQuery.length < 1) reject({ message: 'Please enter your query.' });
+      if (queries.length === 1 && workingQuery.length < 1) return reject({ message: 'Please enter your query.' });
 
       // query processing
       nlpProcessQuery.returnVariants(workingQuery).forEach(e => queriesToDb.push(e));
@@ -68,18 +68,19 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
           const offsetAsNumber = parseInt(offset, 10);
           if (initialResults.finalList.size === 0) {
             if (stats) {
-              reject({
+              return reject({
                 message: 'There are no new preprints about <i>' + query
                   + '</i>. Would you like to rephrase your query?',
               });
             } else {
-              resolve({
+              return resolve({
                 message: 'There are no new preprints about <i>' + query
                   + '</i>. Would you like to rephrase your query?',
               });
             }
           } else if (offsetAsNumber >= initialResults.finalList.size) {
-            reject({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
+            if (stats == 1) return reject({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
+            else return resolve({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
           }
 
           let arrayOfQueries = [];
@@ -91,7 +92,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
             arrayOfQueries = strategyNotifications.provideQueries(sh, initialResults.finalList,
               limitOfRelevancy, parseInt(span, 10));
             if (arrayOfQueries.length == 0) {
-              reject({
+              return reject({
                 message:
                     'Sorry, there are no sufficiently relevant results for <i>' + query + '</i>.',
               });
@@ -111,17 +112,18 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
 
           // 3
           Promise.all(arrayOfQueries)
+            // eslint-disable-next-line consistent-return
             .then((arrayOfResults) => {
               let properArray = []; // will be just 10 results
               // eslint-disable-next-line eqeqeq
               if (arrayOfQueries == undefined) {
                 if (stats) {
-                  reject({
+                  return reject({
                     message: 'There are no new preprints about <i>' + query
                       + '</i>. Would you like to rephrase your query?',
                   });
                 } else {
-                  resolve({
+                  return resolve({
                     message: 'There are no new preprints about <i>' + query
                       + '</i>. Would you like to rephrase your query?',
                   });
@@ -141,12 +143,12 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                 properArray = arrayOfResults[0];
               } else if (arrayOfQueries.length === 0) {
                 if (stats) {
-                  reject({
+                  return reject({
                     message: 'There are no new preprints about <i>' + query
                       + '</i>. Would you like to rephrase your query?',
                   });
                 } else {
-                  resolve({
+                  return resolve({
                     message: 'There are no new preprints about <i>' + query
                       + '</i>. Would you like to rephrase your query?',
                   });
@@ -156,16 +158,16 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
               // eslint-disable-next-line eqeqeq
               if (properArray == undefined) {
                 // eslint-disable-next-line eqeqeq
-                if (stats == 1) reject({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
-                else resolve({ message: 'No new results for notification to <i>' + query + '</i>.' });
+                if (stats == 1) return reject({ message: 'Sorry, there are no more results for <i>' + query + '</i>.' });
+                else return resolve({ message: 'No new results for notification to <i>' + query + '</i>.' });
               } else if (properArray.length === 0) {
                 if (stats) {
-                  reject({
+                  return reject({
                     message: 'There are no new preprints about <i>' + query
                       + '</i>. Would you like to rephrase your query?',
                   });
                 } else {
-                  resolve({
+                  return resolve({
                     message: 'There are no new preprints about <i>' + query
                       + '</i>. Would you like to rephrase your query?',
                   });
@@ -189,7 +191,7 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
                 initialResults.finalList, listOfWords, relativeWeightModule.theNumberOfWords(workingQueries));
 
               // eslint-disable-next-line eqeqeq
-              if (parseInt(offset, 10) == 0 && stats == 1) {
+              if (publications != undefined && publications.length > 0 && parseInt(offset, 10) == 0 && stats == 1) {
                 let quality = 0;
                 quality = publications[0].relativeWeight / 2;
                 if (publications.length >= 5) { quality += publications[4].relativeWeight / 4; }
@@ -244,8 +246,8 @@ exports.doYourJob = function (sh, query, limit = 10, offset = 0, stats = 1, sort
           queryStats.register(sh, workingQueries.join(', '), '0',
             '{"timestamp":"' + Date.now() + '","error":"' + escape(e.toString()) + '"}');
         }
-        logger.error('line 173');
-        logger.error(e);
+        // logger.error('line 173');
+        // logger.error(e);
         reject({ message: 'Sorry, we have encountered an error.' });
       });
   });
