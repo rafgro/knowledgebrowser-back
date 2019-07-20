@@ -148,17 +148,37 @@ function provideIds(sh, dateFrom, servers, subs) {
     if (servers != null && subs == null) {
       // only servers
       if (servers.length === 1) queryForIds = queryForIds.and('server', '=', servers[0]);
-      else queryForIds = queryForIds.and('server', 'IN', "('" + servers.join("', '") + "')");
+      else {
+        let innerQuery = sh.if('server', '=', servers[0]);
+        for (let i = 1; i < servers.length; i += 1) {
+          innerQuery = innerQuery.or('server', '=', servers[i]);
+        }
+        queryForIds = queryForIds.and(innerQuery);
+      }
     } else if (servers != null && subs != null) {
       // both servers and subs
+      let innerQuery1 = sh.if('server', '=', servers[0]);
+      for (let i = 1; i < servers.length; i += 1) {
+        innerQuery1 = innerQuery1.or('server', '=', servers[i]);
+      }
+      let innerQuery2 = sh.if('sub', '=', subs[0]);
+      for (let i = 1; i < servers.length; i += 1) {
+        innerQuery2 = innerQuery2.or('sub', '=', subs[i]);
+      }
       queryForIds = queryForIds.and(
-        sh.if('server', 'IN', "('" + servers.join("', '") + "')")
-          .or('sub', 'IN', "('" + subs.join("', '") + "')"),
+        sh.if(innerQuery1)
+          .or(innerQuery2),
       );
     } else if (servers == null && subs != null) {
       // only subs
       if (subs.length === 1) queryForIds = queryForIds.and('sub', '=', subs[0]);
-      else queryForIds = queryForIds.and('sub', 'IN', "('" + subs.join("', '") + "')");
+      else {
+        let innerQuery = sh.if('sub', '=', subs[0]);
+        for (let i = 1; i < subs.length; i += 1) {
+          innerQuery = innerQuery.or('sub', '=', subs[i]);
+        }
+        queryForIds = queryForIds.and(innerQuery);
+      }
     }
     queryForIds.run()
       .then((res) => {

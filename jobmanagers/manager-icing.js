@@ -25,7 +25,7 @@ exports.start = function (ifForce) {
 
   const specObjects = [
     { type: 'spec-bio', dateFrom: textMinusSeven,
-      servers: ['bioRxiv', 'Preprints.org', 'PeerJ Preprints', 'AgriXiv', 'EcoEvoRxiv', 'MarXiv', 'PaleorXiv', 'Preprints.org', 'medRxiv'],
+      servers: ['bioRxiv', 'PeerJ Preprints', 'AgriXiv', 'EcoEvoRxiv', 'MarXiv', 'PaleorXiv', 'Preprints.org', 'medRxiv'],
       subs: ['q-bio', 'life sciences'] },
     { type: 'spec-chem', dateFrom: textMinusSeven, servers: ['chemRxiv', 'ECSarXiv'], subs: ['chemistry'] },
     { type: 'spec-phys', dateFrom: textMinusSeven, servers: null, subs: ['physics', 'physical sciences'] },
