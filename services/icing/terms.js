@@ -3,6 +3,13 @@
 exports.process = async function (hrstart, sh, terms, hotnessBoundary, specializedObj) {
   const processingEntities = [];
 
+  const date = new Date(Date.now());
+  const today = date.getUTCFullYear()
+    + (date.getUTCMonth() + 1 < 10 ? '-0' : '-')
+    + (date.getUTCMonth() + 1)
+    + (date.getUTCDate() < 10 ? '-0' : '-')
+    + date.getUTCDate();
+
   // first - all preprints in the last week
   processingEntities.push({ arrayOfScores: [], type: 'a' });
 
@@ -17,6 +24,14 @@ exports.process = async function (hrstart, sh, terms, hotnessBoundary, specializ
         type: specializedObj[i].type,
         ids,
       });
+      sh.update('icing_stats').set('noofall', ids.length)
+        .where('type', '=', specializedObj[i].type)
+        .and('date', '=', today)
+        .run()
+        // eslint-disable-next-line no-unused-vars
+        .then(_ => 1)
+        // eslint-disable-next-line no-loop-func
+        .catch(e => logger.error(e));
     }
   }
 
@@ -99,12 +114,6 @@ exports.process = async function (hrstart, sh, terms, hotnessBoundary, specializ
     });
 
     if (sorted.length > 0 && sorted[0].s !== '0') {
-      const date = new Date(Date.now());
-      const today = date.getUTCFullYear()
-        + (date.getUTCMonth() + 1 < 10 ? '-0' : '-')
-        + (date.getUTCMonth() + 1)
-        + (date.getUTCDate() < 10 ? '-0' : '-')
-        + date.getUTCDate();
       sh.select('type', 'date', 'rawterms').from('icing_stats').where('date', '=', today).and('type', '=', one.type)
         .run()
         .then((returned) => {

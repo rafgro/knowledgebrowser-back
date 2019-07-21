@@ -23,7 +23,10 @@ exports.endThis = function (sh, terms, today) {
       'over time', 'their', 'one', 'herein', 'different', 'method', 'long term', 'short run', 'order', 'methods',
       'can', 'been', 'high', 'process', 'model', 'models', 'end to end', 'one dimensional', 'non linear', 'time series',
       'proposed method', 'real world', 'two dimensional', 'type specific', 'large scale', 'real time', 'so called',
-      'long range', 'time varying', 'long run', 'high dimensional', 'data driven', 'order of magnitude'];
+      'long range', 'time varying', 'long run', 'high dimensional', 'data driven', 'order of magnitude', 'recent years',
+      'learning based', 'high quality', 'proposed model', 'data sets', 'steady state', 'short term', 'density functional',
+      'room temperature', 'new avenues', 'end childhood', 'other outcomes', 'same time', 'randomized controlled',
+      'global financial', 'three dimensional', 'higher order'];
     function disqualifyWords(v) {
       let ifTree = true;
       if (!v.t.includes(' ') && v.n > highestN) ifTree = false;
