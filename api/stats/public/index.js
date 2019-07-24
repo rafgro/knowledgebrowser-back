@@ -298,6 +298,16 @@ exports.doYourJob = function (sh) {
               .select('date', 'title')
               .from('content_preprints')
               .where('server', '=', element.name)
+              .and(
+                'date',
+                '<=',
+                date.getUTCFullYear()
+                  + (date.getUTCMonth() + 1 < 10 ? '-0' : '-')
+                  + (date.getUTCMonth() + 1)
+                  + (date.getUTCDate() < 10 ? '-0' : '-')
+                  + date.getUTCDate()
+                  + ' 23:59:59',
+              )
               .orderBy('date', 'desc')
               .limit(1, 0)
               .run(),

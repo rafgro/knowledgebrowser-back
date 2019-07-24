@@ -92,15 +92,16 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
     if (days <= 1.99) dateAgo = hours.toFixed(0) + ' hours ago';
     else if (days < 2) dateAgo = '1 day ago';
     if (hours <= 1.1) dateAgo = 'less than hour ago';
-    const rawDate = thatDate.getUTCFullYear()
-      + (thatDate.getUTCMonth() + 1 < 10 ? '-0' : '-')
-      + (thatDate.getUTCMonth() + 1)
-      + (thatDate.getUTCDate() < 10 ? '-0' : '-')
-      + thatDate.getUTCDate()
-      + (thatDate.getUTCHours() < 10 ? ' 0' : ' ')
-      + thatDate.getUTCHours()
-      + (thatDate.getUTCMinutes() < 10 ? ':0' : ':')
-      + thatDate.getUTCMinutes() + ' UTC';
+    const thatDate2 = new Date(pub.date);
+    const rawDate = thatDate2.getUTCFullYear()
+      + (thatDate2.getUTCMonth() + 1 < 10 ? '-0' : '-')
+      + (thatDate2.getUTCMonth() + 1)
+      + (thatDate2.getUTCDate() < 10 ? '-0' : '-')
+      + thatDate2.getUTCDate()
+      + (thatDate2.getUTCHours() < 10 ? ' 0' : ' ')
+      + thatDate2.getUTCHours()
+      + (thatDate2.getUTCMinutes() < 10 ? ':0' : ':')
+      + thatDate2.getUTCMinutes() + ' UTC';
     if (pub.relativeWeight >= 8) htmlToSend += '<small><strong>' + pub.relativeWeight + '/10 relevant</strong></small><br/>';
     else htmlToSend += '<small>' + pub.relativeWeight + '/10 relevant</small><br/>';
     htmlToSend += '<small>' + dateAgo + ' (' + rawDate + ') in ' + pub.server + '</small><br/><a href="' + pub.link + '">' + pub.title + '</a><br/>' + pub.abstract + '<br/><br/>';
