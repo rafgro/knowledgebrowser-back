@@ -26,7 +26,9 @@ exports.endThis = function (sh, terms, today) {
       'long range', 'time varying', 'long run', 'high dimensional', 'data driven', 'order of magnitude', 'recent years',
       'learning based', 'high quality', 'proposed model', 'data sets', 'steady state', 'short term', 'density functional',
       'room temperature', 'new avenues', 'end childhood', 'other outcomes', 'same time', 'randomized controlled',
-      'global financial', 'three dimensional', 'higher order', 'other hand', 'first order'];
+      'global financial', 'three dimensional', 'higher order', 'other hand', 'first order', 'x', 'well known',
+      'second order', 'time dependent', 'wide association', 'space self', 'self consistent', 'time resolved',
+      'under consideration', 'extensive experiments', 'i use', 'l evy'];
     function disqualifyWords(v) {
       let ifTree = true;
       if (!v.t.includes(' ') && v.n > highestN) ifTree = false;

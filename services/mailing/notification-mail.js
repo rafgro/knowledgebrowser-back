@@ -104,7 +104,7 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
       + thatDate2.getUTCMinutes() + ' UTC';
     if (pub.relativeWeight >= 8) htmlToSend += '<small><strong>' + pub.relativeWeight + '/10 relevant</strong></small><br/>';
     else htmlToSend += '<small>' + pub.relativeWeight + '/10 relevant</small><br/>';
-    htmlToSend += '<small>' + dateAgo + ' (' + rawDate + ') in ' + pub.server + '</small><br/><a href="' + pub.link + '">' + pub.title + '</a><br/>' + pub.abstract + '<br/><br/>';
+    htmlToSend += '<small>' + dateAgo + ' (' + rawDate + ') in ' + pub.server + '</small><br/><a href="' + pub.link + '">' + sanitize(pub.title) + '</a><br/>' + sanitize(pub.abstractFull) + '<br/><br/>';
 
     textToSend += '- (' + pub.relativeWeight + '/10 relevant, ' + dateAgo + ' in ' + pub.server + ') "' + pub.title + '" Abstract: ' + pub.abstract + ' (more at ' + pub.link + ') ';
 
@@ -113,7 +113,7 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
   logger.info('Sending: ' + JSON.stringify(myHistory));
 
   textToSend += ' If you want to change settings of notifications, please log in to your account at knowledgebrowser.org/login. See you again! kb:preprints';
-  htmlToSend += ' If you want to change settings of notifications, please log in to your account at <a href="https://knowledgebrowser.org/login">knowledgebrowser.org/login</a>.<br/><br/>See you again!<br/>kb:preprints';
+  htmlToSend += ' <small>If you want to change settings of notifications, please log in to your account at <a href="https://knowledgebrowser.org/login">knowledgebrowser.org/login</a>.</small><br/><br/>See you again!<br/>kb:preprints';
 
   let titleThis = pubs.length + ' new preprints on ' + aboutWhat;
   if (pubs.length === 1) titleThis = pubs.length + ' new preprint on ' + aboutWhat;
@@ -171,4 +171,8 @@ function sendThatMail(ifFirst, whereToSend, aboutWhat, minRelevance, span, lastS
       }
     })
     .catch(e => logger.error(e));
+}
+
+function sanitize(text) {
+  return text.replace(/\$/, '').replace(/\\/, '');
 }
