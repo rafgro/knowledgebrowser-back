@@ -9,6 +9,8 @@ exports.processRssBody = function (sh, body, name, subject) {
 
   if (Object.keys(body).length === 0) {
     fatalError = 'empty body';
+  } else if (body.rss.channel == undefined) {
+    fatalError = 'no channel in body';
   } else if (!Array.isArray(body.rss.channel[0].item)) {
     fatalError = 'no array in body';
   } else if (body.rss.channel[0].item[0].doi === undefined) {

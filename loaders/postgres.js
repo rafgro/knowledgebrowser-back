@@ -14,8 +14,8 @@ function doJob() {
 
   return shiphold({
     host: 'aa1f3ajh2rexsb4c.ca68v3nuzco0.us-east-2.rds.amazonaws.com', // config.conf.api.databaseURL,
-    user: process.env.RDS_USERNAME,
-    password: process.env.RDS_PASSWORD,
+    user: 'crawler', // process.env.RDS_USERNAME,
+    password: 'kjfhds576sfdfs561', // process.env.RDS_PASSWORD,
     port: 5432,
     database: 'postgres',
   });
